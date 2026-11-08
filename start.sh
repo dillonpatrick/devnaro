@@ -30,7 +30,7 @@ fi
 APP_NAME="DEVBOX"
 APP_VERSION="1.0.0"
 
-TOTAL_STEPS=9
+TOTAL_STEPS=7
 
 # ==========================================
 # UI functions
@@ -278,53 +278,7 @@ else
 fi
 
 # ==========================================
-# 8. Host shell alias configuration
-# ==========================================
-
-section 8 "Host shell configuration"
-
-HOST_SHELL="$(basename "${SHELL:-bash}")"
-
-case "$HOST_SHELL" in
-    zsh)
-        SHELL_CONFIG="$HOME/.zshrc"
-        ;;
-    bash)
-        SHELL_CONFIG="$HOME/.bashrc"
-        ;;
-    *)
-        warning "Unsupported shell: ${HOST_SHELL}"
-        SHELL_CONFIG=""
-        ;;
-esac
-
-if [[ -n "$SHELL_CONFIG" ]]; then
-
-    ALIAS_LINE="alias devbox='docker exec -it devbox zsh'"
-
-    touch "$SHELL_CONFIG"
-
-    if ! grep -Fxq "$ALIAS_LINE" "$SHELL_CONFIG"; then
-
-        {
-            echo ""
-            echo "# DevBox shortcut"
-            echo "$ALIAS_LINE"
-        } >> "$SHELL_CONFIG"
-
-        success "DevBox alias added."
-        detail "Configuration: ${SHELL_CONFIG}"
-
-    else
-
-        success "DevBox alias already configured."
-
-    fi
-
-fi
-
-# ==========================================
-# 9. Finalization
+# 8. Finalization
 # ==========================================
 
 printf '\n'
