@@ -67,7 +67,7 @@ cd devbox
 make install
 ```
 
-The installer creates `~/.local/bin/devbox` as a symlink to the repository's host CLI and adds `~/.local/bin` to PATH for Bash or Zsh. Open a new terminal or source the shell configuration file printed by the installer. The installer is safe to run more than once.
+The installer creates a `devbox` symlink in `~/.local/bin` by default and adds that directory to PATH for Bash or Zsh. Set `DEVBOX_BIN_DIR` to install the command in a different directory; the installer adds that selected directory to PATH when it can identify a supported shell. Open a new terminal or source the shell configuration file printed by the installer. The installer is safe to run more than once.
 
 Start the environment:
 
@@ -158,7 +158,7 @@ By default, it considers networks that:
 It persists the network IDs it manages in:
 
 ```text
-/home/devuser/.local/state/devbox-network-manager/managed-networks.json
+~/.local/state/devbox-network-manager/managed-networks.json
 ```
 
 The manager only disconnects networks it previously recorded as managed. This state is stored in the `devbox_home` volume.
