@@ -10,6 +10,9 @@ ARG USERNAME=devuser
 ARG USER_UID=1000
 ARG USER_GID=1000
 ARG DOCKER_GID=966
+ARG TERRAFORM_VERSION=1.17.1
+ARG UV_VERSION=0.13.7
+ARG OH_MY_ZSH_COMMIT=cca3bdfbef8c52ef8939ce7911ff68852b949daa
 
 # ==========================================
 # 2. Essential tools
@@ -45,7 +48,7 @@ RUN wget -O- https://apt.releases.hashicorp.com/gpg | \
     && echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com jammy main" \
     > /etc/apt/sources.list.d/hashicorp.list \
     && apt-get update \
-    && apt-get install -y terraform \
+    && apt-get install -y terraform=${TERRAFORM_VERSION}-1 \
     && rm -rf /var/lib/apt/lists/*
 
 # ==========================================
@@ -117,13 +120,16 @@ USER $USERNAME
 
 WORKDIR /home/$USERNAME
 
-# Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# uv is installed at an exact version in the isolated CLI virtual environment.
+ENV PATH="/home/${USERNAME}/.local/bin:/opt/devbox-venv/bin:$PATH"
 
-ENV PATH="/home/${USERNAME}/.local/bin:$PATH"
-
-# Install Oh My Zsh
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended
+# Install a reviewed, immutable Oh My Zsh commit instead of tracking master.
+RUN git init /home/${USERNAME}/.oh-my-zsh \\
+    && git -C /home/${USERNAME}/.oh-my-zsh remote add origin https://github.com/ohmyzsh/ohmyzsh.git \\
+    && git -C /home/${USERNAME}/.oh-my-zsh fetch --depth 1 origin "${OH_MY_ZSH_COMMIT}" \\
+    && git -C /home/${USERNAME}/.oh-my-zsh checkout --detach FETCH_HEAD \\
+    && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \\
+    && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc
 
 # Configure Oh My Zsh plugins
 RUN sed -i \
