@@ -19,12 +19,12 @@ build: ## Build DevBox image
 rebuild: ## Rebuild DevBox image without cache
 	@docker compose --project-directory . -f docker/docker-compose.yml build --no-cache
 
-test: ## Run Python unit and smoke tests
+test: ## Run Python unit tests (DevBox must be running)
 	@docker compose --project-directory . -f docker/docker-compose.yml exec devbox pytest /opt/devbox-cli/tests/unit
 
 config: ## Validate Docker Compose configuration
 	@docker compose --project-directory . -f docker/docker-compose.yml config --quiet
 	@echo "Docker Compose configuration is valid."
 
-clean: ## Remove DevBox containers, networks and volumes
+clean: ## Remove DevBox container, Compose network and devbox_home volume
 	@docker compose --project-directory . -f docker/docker-compose.yml down --volumes --remove-orphans
