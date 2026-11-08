@@ -48,7 +48,7 @@ The workspace is mounted into the container at `/workspace`. The Network Manager
 
 | Component | Responsibility |
 |---|---|
-| Bash scripts | Host bootstrap and teardown |
+| `install.sh` | One-time host shell configuration and alias setup |\n| `start.sh` / `stop.sh` | DevBox startup and teardown |
 | Docker Compose | Container, volume, and socket configuration |
 | Python CLI | Operational commands and diagnostics |
 | Network Manager | Periodic Docker network reconciliation |
@@ -100,7 +100,7 @@ The Python CLI and its dependencies are installed into an isolated virtual envir
 
 ### Enter the environment
 
-From the host, after loading the configured shell file (for example, `source ~/.bashrc` or `source ~/.zshrc`), use:
+From the host, after installing and loading the alias, use:
 
 ```bash
 devbox
@@ -148,7 +148,7 @@ Run these commands from the repository directory on the host:
 | Command | Description |
 |---|---|
 | `make` | Show available commands |
-| `make start` | Start DevBox |
+| `make install` | Configure the host shell alias |\n| `make start` | Start DevBox without entering it |
 | `make stop` | Stop and remove DevBox resources |
 | `make restart` | Restart DevBox |
 | `make build` | Build the image |
