@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help start stop restart build rebuild status logs logs-follow shell manager-logs ps networks config clean doctor test cli-status cli-networks manager-status
+.PHONY: help install start stop restart build rebuild status logs logs-follow shell manager-logs ps networks config clean doctor test cli-status cli-networks manager-status
 
 # ==========================================
 # Main commands
@@ -9,6 +9,9 @@
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 	awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
+
+install: ## Configure the host shell alias
+	@./install.sh
 
 start: ## Start DevBox using start.sh
 	@./start.sh
