@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help start stop restart build rebuild status logs logs-follow shell manager-logs ps networks config clean doctor cli-status cli-networks manager-status
+.PHONY: help start stop restart build rebuild status logs logs-follow shell manager-logs ps networks config clean doctor test cli-status cli-networks manager-status
 
 # ==========================================
 # Main commands
@@ -44,6 +44,10 @@ shell: ## Open a shell inside DevBox
 # ==========================================
 # Python CLI
 # ==========================================
+
+test: ## Run Python unit and smoke tests
+	@docker compose exec devbox pytest /opt/devbox-cli/tests
+
 
 doctor: ## Run DevBox health checks
 	@docker compose exec devbox devbox-manager doctor
