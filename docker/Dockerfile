@@ -20,7 +20,6 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     nano \
-    sudo \
     build-essential \
     python3 \
     python3-pip \
@@ -104,13 +103,11 @@ RUN set -eux; \
     fi; \
     useradd --uid "$USER_UID" --gid "$USER_GID" --create-home --shell /usr/bin/zsh "$USERNAME"; \
     fi; \
-    echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$USERNAME"; \
-    chmod 0440 "/etc/sudoers.d/$USERNAME"; \
     if ! getent group "$DOCKER_GID" > /dev/null; then \
     groupadd --gid "$DOCKER_GID" docker_host; \
     fi; \
     DOCKER_GROUP="$(getent group "$DOCKER_GID" | cut -d: -f1)"; \
-    usermod -aG "$DOCKER_GROUP,sudo" "$USERNAME"
+    usermod -aG "$DOCKER_GROUP" "$USERNAME"
 
 # ==========================================
 # 8. User environment configuration

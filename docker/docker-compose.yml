@@ -28,6 +28,13 @@ services:
 
     restart: unless-stopped
 
+    # Reduce the container's kernel-level privileges. Docker socket access
+    # remains highly privileged and is required by DevBox.
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
     # ==========================================
     # Environment variables
     # ==========================================
