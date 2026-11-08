@@ -178,6 +178,11 @@ fi
 
 WORKSPACE_PATH="$(realpath "$WORKSPACE_PATH")"
 
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+CODE_SOCKET_PATH="$RUNTIME_DIR/devbox-code-$USER_UID.sock"
+CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
+CODE_BRIDGE_LOG="$RUNTIME_DIR/devbox-code-$USER_UID.log"
+
 detail "Location: ${WORKSPACE_PATH}"
 
 # ==========================================
@@ -193,10 +198,47 @@ USER_GID=$USER_GID
 DOCKER_GID=$DOCKER_GID
 TZ=$TZ
 WORKSPACE_PATH=$WORKSPACE_PATH
+CODE_SOCKET_PATH=$CODE_SOCKET_PATH
 EOF
 
 success "Environment file generated."
 detail ".env"
+
+# ==========================================
+# 4. Host VS Code bridge
+# ==========================================
+
+section 4 "Host VS Code bridge"
+
+if ! command -v python3 >/dev/null 2>&1; then
+    error "Python 3 is required on the host for the VS Code bridge."
+    exit 1
+fi
+
+if [[ ! -S "$CODE_SOCKET_PATH" ]] || [[ ! -f "$CODE_BRIDGE_PID" ]] || ! kill -0 "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null; then
+    rm -f "$CODE_SOCKET_PATH" "$CODE_BRIDGE_PID"
+    info "Starting host VS Code bridge..."
+    nohup python3 "$SCRIPT_DIR/scripts/host/code_bridge.py" \
+        --socket "$CODE_SOCKET_PATH" \
+        --workspace "$WORKSPACE_PATH" \
+        >"$CODE_BRIDGE_LOG" 2>&1 &
+    echo "$!" > "$CODE_BRIDGE_PID"
+
+    BRIDGE_READY=false
+    for attempt in {1..5}; do
+        if [[ -S "$CODE_SOCKET_PATH" ]]; then
+            BRIDGE_READY=true
+            break
+        fi
+        sleep 1
+    done
+
+    if [[ "$BRIDGE_READY" != true ]]; then
+        error "Host VS Code bridge failed to start. Check: $CODE_BRIDGE_LOG"
+        exit 1
+    fi
+fi
+success "Host VS Code bridge is ready."
 
 # ==========================================
 # 4. Docker Compose validation
