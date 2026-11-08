@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "devbox-manager"
 version = "0.1.0"
 description = "CLI utilities for the DevBox development environment"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "docker>=7.1,<8",
     "rich>=13.7,<15",
