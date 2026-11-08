@@ -6,13 +6,13 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 
 ## Features
 
-- Containerized development tools based on Ubuntu 22.04.
+- Containerized development tools based on Ubuntu 24.04.
 - Persistent workspace stored outside the DevBox container.
 - Host Docker integration through the mounted Docker socket.
 - Automatic discovery and connection to eligible Docker Compose bridge networks.
 - Persistent home directory across normal container restarts.
 - Host CLI for lifecycle operations and container-side CLI for diagnostics.
-- Zsh, Oh My Zsh (pinned commit), Terraform 1.17.1, Docker CLI, Python, uv 0.13.7, Typer, and Rich.
+- Zsh, Oh My Zsh (pinned commit), Terraform 1.17.1, Docker CLI, Python 3.12+, uv 0.13.7, Typer, and Rich.
 
 ## Architecture
 
@@ -55,7 +55,7 @@ The workspace is mounted in the container at `/workspace`. Project Compose files
 - Bash, Git, and GNU Make.
 - Access to `/var/run/docker.sock`.
 
-The container image is based on Ubuntu 22.04. The host may use another Linux distribution if the requirements above are available.
+The container image is based on Ubuntu 24.04. The host may use another Linux distribution if the requirements above are available.
 
 ## Installation
 
@@ -139,7 +139,7 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 
 ## Python CLI
 
-The `devbox-manager` Python CLI is installed inside the container in an isolated virtual environment at `/opt/devbox-venv`. The `dm` shortcut invokes the same CLI.
+The project requires Python 3.12 or newer. The `devbox-manager` Python CLI is installed inside the container in an isolated virtual environment at `/opt/devbox-venv`. The `dm` shortcut invokes the same CLI.
 
 Available command groups include status, health checks, network listing, and Network Manager status/logs. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
 
