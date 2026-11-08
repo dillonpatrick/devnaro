@@ -33,7 +33,7 @@ EXCLUDE_INTERNAL = os.getenv("NETWORK_EXCLUDE_INTERNAL", "true").lower() == "tru
 
 STATE_DIR = Path(
     os.getenv(
-        "NETWORK_MANAGER_STATE_DIR", "/home/devuser/.local/state/devbox-network-manager"
+        "NETWORK_MANAGER_STATE_DIR", str(Path.home() / ".local/state/devbox-network-manager")
     )
 )
 
