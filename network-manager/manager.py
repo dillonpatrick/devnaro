@@ -142,6 +142,7 @@ def synchronize():
                 network.connect(container)
 
                 state[name] = network_id
+                current[name] = {}
 
                 print(f"[+] Connected: {name}", flush=True)
 
