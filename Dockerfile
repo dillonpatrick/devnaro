@@ -80,6 +80,7 @@ WORKDIR /opt/devbox-cli
 
 COPY pyproject.toml ./
 COPY devbox_manager/ ./devbox_manager/
+COPY tests/ ./tests/
 
 RUN python3 -m venv /opt/devbox-venv \
     && /opt/devbox-venv/bin/pip install --no-cache-dir ".[dev]"
