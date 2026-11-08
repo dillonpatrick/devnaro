@@ -29,7 +29,6 @@ Host Machine
 |   |   +-- network_manager.py
 |   +-- network-manager/
 |   |   +-- manager.py
-|   +-- scripts/
 |   +-- Dockerfile
 |   +-- docker-compose.yml
 |   +-- pyproject.toml
