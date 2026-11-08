@@ -73,7 +73,21 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 COPY --chown=root:root network-manager/ /opt/network-manager/
 
 # ==========================================
-# 6. User and group configuration
+# 6. DevBox Python CLI
+# ==========================================
+
+WORKDIR /opt/devbox-cli
+
+COPY pyproject.toml ./
+COPY devbox_manager/ ./devbox_manager/
+
+RUN python3 -m venv /opt/devbox-venv \
+    && /opt/devbox-venv/bin/pip install --no-cache-dir .
+
+ENV PATH="/opt/devbox-venv/bin:$PATH"
+
+# ==========================================
+# 7. User and group configuration
 # ==========================================
 
 RUN set -eux; \
@@ -98,7 +112,7 @@ RUN set -eux; \
     usermod -aG "$DOCKER_GROUP,sudo" "$USERNAME"
 
 # ==========================================
-# 7. User environment configuration
+# 8. User environment configuration
 # ==========================================
 
 USER $USERNAME
@@ -125,7 +139,7 @@ RUN echo '\n# Zsh autosuggestions' >> /home/$USERNAME/.zshrc \
     && echo 'source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' >> /home/$USERNAME/.zshrc
 
 # ==========================================
-# 8. Default shell
+# 9. Default shell
 # ==========================================
 
 CMD ["zsh"]
