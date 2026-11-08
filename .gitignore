@@ -36,3 +36,8 @@ htmlcov/
 # Build artifacts
 build/
 dist/
+
+# Test and coverage output
+.pytest_cache/
+.coverage
+htmlcov/
