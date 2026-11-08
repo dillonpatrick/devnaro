@@ -29,10 +29,13 @@ Host Machine
 |   |   +-- network_manager.py
 |   +-- network-manager/
 |   |   +-- manager.py
+|   +-- scripts/
+|   |   +-- devbox
 |   +-- Dockerfile
 |   +-- docker-compose.yml
 |   +-- pyproject.toml
 |   +-- Makefile
+|   +-- install.sh
 |   +-- start.sh
 |   +-- stop.sh
 |
