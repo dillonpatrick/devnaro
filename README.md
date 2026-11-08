@@ -178,6 +178,14 @@ The startup script generates a local `.env` file, which is ignored by Git.
 | `TZ` | Host timezone |
 | `WORKSPACE_PATH` | Absolute workspace path |
 
+The following build arguments can be set in the local `.env` file to update pinned tools deliberately:
+
+| Variable | Default | Description |
+|---|---|---|
+| `TERRAFORM_VERSION` | `1.17.1` | Terraform version installed in the image |
+| `UV_VERSION` | `0.13.7` | uv version installed in the image |
+| `OH_MY_ZSH_COMMIT` | `cca3bdfbef8c52ef8939ce7911ff68852b949daa` | Exact Oh My Zsh commit |
+
 The Network Manager also supports:
 
 | Variable | Default | Description |
