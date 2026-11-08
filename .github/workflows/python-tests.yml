@@ -33,7 +33,7 @@ jobs:
         run: uv sync --locked --all-extras
 
       - name: Run tests
-        run: python -m pytest
+        run: uv run --locked pytest
 
   repository-validation:
     runs-on: ubuntu-latest
