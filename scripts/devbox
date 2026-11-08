@@ -73,7 +73,11 @@ config_set() {
 show_config() {
     printf 'DevBox machine configuration\n'
     printf '  Config file: %s\n' "$CONFIG_FILE"
-    printf '  Workspace:   %s\n' "$(config_get workspace_path)"
+    workspace_path="$(config_get workspace_path)"
+    if [[ -z "$workspace_path" ]]; then
+        workspace_path="$DEVBOX_DIR/../workspace (default)"
+    fi
+    printf '  Workspace:   %s\n' "$workspace_path"
     printf '  Repository:  %s\n' "$DEVBOX_DIR"
 }
 
