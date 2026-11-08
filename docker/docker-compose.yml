@@ -5,7 +5,7 @@ services:
     # ==========================================
 
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile
       args:
         USERNAME: ${USERNAME:-devuser}
