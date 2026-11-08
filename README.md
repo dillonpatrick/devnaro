@@ -51,7 +51,8 @@ The workspace is mounted into the container at `/workspace`. The Network Manager
 
 | Component | Responsibility |
 |---|---|
-| `install.sh` | Installs the host-side `devbox` command |\n| `start.sh` / `stop.sh` | DevBox startup and teardown |
+| `install.sh` | Installs the host-side `devbox` command |
+| `start.sh` / `stop.sh` | DevBox startup and teardown |
 | Docker Compose | Container, volume, and socket configuration |
 | Python CLI | Operational commands and diagnostics |
 | Network Manager | Periodic Docker network reconciliation |
@@ -113,7 +114,7 @@ devbox stop            # Stop and remove DevBox resources
 devbox help            # Show all commands
 ```
 
-Machine-specific settings are stored outside the repository in `~/.config/devbox/config` (or `$XDG_CONFIG_HOME/devbox/config`). Use `devbox config` to inspect them and `devbox config set workspace /absolute/path` to choose a different workspace. An explicitly exported `WORKSPACE_PATH` takes precedence over this setting.\n\nThe `dm` shortcut runs the Network Manager commands (`dm status`, `dm logs`). The installer checks for an existing `dm` command and will not overwrite it; if there is a conflict, continue using `devbox manager status` and `devbox manager logs`.\n\nThe `devbox restart` command recreates the container without deleting the persistent `devbox_home` volume. Use `devbox stop` when you intentionally want to remove DevBox resources, including that volume.
+Machine-specific settings are stored outside the repository in `~/.config/devbox/config` (or `$XDG_CONFIG_HOME/devbox/config`). Use `devbox config` to inspect them and `devbox config set workspace /absolute/path` to choose a different workspace. An explicitly exported `WORKSPACE_PATH` takes precedence over this setting.\n\nInside the container, `dm` is a Zsh shortcut for `devbox-manager network-manager`. Use `dm status` and `dm logs` after entering DevBox. On the host, use `devbox manager status` and `devbox manager logs`.\n\nThe `devbox restart` command recreates the container without deleting the persistent `devbox_home` volume. Use `devbox stop` when you intentionally want to remove DevBox resources, including that volume.
 
 ### Work with projects
 
@@ -129,7 +130,7 @@ The Network Manager discovers eligible project networks. Project Compose files d
 
 ## Python CLI
 
-The `devbox-manager` command runs inside the DevBox container.
+The `devbox-manager` command and its `dm` shortcut run inside the DevBox container.
 
 | Command | Description |
 |---|---|
@@ -141,6 +142,8 @@ The `devbox-manager` command runs inside the DevBox container.
 | `devbox-manager network-manager status` | Check Network Manager process |
 | `devbox-manager network-manager logs` | Show recent Network Manager logs |
 | `devbox-manager network-manager logs -n 100` | Show the last 100 log lines |
+| `dm status` | Shortcut for `devbox-manager network-manager status` |
+| `dm logs` | Shortcut for `devbox-manager network-manager logs` |
 
 The CLI uses Typer for command handling and Rich for formatted terminal output.
 
@@ -151,7 +154,8 @@ Run these commands from the repository directory on the host:
 | Command | Description |
 |---|---|
 | `make` | Show available commands |
-| `make install` | Install the host-side `devbox` command |\n| `make start` | Start DevBox without entering it |
+| `make install` | Install the host-side `devbox` command |
+| `make start` | Start DevBox without entering it |
 | `make stop` | Stop and remove DevBox resources |
 | `make restart` | Restart DevBox |
 | `make build` | Build the image |
