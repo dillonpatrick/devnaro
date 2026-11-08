@@ -1,66 +1,71 @@
 # DevBox
 
-A containerized development environment powered by Docker, designed to keep your host machine clean while providing a flexible and isolated workspace for multiple projects.
+A containerized development environment powered by Docker, designed to keep the host machine clean while providing a consistent workspace for multiple projects.
 
-DevBox provides a consistent development environment with essential engineering tools, Docker integration, and automatic network discovery between containers.
+DevBox combines Docker Compose, Bash bootstrap scripts, and a Python CLI with Rich-powered terminal output.
 
 ## Features
 
 - **Isolated environment:** Keep development tools and dependencies inside a Docker container.
 - **Persistent workspace:** Store projects outside the DevBox container lifecycle.
-- **Docker integration:** Manage host Docker containers directly from the DevBox.
-- **Automatic network discovery:** Connect the DevBox to eligible Docker Compose networks automatically.
-- **Persistent home directory:** Preserve user configuration between restarts.
-- **Infrastructure tools:** Preinstalled Terraform, Docker CLI, Docker Compose, Python, and `uv`.
-- **Developer experience:** Zsh with Oh My Zsh and useful plugins.
+- **Docker integration:** Manage host Docker resources through the mounted Docker socket.
+- **Automatic network discovery:** Connect DevBox to eligible Docker Compose bridge networks.
+- **Persistent home directory:** Preserve user configuration between container restarts.
+- **Python CLI:** Inspect container status, networks, health checks, and Network Manager logs.
+- **Developer experience:** Zsh, Oh My Zsh, Terraform, Docker CLI, Python, uv, Typer, and Rich.
 
 ## Architecture
 
 ```text
 Host Machine
-│
-├── devbox/
-│   ├── Dockerfile
-│   ├── compose.yaml
-│   ├── start.sh
-│   ├── stop.sh
-│   └── network-manager/
-│       └── manager.py
-│
-├── workspace/
-│   ├── project-1/
-│   ├── project-2/
-│   └── project-3/
-│
-└── Docker Engine
-    │
-    ├── DevBox
-    │   ├── Docker CLI
-    │   ├── Python
-    │   ├── Terraform
-    │   └── Network Manager
-    │
-    ├── Project containers
-    │   └── Docker Compose networks
-    │
-    └── Persistent project volumes
+|
++-- devbox/
+|   +-- .devcontainer/
+|   |   +-- devcontainer.json
+|   +-- devbox_manager/
+|   |   +-- cli.py
+|   |   +-- config.py
+|   |   +-- docker_client.py
+|   |   +-- network_manager.py
+|   +-- network-manager/
+|   |   +-- manager.py
+|   +-- scripts/
+|   +-- Dockerfile
+|   +-- docker-compose.yml
+|   +-- pyproject.toml
+|   +-- Makefile
+|   +-- start.sh
+|   +-- stop.sh
+|
++-- workspace/
+    +-- project-1/
+    +-- project-2/
+    +-- project-3/
 ```
 
-The workspace is mounted into the DevBox container at `/workspace`.
+The workspace is mounted into the container at `/workspace`. The Network Manager discovers eligible Compose networks and connects the DevBox container automatically.
 
-The Network Manager periodically discovers eligible Docker Compose bridge networks and connects the DevBox automatically.
+### Responsibilities
+
+| Component | Responsibility |
+|---|---|
+| Bash scripts | Host bootstrap and teardown |
+| Docker Compose | Container, volume, and socket configuration |
+| Python CLI | Operational commands and diagnostics |
+| Network Manager | Periodic Docker network reconciliation |
+| Makefile | Convenient command shortcuts |
 
 ## Requirements
 
-Before getting started, make sure you have:
-
-- Linux host with Docker Engine installed.
+- Linux host.
+- Docker Engine.
 - Docker Compose plugin.
 - Bash.
 - Git.
+- GNU Make.
 - Access to `/var/run/docker.sock`.
 
-The current configuration is designed for Ubuntu-based Docker environments.
+The current container image is based on Ubuntu 22.04. The host can use another Linux distribution as long as the requirements above are available.
 
 ## Installation
 
@@ -71,199 +76,125 @@ git clone git@github.com:dillonpatrick/devbox.git
 cd devbox
 ```
 
-### 2. Review configuration
-
-The default configuration uses:
-
-| Setting | Default value |
-|---|---|
-| Username | `devuser` |
-| Workspace | `../workspace` |
-| Base image | Ubuntu 22.04 |
-| Timezone | Host timezone |
-| Persistent home | `devbox_home` |
-| Network Manager interval | 10 seconds |
-
-The workspace is created at the same directory level as the DevBox repository.
-
-### 3. Start DevBox
-
-Make the startup script executable:
+### 2. Start DevBox
 
 ```bash
-chmod +x start.sh
+chmod +x start.sh stop.sh
+make start
 ```
 
-Start the environment:
-
-```bash
-./start.sh
-```
-
-The startup script automatically:
+The startup script:
 
 1. Detects host UID and GID.
 2. Detects the Docker socket group ID.
-3. Creates or reuses the workspace directory.
-4. Generates the `.env` configuration file.
-5. Validates the Docker Compose configuration.
-6. Builds the DevBox image.
-7. Starts the DevBox container.
-8. Starts the Network Manager.
+3. Creates or reuses the sibling `workspace` directory.
+4. Generates the local `.env` file.
+5. Validates Docker Compose.
+6. Builds and starts the DevBox container.
+7. Starts the Network Manager.
+8. Adds a `devbox` shell alias when the host shell is supported.
 9. Opens an interactive Zsh session.
 
-No manual container configuration is required.
+The Python CLI and its dependencies are installed into an isolated virtual environment in the container image. No Python packages are installed on the host.
 
 ## Using DevBox
 
-### Access the workspace
+### Enter the environment
 
-Once inside the DevBox:
+From the host, after loading the configured shell file (for example, `source ~/.bashrc` or `source ~/.zshrc`), use:
+
+```bash
+devbox
+```
+
+Alternatively:
+
+```bash
+make shell
+```
+
+### Work with projects
+
+Inside DevBox:
 
 ```bash
 cd /workspace
-```
-
-Your projects are available under this directory.
-
-### Start a project
-
-Navigate to a project directory:
-
-```bash
-cd /workspace/project-1
-```
-
-Start its containers:
-
-```bash
+cd project-1
 docker compose up -d
 ```
 
-The Network Manager automatically detects eligible project networks and connects the DevBox.
+The Network Manager discovers eligible project networks. Project Compose files do not need to be modified.
 
-### Access project containers
+## Python CLI
 
-Containers can be accessed through their Docker DNS names.
+The `devbox-manager` command runs inside the DevBox container.
 
-For example, to connect to a PostgreSQL container:
-
-```bash
-psql -h project-1-db -p 5432 -U appuser
-```
-
-You can also test connectivity using Python:
-
-```bash
-python3 -c "import socket; s=socket.create_connection(('project-1-db', 5432), timeout=5); print('Connection successful'); s.close()"
-```
-
-No manual IP configuration is required.
-
-### Available tools
-
-The DevBox image includes:
-
-| Tool | Purpose |
+| Command | Description |
 |---|---|
-| Git | Version control |
-| Python 3 | Python development |
-| pip / venv | Python package management |
-| uv | Python project and dependency management |
-| Docker CLI | Container management |
-| Docker Compose | Multi-container applications |
-| Terraform | Infrastructure as Code |
-| Zsh | Interactive shell |
-| Oh My Zsh | Shell customization |
+| `devbox-manager --help` | Show CLI help |
+| `devbox-manager --version` | Show CLI version |
+| `devbox-manager status` | Show detailed container status |
+| `devbox-manager doctor` | Run basic environment health checks |
+| `devbox-manager networks` | List networks attached to DevBox |
+| `devbox-manager network-manager status` | Check Network Manager process |
+| `devbox-manager network-manager logs` | Show recent Network Manager logs |
+| `devbox-manager network-manager logs -n 100` | Show the last 100 log lines |
+
+The CLI uses Typer for command handling and Rich for formatted terminal output.
+
+### Makefile shortcuts
+
+Run these commands from the repository directory on the host:
+
+| Command | Description |
+|---|---|
+| `make` | Show available commands |
+| `make start` | Start DevBox |
+| `make stop` | Stop and remove DevBox resources |
+| `make restart` | Restart DevBox |
+| `make build` | Build the image |
+| `make rebuild` | Rebuild without cache |
+| `make status` | Show Compose container status |
+| `make doctor` | Run Python health checks |
+| `make cli-status` | Show detailed DevBox status |
+| `make cli-networks` | Show attached networks |
+| `make manager-status` | Check Network Manager |
+| `make manager-logs` | Show Network Manager logs |
+| `make logs-follow` | Follow container logs |
+| `make config` | Validate Compose configuration |
+| `make clean` | Remove DevBox containers, network, and home volume |
 
 ## Network Manager
 
-The Network Manager is responsible for automatic network discovery and synchronization.
+The Network Manager runs inside the DevBox container and periodically reconciles Docker networks.
 
-It runs continuously inside the DevBox container.
+By default, it considers networks that:
 
-### How it works
+- Use the `bridge` driver.
+- Have the Docker Compose project label.
+- Are not marked as internal.
+- Have IPAM configuration.
+- Are not explicitly excluded.
 
-1. Lists Docker networks.
-2. Identifies eligible networks.
-3. Filters networks based on configuration.
-4. Connects the DevBox to eligible networks.
-5. Disconnects managed networks that are no longer eligible.
-6. Repeats the process every 10 seconds.
+The default synchronization interval is 10 seconds.
 
-By default, it only considers:
+The manager persists the network IDs it connected in:
 
-- Bridge networks.
-- Docker Compose-managed networks.
-- Networks that are not marked as internal.
-- Networks with valid IPAM configuration.
-
-### Network Manager logs
-
-Inside the DevBox:
-
-```bash
-cat /tmp/network-manager.log
+```text
+/home/devuser/.local/state/devbox-network-manager/managed-networks.json
 ```
 
-Follow logs in real time:
+It only disconnects networks recorded as managed by the process. The state is stored in the persistent home volume.
+
+Network Manager logs are available through:
 
 ```bash
-tail -f /tmp/network-manager.log
+make manager-logs
 ```
-
-Check whether the process is running:
-
-```bash
-pgrep -af manager.py
-```
-
-## Stopping DevBox
-
-To stop and remove DevBox resources, exit the container:
-
-```bash
-exit
-```
-
-Then, from the host, navigate to the DevBox directory and run:
-
-```bash
-./stop.sh
-```
-
-The stop script removes:
-
-- DevBox container.
-- DevBox Compose network.
-- DevBox persistent home volume.
-- Other orphaned containers belonging to the DevBox Compose project.
-
-The following resources are preserved:
-
-- Workspace directory and project files.
-- Project containers.
-- Project volumes and databases.
-- Docker images.
-
-## Rebuilding DevBox
-
-To recreate the environment from scratch:
-
-```bash
-./stop.sh
-./start.sh
-```
-
-The startup script rebuilds and starts the DevBox.
-
-Your workspace remains untouched, allowing you to recreate the development environment without losing project data.
 
 ## Configuration
 
-The `start.sh` script generates a `.env` file automatically.
-
-The following variables are configured:
+The startup script generates a local `.env` file. It is intentionally ignored by Git.
 
 | Variable | Description |
 |---|---|
@@ -274,59 +205,34 @@ The following variables are configured:
 | `TZ` | Host timezone |
 | `WORKSPACE_PATH` | Absolute workspace path |
 
-These values are detected automatically during startup.
+The Network Manager also supports:
 
-## Troubleshooting
+| Variable | Default | Description |
+|---|---|---|
+| `NETWORK_SYNC_INTERVAL` | `10` | Synchronization interval in seconds |
+| `NETWORK_EXCLUDE` | `bridge,host,none` | Comma-separated excluded network names |
+| `NETWORK_COMPOSE_ONLY` | `true` | Only manage Compose networks |
+| `NETWORK_EXCLUDE_INTERNAL` | `true` | Ignore internal networks |
+| `NETWORK_MANAGER_STATE_DIR` | User state directory | Persistent manager state location |
 
-### Docker socket permission issues
+## Stopping and cleanup
 
-Check the Docker socket:
-
-```bash
-ls -l /var/run/docker.sock
-```
-
-Verify Docker access inside the DevBox:
-
-```bash
-docker ps
-```
-
-### Network Manager is not running
-
-Check the process:
+Stop DevBox:
 
 ```bash
-pgrep -af manager.py
+make stop
 ```
 
-Inspect logs:
+This removes the DevBox container, its Compose network, and the persistent `devbox_home` volume. The workspace, project containers, project volumes, and images are preserved.
 
-```bash
-cat /tmp/network-manager.log
-```
+**Warning:** removing `devbox_home` also removes the persisted shell configuration and Network Manager state.
 
-### Project container is unreachable
+## Security note
 
-Verify the DevBox network connections from the host:
+The Docker socket grants extensive control over the host Docker Engine. Treat the DevBox container as a privileged development environment and only run trusted project code.
 
-```bash
-docker inspect devbox \
-  --format '{{json .NetworkSettings.Networks}}'
-```
+## Development
 
-Inspect the project network:
+The Python CLI source is in `devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`.
 
-```bash
-docker network ls
-```
-
-Check that the project network is a Docker Compose-managed bridge network.
-
-## Important Notes
-
-- DevBox uses the host Docker socket to manage containers. This provides extensive control over the host Docker Engine and should be treated as privileged access.
-- Project containers and their volumes are managed independently by their respective Docker Compose configurations.
-- The workspace is intentionally stored outside the DevBox project directory.
-- Removing DevBox does not remove project data.
-- The Network Manager only discovers networks that match its eligibility rules.
+The container image installs the CLI into `/opt/devbox-venv`, keeping its Python dependencies isolated from Ubuntu's system Python packages.
