@@ -140,11 +140,8 @@ RUN echo '\n# Zsh autosuggestions' >> /home/$USERNAME/.zshrc \
     && echo 'source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' >> /home/$USERNAME/.zshrc
 
 # ==========================================
-# 9. Default shell
-# ==========================================
-
-# ==========================================
 # 9. Welcome screen and container entrypoint
+# ==========================================
 # ==========================================
 
 COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint
