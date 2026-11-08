@@ -64,6 +64,8 @@ if [[ -n "$SHELL_CONFIG" && -f "$SHELL_CONFIG" ]]; then
         $0 == "# <<< DevBox alias <<<" { skip = 0; next }
         $0 == "# >>> DevBox PATH >>>" { skip = 1; next }
         $0 == "# <<< DevBox PATH <<<" { skip = 0; next }
+        $0 == "# DevBox shortcut" { next }
+        $0 == "alias devbox='\"'"\"'docker exec -it devbox zsh'\"'"\"'" { next }
         !skip { print }
     ' "$SHELL_CONFIG" > "$TEMP_CONFIG"
     cat "$TEMP_CONFIG" > "$SHELL_CONFIG"
