@@ -91,7 +91,7 @@ The installer creates or updates `~/.local/bin/devbox` as a symlink to the repos
 ### 3. Start DevBox
 
 ```bash
-make start
+devbox start
 ```
 
 The startup script detects host and Docker socket IDs, creates or reuses the configured workspace directory, generates the local `.env`, validates Compose, builds and starts the container, and starts the Network Manager. It does not configure the host shell or automatically enter the container. The welcome panel is displayed when you enter the container for the first time after startup or restart.
@@ -114,7 +114,7 @@ devbox stop            # Stop and remove DevBox resources
 devbox help            # Show all commands
 ```
 
-Machine-specific settings are stored outside the repository in `~/.config/devbox/config` (or `$XDG_CONFIG_HOME/devbox/config`). Use `devbox config` to inspect them and `devbox config set workspace /absolute/path` to choose a different workspace. An explicitly exported `WORKSPACE_PATH` takes precedence over this setting.\n\nInside the container, `dm` is a Zsh shortcut for `devbox-manager network-manager`. Use `dm status` and `dm logs` after entering DevBox. On the host, use `devbox manager status` and `devbox manager logs`.\n\nThe `devbox restart` command recreates the container without deleting the persistent `devbox_home` volume. Use `devbox stop` when you intentionally want to remove DevBox resources, including that volume.
+Machine-specific settings are stored outside the repository in `~/.config/devbox/config` (or `$XDG_CONFIG_HOME/devbox/config`). Use `devbox config` to inspect them and `devbox config set workspace /absolute/path` to choose a different workspace. An explicitly exported `WORKSPACE_PATH` takes precedence over this setting.\n\nInside the container, `dm` is a Zsh shortcut for `devbox-manager`. Use `dm status`, `dm doctor`, `dm networks`, and `dm network-manager logs` after entering DevBox.\n\nThe `devbox restart` command recreates the container without deleting the persistent `devbox_home` volume. Use `devbox stop` when you intentionally want to remove DevBox resources, including that volume.
 
 ### Work with projects
 
@@ -130,7 +130,7 @@ The Network Manager discovers eligible project networks. Project Compose files d
 
 ## Python CLI
 
-The `devbox-manager` command and its `dm` shortcut run inside the DevBox container.
+The `devbox-manager` command and its `dm` shortcut run inside the DevBox container. The `dm` command is a direct alias, so its subcommands and options are identical.
 
 | Command | Description |
 |---|---|
@@ -142,32 +142,24 @@ The `devbox-manager` command and its `dm` shortcut run inside the DevBox contain
 | `devbox-manager network-manager status` | Check Network Manager process |
 | `devbox-manager network-manager logs` | Show recent Network Manager logs |
 | `devbox-manager network-manager logs -n 100` | Show the last 100 log lines |
-| `dm status` | Shortcut for `devbox-manager network-manager status` |
-| `dm logs` | Shortcut for `devbox-manager network-manager logs` |
+| `dm status` | Shortcut for `devbox-manager status` |
+| `dm doctor` | Shortcut for `devbox-manager doctor` |
+| `dm networks` | Shortcut for `devbox-manager networks` |
+| `dm network-manager logs` | Shortcut for `devbox-manager network-manager logs` |
 
 The CLI uses Typer for command handling and Rich for formatted terminal output.
 
 ### Makefile shortcuts
 
-Run these commands from the repository directory on the host:
+Run these development and maintenance commands from the repository directory on the host. Use the `devbox` CLI for everyday environment operations (start, stop, restart, status, logs, shell, and diagnostics):
 
 | Command | Description |
 |---|---|
-| `make` | Show available commands |
+| `make` | Show available development tasks |
 | `make install` | Install the host-side `devbox` command |
-| `make start` | Start DevBox without entering it |
-| `make stop` | Stop and remove DevBox resources |
-| `make restart` | Restart DevBox |
 | `make build` | Build the image |
 | `make rebuild` | Rebuild without cache |
-| `make status` | Show Compose container status |
-| `make doctor` | Run Python health checks |
 | `make test` | Run Python unit and smoke tests |
-| `make cli-status` | Show detailed DevBox status |
-| `make cli-networks` | Show attached networks |
-| `make manager-status` | Check Network Manager |
-| `make manager-logs` | Show Network Manager logs |
-| `make logs-follow` | Follow container logs |
 | `make config` | Validate Compose configuration |
 | `make clean` | Remove DevBox containers, network, and home volume |
 
@@ -203,11 +195,7 @@ The manager persists the network IDs it connected in:
 
 It only disconnects networks recorded as managed by the process. The state is stored in the persistent home volume.
 
-Network Manager logs are available through:
-
-```bash
-make manager-logs
-```
+Network Manager logs are available inside the container with `dm network-manager logs`, or from the host with `devbox manager logs`.
 
 ## Configuration
 
@@ -237,7 +225,7 @@ The Network Manager also supports:
 Stop DevBox:
 
 ```bash
-make stop
+devbox stop
 ```
 
 This removes the DevBox container, its Compose network, and the persistent `devbox_home` volume. The workspace, project containers, project volumes, and images are preserved.
