@@ -159,7 +159,7 @@ COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint
 COPY scripts/container/code /usr/local/bin/code
 
 USER root
-RUN chmod +x /usr/local/bin/devbox-entrypoint \
+RUN chmod +x /usr/local/bin/devbox-entrypoint /usr/local/bin/code \
     && cat >> /etc/zsh/zshrc <<'EOF'
 
 # Short command for Network Manager operations, available in the container only.
