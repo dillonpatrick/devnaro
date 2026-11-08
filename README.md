@@ -113,7 +113,7 @@ devbox stop            # Stop and remove DevBox resources
 devbox help            # Show all commands
 ```
 
-The `devbox restart` command recreates the container without deleting the persistent `devbox_home` volume. Use `devbox stop` when you intentionally want to remove DevBox resources, including that volume.
+Machine-specific settings are stored outside the repository in `~/.config/devbox/config` (or `$XDG_CONFIG_HOME/devbox/config`). Use `devbox config` to inspect them and `devbox config set workspace /absolute/path` to choose a different workspace. An explicitly exported `WORKSPACE_PATH` takes precedence over this setting.\n\nThe `devbox restart` command recreates the container without deleting the persistent `devbox_home` volume. Use `devbox stop` when you intentionally want to remove DevBox resources, including that volume.
 
 ### Work with projects
 
