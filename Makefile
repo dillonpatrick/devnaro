@@ -14,17 +14,17 @@ install: ## Install the host-side DevBox command
 	@bash ./scripts/host/install.sh
 
 build: ## Build DevBox image
-	@docker compose -f docker/docker-compose.yml build
+	@docker compose --project-directory . -f docker/docker-compose.yml build
 
 rebuild: ## Rebuild DevBox image without cache
-	@docker compose -f docker/docker-compose.yml build --no-cache
+	@docker compose --project-directory . -f docker/docker-compose.yml build --no-cache
 
 test: ## Run Python unit and smoke tests
-	@docker compose -f docker/docker-compose.yml exec devbox pytest /opt/devbox-cli/tests/unit
+	@docker compose --project-directory . -f docker/docker-compose.yml exec devbox pytest /opt/devbox-cli/tests/unit
 
 config: ## Validate Docker Compose configuration
-	@docker compose -f docker/docker-compose.yml config --quiet
+	@docker compose --project-directory . -f docker/docker-compose.yml config --quiet
 	@echo "Docker Compose configuration is valid."
 
 clean: ## Remove DevBox containers, networks and volumes
-	@docker compose -f docker/docker-compose.yml down --volumes --remove-orphans
+	@docker compose --project-directory . -f docker/docker-compose.yml down --volumes --remove-orphans
