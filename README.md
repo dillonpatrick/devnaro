@@ -102,14 +102,18 @@ The startup script detects host and Docker socket IDs, creates or reuses the sib
 From the host, after installing the CLI and loading the updated PATH, use:
 
 ```bash
-devbox
+devbox                 # Enter DevBox (default)
+devbox start           # Build and start DevBox
+devbox status          # Show container status
+devbox shell           # Enter DevBox
+devbox doctor           # Run health checks
+devbox networks        # Show attached networks
+devbox manager logs    # Show Network Manager logs
+devbox stop            # Stop and remove DevBox resources
+devbox help            # Show all commands
 ```
 
-Alternatively:
-
-```bash
-make shell
-```
+The `devbox restart` command recreates the container without deleting the persistent `devbox_home` volume. Use `devbox stop` when you intentionally want to remove DevBox resources, including that volume.
 
 ### Work with projects
 
