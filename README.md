@@ -82,7 +82,7 @@ chmod +x install.sh start.sh stop.sh
 make install
 ```
 
-The installer detects the user's login shell (Bash or Zsh) and adds the `devbox` alias to the corresponding configuration file. It is safe to run more than once. Load the change with `source ~/.bashrc` or `source ~/.zshrc`, or open a new terminal.
+The installer detects the user's login shell (Bash or Zsh) and adds the `devbox` alias to the corresponding configuration file. It is safe to run more than once. Open a new terminal to load the alias. Alternatively, source only the file printed by the installer: `~/.bashrc` for Bash or `~/.zshrc` for Zsh. Do not source `~/.bashrc` from Zsh; Bash prompt settings can appear as literal escape sequences.
 
 ### 3. Start DevBox
 
