@@ -9,8 +9,6 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="${DEVBOX_BIN_DIR:-$HOME/.local/bin}"
 CLI_SOURCE="$SCRIPT_DIR/scripts/devbox"
 CLI_TARGET="$BIN_DIR/devbox"
-DM_SOURCE="$SCRIPT_DIR/scripts/dm"
-DM_TARGET="$BIN_DIR/dm"
 
 if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
     RESET='\033[0m'
@@ -45,13 +43,8 @@ if [[ ! -f "$CLI_SOURCE" ]]; then
     exit 1
 fi
 
-if [[ ! -f "$DM_SOURCE" ]]; then
-    error "Manager shortcut not found: $DM_SOURCE"
-    exit 1
-fi
-
 mkdir -p "$BIN_DIR"
-chmod +x "$CLI_SOURCE" "$DM_SOURCE"
+chmod +x "$CLI_SOURCE"
 
 # Remove the legacy alias block created by earlier DevBox installer versions.
 HOST_SHELL="$(basename "${SHELL:-bash}")"
@@ -92,20 +85,6 @@ fi
 ln -s "$CLI_SOURCE" "$CLI_TARGET"
 success "DevBox command installed: $CLI_TARGET"
 
-# Install "dm" only if it will not shadow an existing command.
-DM_EXISTING="$(command -v dm 2>/dev/null || true)"
-if [[ -n "$DM_EXISTING" && "$DM_EXISTING" != "$DM_TARGET" ]]; then
-    warning "The command 'dm' already resolves to $DM_EXISTING. Keeping it untouched; use 'devbox manager' instead."
-elif [[ -e "$DM_TARGET" && ! -L "$DM_TARGET" ]]; then
-    warning "$DM_TARGET already exists and is not a symlink. Keeping it untouched; use 'devbox manager' instead."
-else
-    if [[ -L "$DM_TARGET" ]]; then
-        rm "$DM_TARGET"
-    fi
-    ln -s "$DM_SOURCE" "$DM_TARGET"
-    success "Manager shortcut installed: $DM_TARGET"
-fi
-
 # Ensure ~/.local/bin is added to PATH for future interactive shells.
 PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
 if [[ -n "$SHELL_CONFIG" ]]; then
@@ -128,7 +107,5 @@ printf '  devbox start\n'
 printf '  devbox status\n'
 printf '  devbox shell\n'
 printf '  devbox doctor\n'
-printf '  dm status\n'
-printf '  dm logs\n'
 printf '  devbox stop\n'
 printf '\n'
