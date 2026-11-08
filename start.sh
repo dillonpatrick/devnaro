@@ -129,7 +129,15 @@ cd "$SCRIPT_DIR"
 
 USERNAME="devuser"
 
-WORKSPACE_PATH="${WORKSPACE_PATH:-$SCRIPT_DIR/../workspace}"
+# Workspace precedence: explicit environment variable, machine config, default.
+CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/devbox/config"
+CONFIG_WORKSPACE=""
+
+if [[ -f "$CONFIG_FILE" ]]; then
+    CONFIG_WORKSPACE="$(awk -F= '$1 == "workspace_path" { sub(/^[^=]*=/, ""); print; exit }' "$CONFIG_FILE")"
+fi
+
+WORKSPACE_PATH="${WORKSPACE_PATH:-${CONFIG_WORKSPACE:-$SCRIPT_DIR/../workspace}}"
 
 USER_UID=$(id -u)
 USER_GID=$(id -g)
