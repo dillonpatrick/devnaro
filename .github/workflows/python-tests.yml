@@ -26,8 +26,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install package and development dependencies
-        run: python -m pip install -e ".[dev]"
+      - name: Install pinned uv
+        run: python -m pip install "uv==0.13.7"
+
+      - name: Install locked package and development dependencies
+        run: uv sync --locked --all-extras
 
       - name: Run tests
         run: python -m pytest
