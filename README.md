@@ -75,26 +75,22 @@ git clone git@github.com:dillonpatrick/devbox.git
 cd devbox
 ```
 
-### 2. Start DevBox
+### 2. Configure the host
 
 ```bash
-chmod +x start.sh stop.sh
+chmod +x install.sh start.sh stop.sh
+make install
+```
+
+The installer detects the user's login shell (Bash or Zsh) and adds the `devbox` alias to the corresponding configuration file. It is safe to run more than once. Load the change with `source ~/.bashrc` or `source ~/.zshrc`, or open a new terminal.
+
+### 3. Start DevBox
+
+```bash
 make start
 ```
 
-The startup script:
-
-1. Detects host UID and GID.
-2. Detects the Docker socket group ID.
-3. Creates or reuses the sibling `workspace` directory.
-4. Generates the local `.env` file.
-5. Validates Docker Compose.
-6. Builds and starts the DevBox container.
-7. Starts the Network Manager.
-8. Adds a `devbox` shell alias when the host shell is supported.
-9. Opens an interactive Zsh session.
-
-The Python CLI and its dependencies are installed into an isolated virtual environment in the container image. No Python packages are installed on the host.
+The startup script detects host and Docker socket IDs, creates or reuses the sibling `workspace` directory, generates the local `.env`, validates Compose, builds and starts the container, and starts the Network Manager. It does not configure the host shell or automatically enter the container.
 
 ## Using DevBox
 
