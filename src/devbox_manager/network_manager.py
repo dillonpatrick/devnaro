@@ -33,4 +33,5 @@ def read_logs(lines: int = 50, path: Path = NETWORK_MANAGER_LOG) -> str:
         raise FileNotFoundError(f"Network Manager log not found: {path}")
 
     with path.open("r", encoding="utf-8", errors="replace") as log_file:
-        return "\n".join(deque(log_file, maxlen=lines)).rstrip()
+        recent_lines = deque(log_file, maxlen=lines)
+        return "\n".join(line.rstrip("\r\n") for line in recent_lines)
