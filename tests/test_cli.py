@@ -22,6 +22,13 @@ def test_cli_version():
     assert __version__ in result.stdout
 
 
+def test_cli_short_version():
+    result = runner.invoke(app, ["-v"])
+
+    assert result.exit_code == 0
+    assert __version__ in result.stdout
+
+
 def test_network_manager_help():
     result = runner.invoke(app, ["network-manager", "--help"])
 
