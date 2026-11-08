@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# ==========================================
+# DevBox Host CLI
+# ==========================================
+
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+DEVBOX_DIR="$(cd -- "$(dirname "$SCRIPT_PATH")/.." && pwd)"
+
+usage() {
+    cat <<'EOF'
+DevBox - Docker development environment
+
+Usage:
+  devbox [command]
+
+Commands:
+  start             Build and start DevBox
+  stop              Stop and remove DevBox resources
+  restart           Restart DevBox
+  shell             Enter the DevBox container (default)
+  status            Show DevBox container status
+  logs              Show DevBox container logs
+  networks          Show networks connected to DevBox
+  doctor            Run DevBox health checks
+  manager status    Show Network Manager process status
+  manager logs      Show Network Manager logs
+  help              Show this help message
+
+Examples:
+  devbox start
+  devbox status
+  devbox
+  devbox manager logs
+EOF
+}
+
+compose() {
+    docker compose --project-directory "$DEVBOX_DIR" "$@"
+}
+
+require_running() {
+    if ! compose ps --status running --services | grep -Fxq devbox; then
+        printf 'DevBox is not running. Start it with: devbox start\n' >&2
+        exit 1
+    fi
+}
+
+command="${1:-shell}"
+
+case "$command" in
+    start)
+        exec "$DEVBOX_DIR/start.sh"
+        ;;
+    stop)
+        exec "$DEVBOX_DIR/stop.sh"
+        ;;
+    restart)
+        "$DEVBOX_DIR/stop.sh"
+        exec "$DEVBOX_DIR/start.sh"
+        ;;
+    shell|enter)
+        require_running
+        exec compose exec devbox zsh
+        ;;
+    status)
+        compose ps devbox
+        ;;
+    logs)
+        compose logs devbox
+        ;;
+    networks)
+        require_running
+        exec compose exec devbox devbox-manager networks
+        ;;
+    doctor)
+        require_running
+        exec compose exec devbox devbox-manager doctor
+        ;;
+    manager)
+        subcommand="${2:-status}"
+        require_running
+        case "$subcommand" in
+            status)
+                exec compose exec devbox devbox-manager network-manager status
+                ;;
+            logs)
+                exec compose exec devbox devbox-manager network-manager logs
+                ;;
+            *)
+                printf 'Unknown manager command: %s\n' "$subcommand" >&2
+                usage >&2
+                exit 2
+                ;;
+        esac
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        printf 'Unknown command: %s\n\n' "$command" >&2
+        usage >&2
+        exit 2
+        ;;
+esac
