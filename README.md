@@ -12,7 +12,7 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 - Automatic discovery and connection to eligible Docker Compose bridge networks.
 - Persistent home directory across normal container restarts.
 - Host CLI for lifecycle operations and container-side CLI for diagnostics.
-- Zsh, Oh My Zsh, Terraform, Docker CLI, Python, uv, Typer, and Rich.
+- Zsh, Oh My Zsh (pinned commit), Terraform 1.17.1, Docker CLI, Python, uv 0.13.7, Typer, and Rich.
 
 ## Architecture
 
