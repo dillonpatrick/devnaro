@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+"""Container-side 'code' command forwarding paths to the Linux host."""
+
+import json
+import os
+import socket
+import sys
+from pathlib import Path
+
+SOCKET_PATH = "/run/devbox-host/code.sock"
+
+
+def main():
+    args = sys.argv[1:] or ["."]
+    paths = [arg for arg in args if not arg.startswith("-")]
+    if not paths:
+        paths = ["."]
+    if len(paths) != 1:
+        print("DevBox code bridge currently accepts one path at a time.", file=sys.stderr)
+        return 2
+
+    target = Path(paths[0])
+    if not target.is_absolute():
+        target = Path.cwd() / target
+    target = target.resolve()
+
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(5)
+            client.connect(SOCKET_PATH)
+            client.sendall((json.dumps({"path": str(target)}) + "\n").encode())
+            stream = client.makefile("r", encoding="utf-8")
+            response = json.loads(stream.readline())
+    except FileNotFoundError:
+        print(
+            "Cannot reach the host VS Code bridge. Run 'devbox start' again.",
+            file=sys.stderr,
+        )
+        return 1
+    except OSError as exc:
+        print(f"VS Code bridge error: {exc}", file=sys.stderr)
+        return 1
+
+    if not response.get("ok"):
+        print(f"Cannot open VS Code: {response.get('error', 'unknown error')}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
