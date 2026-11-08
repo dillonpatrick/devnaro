@@ -155,6 +155,9 @@ USER root
 RUN chmod +x /usr/local/bin/devbox-entrypoint \
     && cat >> /etc/zsh/zshrc <<'EOF'
 
+# Short command for Network Manager operations, available in the container only.
+function dm() { devbox-manager network-manager "$@"; }
+
 # DevBox welcome screen: display once after each container start/restart.
 if [[ -f /tmp/devbox-welcome-pending ]]; then
     rm -f /tmp/devbox-welcome-pending
