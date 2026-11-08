@@ -158,30 +158,30 @@ RUN chmod +x /usr/local/bin/devbox-entrypoint \
 # DevBox welcome screen: display once after each container start/restart.
 if [[ -f /tmp/devbox-welcome-pending ]]; then
     rm -f /tmp/devbox-welcome-pending
-    printf '\\n'
-    printf '\\033[1;36m==============================================\\033[0m\\n'
-    printf '\\033[1;36m                 DEVBOX READY                 \\033[0m\\n'
-    printf '\\033[1;36m==============================================\\033[0m\\n'
-    printf '\\n'
-    printf '  User:             %s\\n' "$USERNAME"
-    printf '  Workspace:        %s\\n' "$PWD"
+    printf '\n'
+    printf '\033[1;36m==============================================\033[0m\n'
+    printf '\033[1;36m                 DEVBOX READY                 \033[0m\n'
+    printf '\033[1;36m==============================================\033[0m\n'
+    printf '\n'
+    printf '  User:             %s\n' "$USER"
+    printf '  Workspace:        %s\n' "$PWD"
     if pgrep -f '[/]opt/network-manager/manager.py' >/dev/null 2>&1; then
-        printf '  Network Manager:  \\033[1;32mRunning\\033[0m\\n'
+        printf '  Network Manager:  \033[1;32mRunning\033[0m\n'
     else
-        printf '  Network Manager:  \\033[1;33mNot detected\\033[0m\\n'
+        printf '  Network Manager:  \033[1;33mNot detected\033[0m\n'
     fi
-    printf '\\n'
-    printf '\\033[1;37m  Useful commands\\033[0m\\n'
-    printf '  cd /workspace                         Browse your projects\\n'
-    printf '  devbox-manager status                 Container status\\n'
-    printf '  devbox-manager doctor                 Environment health checks\\n'
-    printf '  devbox-manager networks               Docker networks\\n'
-    printf '  devbox-manager network-manager logs   Network Manager logs\\n'
-    printf '  docker ps                             Running containers\\n'
-    printf '  docker compose up -d                  Start project services\\n'
-    printf '\\n'
-    printf '\\033[2m  Tip: run commands from inside each project directory.\\033[0m\\n'
-    printf '\\n'
+    printf '\n'
+    printf '\033[1;37m  Useful commands\033[0m\n'
+    printf '  cd /workspace                         Browse your projects\n'
+    printf '  devbox-manager status                 Container status\n'
+    printf '  devbox-manager doctor                 Environment health checks\n'
+    printf '  devbox-manager networks               Docker networks\n'
+    printf '  devbox-manager network-manager logs   Network Manager logs\n'
+    printf '  docker ps                             Running containers\n'
+    printf '  docker compose up -d                  Start project services\n'
+    printf '\n'
+    printf '\033[2m  Tip: run commands from inside each project directory.\033[0m\n'
+    printf '\n'
 fi
 EOF
 
