@@ -1,180 +1,151 @@
 # DevBox
 
-A containerized development environment powered by Docker, designed to keep the host machine clean while providing a consistent workspace for multiple projects.
+A Docker-based development environment designed to keep development tools and dependencies out of the host system while providing a shared workspace for multiple projects.
 
-DevBox combines Docker Compose, Bash bootstrap scripts, and a Python CLI with Rich-powered terminal output.
+DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an automatic Docker network manager.
 
 ## Features
 
-- **Isolated environment:** Keep development tools and dependencies inside a Docker container.
-- **Persistent workspace:** Store projects outside the DevBox container lifecycle.
-- **Docker integration:** Manage host Docker resources through the mounted Docker socket.
-- **Automatic network discovery:** Connect DevBox to eligible Docker Compose bridge networks.
-- **Persistent home directory:** Preserve user configuration between container restarts.
-- **Python CLI:** Inspect container status, networks, health checks, and Network Manager logs.
-- **Developer experience:** Zsh, Oh My Zsh, Terraform, Docker CLI, Python, uv, Typer, and Rich.
+- Containerized development tools based on Ubuntu 22.04.
+- Persistent workspace stored outside the DevBox container.
+- Host Docker integration through the mounted Docker socket.
+- Automatic discovery and connection to eligible Docker Compose bridge networks.
+- Persistent home directory across normal container restarts.
+- Host CLI for lifecycle operations and container-side CLI for diagnostics.
+- Zsh, Oh My Zsh, Terraform, Docker CLI, Python, uv, Typer, and Rich.
 
 ## Architecture
 
 ```text
-Host Machine
+Host
 |
 +-- devbox/
 |   +-- .devcontainer/
-|   |   +-- devcontainer.json
-|   +-- src/devbox_manager/
-|   |   +-- cli.py
-|   |   +-- config.py
-|   |   +-- docker_client.py
-|   |   +-- network_manager.py
+|   +-- .github/
+|   +-- docker/
+|   |   +-- Dockerfile
+|   |   +-- docker-compose.yml
 |   +-- network_manager/
 |   |   +-- manager.py
 |   +-- scripts/
-|   |   +-- devbox
-|   +-- docker/\n|   |   +-- Dockerfile\n|   |   +-- scripts/host/\n|   |   +-- devbox\n|   |   +-- install.sh\n|   |   +-- start.sh\n|   |   +-- stop.sh\n|   +-- scripts/container/\n|   |   +-- entrypoint.sh\n|   +-- tests/unit/
-|   +-- docker-compose.yml
-|   +-- pyproject.toml
+|   |   +-- host/
+|   |   |   +-- devbox
+|   |   |   +-- install.sh
+|   |   |   +-- start.sh
+|   |   |   +-- stop.sh
+|   |   +-- container/
+|   |       +-- entrypoint.sh
+|   +-- src/devbox_manager/
+|   +-- tests/unit/
 |   +-- Makefile
-|   +-- install.sh
-|   +-- start.sh
-|   +-- stop.sh
+|   +-- pyproject.toml
+|   +-- README.md
 |
 +-- workspace/
     +-- project-1/
     +-- project-2/
-    +-- project-3/
 ```
 
-The workspace is mounted into the container at `/workspace`. The Network Manager discovers eligible Compose networks and connects the DevBox container automatically. On the first interactive Zsh session after each container start or restart, DevBox displays a welcome panel with environment status and useful commands.
-
-### Responsibilities
-
-| Component | Responsibility |
-|---|---|
-| `scripts/host/install.sh` | Installs the host-side `devbox` command |
-| `scripts/host/start.sh` / `scripts/host/stop.sh` | DevBox startup and teardown |
-| Docker Compose | Container, volume, and socket configuration |
-| Python CLI | Operational commands and diagnostics |
-| Network Manager | Periodic Docker network reconciliation |
-| Makefile | Convenient command shortcuts |
+The workspace is mounted in the container at `/workspace`. Project Compose files remain in their own directories and do not need to be changed by DevBox.
 
 ## Requirements
 
 - Linux host.
-- Docker Engine.
-- Docker Compose plugin.
-- Bash.
-- Git.
-- GNU Make.
+- Docker Engine and Docker Compose plugin.
+- Bash, Git, and GNU Make.
 - Access to `/var/run/docker.sock`.
 
-The current container image is based on Ubuntu 22.04. The host can use another Linux distribution as long as the requirements above are available.
+The container image is based on Ubuntu 22.04. The host may use another Linux distribution if the requirements above are available.
 
 ## Installation
 
-### 1. Clone the repository
+Clone the repository and install the host command:
 
 ```bash
 git clone git@github.com:dillonpatrick/devbox.git
 cd devbox
-```
-
-### 2. Configure the host
-
-```bash
 make install
 ```
 
-The installer creates or updates `~/.local/bin/devbox` as a symlink to the repository's host CLI and adds `~/.local/bin` to the supported shell's PATH configuration. It is safe to run more than once. Open a new terminal, or source the shell configuration file printed by the installer. The installer also removes the legacy DevBox alias block from previous versions.
+The installer creates `~/.local/bin/devbox` as a symlink to the repository's host CLI and adds `~/.local/bin` to PATH for Bash or Zsh. Open a new terminal or source the shell configuration file printed by the installer. The installer is safe to run more than once.
 
-### 3. Start DevBox
+Start the environment:
 
 ```bash
 devbox start
 ```
 
-The startup script detects host and Docker socket IDs, creates or reuses the configured workspace directory, generates the local `.env`, validates Compose, builds and starts the container, and starts the Network Manager. It does not configure the host shell or automatically enter the container. The welcome panel is displayed when you enter the container for the first time after startup or restart.
+The startup script detects host and Docker socket IDs, prepares the workspace, writes the local `.env`, validates the Compose configuration, builds and starts the container, and starts the Network Manager. It does not automatically enter the container.
 
-## Using DevBox
+## Host commands
 
-### Enter the environment
+Run these commands in a host terminal:
 
-From the host, after installing the CLI and loading the updated PATH, use:
+| Command | Description |
+|---|---|
+| `devbox` or `devbox shell` | Enter the running DevBox container |
+| `devbox start` | Build and start DevBox |
+| `devbox stop` | Remove DevBox container, Compose network, and home volume |
+| `devbox restart` | Recreate DevBox while preserving its home volume |
+| `devbox status` | Show container status |
+| `devbox logs` | Show DevBox container logs |
+| `devbox networks` | Show networks connected to DevBox |
+| `devbox doctor` | Run container-side health checks |
+| `devbox manager status` | Show Network Manager process status |
+| `devbox manager logs` | Show Network Manager logs |
+| `devbox config` | Show machine-specific configuration |
+| `devbox config set workspace PATH` | Set the workspace directory |
+| `devbox help` | Show host CLI help |
+
+Machine-specific settings are stored outside the repository in `~/.config/devbox/config` (or `$XDG_CONFIG_HOME/devbox/config`). An explicitly exported `WORKSPACE_PATH` takes precedence over the saved workspace setting.
+
+## Inside the container
+
+After entering DevBox, the first interactive Zsh session after each container start or restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
+
+The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`.
+
+| Command | Description |
+|---|---|
+| `dm status` | Show DevBox container status |
+| `dm doctor` | Run environment health checks |
+| `dm networks` | List networks connected to DevBox |
+| `dm network-manager status` | Check Network Manager process |
+| `dm network-manager logs` | Show recent Network Manager logs |
+| `dm network-manager logs -n 100` | Show the last 100 log lines |
+| `docker ps` | List running containers |
+| `docker compose up -d` | Start services in the current project directory |
+
+Run project-specific Docker Compose commands from that project's directory, for example:
 
 ```bash
-devbox                 # Enter DevBox (default)
-devbox start           # Build and start DevBox
-devbox status          # Show container status
-devbox shell           # Enter DevBox
-devbox doctor           # Run health checks
-devbox networks        # Show attached networks
-dm status              # Show Network Manager status\ndm logs                # Show Network Manager logs
-devbox stop            # Stop and remove DevBox resources
-devbox help            # Show all commands
-```
-
-Machine-specific settings are stored outside the repository in `~/.config/devbox/config` (or `$XDG_CONFIG_HOME/devbox/config`). Use `devbox config` to inspect them and `devbox config set workspace /absolute/path` to choose a different workspace. An explicitly exported `WORKSPACE_PATH` takes precedence over this setting.\n\nInside the container, `dm` is a Zsh shortcut for `devbox-manager`. Use `dm status`, `dm doctor`, `dm networks`, and `dm network-manager logs` after entering DevBox.\n\nThe `devbox restart` command recreates the container without deleting the persistent `devbox_home` volume. Use `devbox stop` when you intentionally want to remove DevBox resources, including that volume.
-
-### Work with projects
-
-Inside DevBox:
-
-```bash
-cd /workspace
-cd project-1
+cd /workspace/project-1
 docker compose up -d
 ```
 
-The Network Manager discovers eligible project networks. Project Compose files do not need to be modified.
+## Makefile tasks
+
+Run these tasks from the DevBox repository directory on the host. They are for development and maintenance; use the `devbox` command for everyday operations.
+
+| Command | Description |
+|---|---|
+| `make` | Show available tasks |
+| `make install` | Install the host-side `devbox` command |
+| `make build` | Build the DevBox image |
+| `make rebuild` | Rebuild the image without cache |
+| `make test` | Run Python unit tests (DevBox must be running) |
+| `make config` | Validate Docker Compose configuration |
+| `make clean` | Remove DevBox container, Compose network, and `devbox_home` volume |
 
 ## Python CLI
 
-The `devbox-manager` command and its `dm` shortcut run inside the DevBox container. The `dm` command is a direct alias, so its subcommands and options are identical.
+The `devbox-manager` Python CLI is installed inside the container in an isolated virtual environment at `/opt/devbox-venv`. The `dm` shortcut invokes the same CLI.
 
-| Command | Description |
-|---|---|
-| `devbox-manager --help` | Show CLI help |
-| `devbox-manager --version` | Show CLI version |
-| `devbox-manager status` | Show detailed container status |
-| `devbox-manager doctor` | Run basic environment health checks |
-| `devbox-manager networks` | List networks attached to DevBox |
-| `devbox-manager network-manager status` | Check Network Manager process |
-| `devbox-manager network-manager logs` | Show recent Network Manager logs |
-| `devbox-manager network-manager logs -n 100` | Show the last 100 log lines |
-| `dm status` | Shortcut for `devbox-manager status` |
-| `dm doctor` | Shortcut for `devbox-manager doctor` |
-| `dm networks` | Shortcut for `devbox-manager networks` |
-| `dm network-manager logs` | Shortcut for `devbox-manager network-manager logs` |
-
-The CLI uses Typer for command handling and Rich for formatted terminal output.
-
-### Makefile shortcuts
-
-Run these development and maintenance commands from the repository directory on the host. Use the `devbox` CLI for everyday environment operations (start, stop, restart, status, logs, shell, and diagnostics):
-
-| Command | Description |
-|---|---|
-| `make` | Show available development tasks |
-| `make install` | Install the host-side `devbox` command |
-| `make build` | Build the image |
-| `make rebuild` | Rebuild without cache |
-| `make test` | Run Python unit tests (DevBox must be running) |
-| `make config` | Validate Compose configuration |
-| `make clean` | Remove DevBox container, Compose network, and `devbox_home` volume |
-
-## Testing
-
-The unit test suite uses pytest and runs inside an already-running DevBox container:
-
-```bash
-make test
-```
-
-Tests cover CLI help/version output and Network Manager process/log diagnostics. No external Docker daemon is required for these unit and smoke tests.
+Available command groups include status, health checks, network listing, and Network Manager status/logs. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
 
 ## Network Manager
 
-The Network Manager runs inside the DevBox container and periodically reconciles Docker networks.
+The Network Manager runs inside DevBox and reconciles Docker networks every 10 seconds by default.
 
 By default, it considers networks that:
 
@@ -182,23 +153,21 @@ By default, it considers networks that:
 - Have the Docker Compose project label.
 - Are not marked as internal.
 - Have IPAM configuration.
-- Are not explicitly excluded.
+- Are not named in the exclusion list (default: `bridge,host,none`).
 
-The default synchronization interval is 10 seconds.
-
-The manager persists the network IDs it connected in:
+It persists the network IDs it manages in:
 
 ```text
 /home/devuser/.local/state/devbox-network-manager/managed-networks.json
 ```
 
-It only disconnects networks recorded as managed by the process. The state is stored in the persistent home volume.
+The manager only disconnects networks it previously recorded as managed. This state is stored in the `devbox_home` volume.
 
-Network Manager logs are available inside the container with `dm network-manager logs`, or from the host with `devbox manager logs`.
+View logs from the host with `devbox manager logs`, or from inside the container with `dm network-manager logs`.
 
 ## Configuration
 
-The startup script generates a local `.env` file. It is intentionally ignored by Git.
+The startup script generates a local `.env` file, which is ignored by Git.
 
 | Variable | Description |
 |---|---|
@@ -221,22 +190,31 @@ The Network Manager also supports:
 
 ## Stopping and cleanup
 
-Stop DevBox:
+Run on the host:
 
 ```bash
 devbox stop
 ```
 
-This removes the DevBox container, its Compose network, and the `devbox_home` volume. The workspace, containers and volumes belonging to other Compose projects, and Docker images are preserved.
+This removes:
 
-**Warning:** removing `devbox_home` also removes the persisted shell configuration and Network Manager state.
+- The DevBox container.
+- The DevBox Compose network.
+- The `devbox_home` volume.
 
-## Security note
+It preserves:
 
-The Docker socket grants extensive control over the host Docker Engine. Treat the DevBox container as a privileged development environment and only run trusted project code.
+- Workspace files.
+- Containers belonging to other Compose projects.
+- Volumes belonging to other Compose projects.
+- Docker images.
+
+**Important:** removing `devbox_home` also removes the persisted Zsh configuration and Network Manager state. These are recreated from defaults the next time DevBox starts. Use `devbox restart` instead if you want to recreate the container while preserving this volume.
+
+## Security
+
+The mounted Docker socket grants extensive control over the host Docker Engine. Treat DevBox as a privileged development environment and only run trusted project code.
 
 ## Development
 
-The Python CLI source is in `src/devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`.
-
-The container image installs the CLI into `/opt/devbox-venv`, keeping its Python dependencies isolated from Ubuntu's system Python packages.
+The Python CLI source is in `src/devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`. Unit tests are in `tests/unit/`.
