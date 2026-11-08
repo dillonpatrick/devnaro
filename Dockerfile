@@ -156,7 +156,7 @@ RUN chmod +x /usr/local/bin/devbox-entrypoint \
     && cat >> /etc/zsh/zshrc <<'EOF'
 
 # Short command for Network Manager operations, available in the container only.
-function dm() { devbox-manager network-manager "$@"; }
+function dm() { devbox-manager "$@"; }
 
 # DevBox welcome screen: display once after each container start/restart.
 if [[ -f /tmp/devbox-welcome-pending ]]; then
@@ -176,10 +176,10 @@ if [[ -f /tmp/devbox-welcome-pending ]]; then
     printf '\n'
     printf '\033[1;37m  Useful commands\033[0m\n'
     printf '  cd /workspace                         Browse your projects\n'
-    printf '  devbox-manager status                 Container status\n'
-    printf '  devbox-manager doctor                 Environment health checks\n'
-    printf '  devbox-manager networks               Docker networks\n'
-    printf '  devbox-manager network-manager logs   Network Manager logs\n'
+    printf '  dm status                             Container status\n'
+    printf '  dm doctor                             Environment health checks\n'
+    printf '  dm networks                           Docker networks\n'
+    printf '  dm network-manager logs               Network Manager logs\n'
     printf '  docker ps                             Running containers\n'
     printf '  docker compose up -d                  Start project services\n'
     printf '\n'
