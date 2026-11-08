@@ -1,6 +1,7 @@
 """Rich-powered command line interface for DevBox."""
 
 from datetime import datetime
+import re
 from pathlib import Path
 
 import typer
@@ -28,6 +29,23 @@ network_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(network_app, name="network-manager")
+
+
+def _format_started_at(value: str) -> str:
+    """Format Docker's RFC3339 timestamp, trimming nanoseconds to microseconds."""
+    if not value or value.startswith("0001-"):
+        return "Not running"
+
+    normalized = value.replace("Z", "+00:00")
+    normalized = re.sub(
+        r"(\\.\\d{6})\\d+(?=[+-]\\d{2}:\\d{2}$)",
+        r"\\1",
+        normalized,
+    )
+
+    return datetime.fromisoformat(normalized).astimezone().strftime(
+        "%Y-%m-%d %H:%M:%S %Z"
+    )
 
 
 def _docker_connection():
@@ -73,14 +91,7 @@ def status() -> None:
     attrs = container.attrs
     state = attrs.get("State", {})
     networks = attrs.get("NetworkSettings", {}).get("Networks", {})
-    started_at = state.get("StartedAt", "")
-    if started_at and not started_at.startswith("0001-"):
-        started_at = started_at.replace("Z", "+00:00")
-        started = datetime.fromisoformat(started_at).astimezone().strftime(
-            "%Y-%m-%d %H:%M:%S %Z"
-        )
-    else:
-        started = "Not running"
+    started = _format_started_at(state.get("StartedAt", ""))
 
     table = Table(title="DevBox status", box=box.ROUNDED, show_header=False)
     table.add_column("Property", style="cyan", no_wrap=True)
