@@ -1,0 +1,33 @@
+
+{
+  "name": "DevBox Ubuntu 22.04",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "devbox",
+  "workspaceFolder": "/workspace",
+
+  "shutdownAction": "none",
+  "overrideCommand": false,
+
+  "remoteUser": "devuser",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "hashicorp.terraform",
+        "eamodio.gitlens",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "editorconfig.editorconfig"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "files.eol": "\n",
+        "editor.formatOnSave": true,
+        "python.defaultInterpreterPath": "/usr/bin/python3"
+      }
+    }
+  }
+}
