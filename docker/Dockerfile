@@ -85,7 +85,7 @@ COPY src/devbox_manager/ ./src/devbox_manager/
 COPY tests/unit/ ./tests/unit/
 
 RUN python3 -m venv /opt/devbox-venv \
-    && /opt/devbox-venv/bin/pip install --no-cache-dir ".[dev]"
+    && /opt/devbox-venv/bin/pip install --no-cache-dir ".[dev]" "uv==${UV_VERSION}"
 
 ENV PATH="/opt/devbox-venv/bin:$PATH"
 
@@ -124,11 +124,11 @@ WORKDIR /home/$USERNAME
 ENV PATH="/home/${USERNAME}/.local/bin:/opt/devbox-venv/bin:$PATH"
 
 # Install a reviewed, immutable Oh My Zsh commit instead of tracking master.
-RUN git init /home/${USERNAME}/.oh-my-zsh \\
-    && git -C /home/${USERNAME}/.oh-my-zsh remote add origin https://github.com/ohmyzsh/ohmyzsh.git \\
-    && git -C /home/${USERNAME}/.oh-my-zsh fetch --depth 1 origin "${OH_MY_ZSH_COMMIT}" \\
-    && git -C /home/${USERNAME}/.oh-my-zsh checkout --detach FETCH_HEAD \\
-    && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \\
+RUN git init /home/${USERNAME}/.oh-my-zsh \
+    && git -C /home/${USERNAME}/.oh-my-zsh remote add origin https://github.com/ohmyzsh/ohmyzsh.git \
+    && git -C /home/${USERNAME}/.oh-my-zsh fetch --depth 1 origin "${OH_MY_ZSH_COMMIT}" \
+    && git -C /home/${USERNAME}/.oh-my-zsh checkout --detach FETCH_HEAD \
+    && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \
     && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc
 
 # Configure Oh My Zsh plugins
