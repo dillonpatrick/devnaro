@@ -1,7 +1,6 @@
-
 .DEFAULT_GOAL := help
 
-.PHONY: help start stop restart build rebuild status logs logs-follow shell manager-logs ps networks config clean
+.PHONY: help start stop restart build rebuild status logs logs-follow shell manager-logs ps networks config clean doctor cli-status cli-networks manager-status
 
 # ==========================================
 # Main commands
@@ -9,7 +8,7 @@
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-	awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
+	awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\\n", $$1, $$2}'
 
 start: ## Start DevBox using start.sh
 	@./start.sh
@@ -43,6 +42,25 @@ shell: ## Open a shell inside DevBox
 	@docker compose exec devbox zsh
 
 # ==========================================
+# Python CLI
+# ==========================================
+
+doctor: ## Run DevBox health checks
+	@docker compose exec devbox devbox-manager doctor
+
+cli-status: ## Show detailed DevBox status using Rich
+	@docker compose exec devbox devbox-manager status
+
+cli-networks: ## Show networks connected to DevBox
+	@docker compose exec devbox devbox-manager networks
+
+manager-status: ## Show Network Manager process status
+	@docker compose exec devbox devbox-manager network-manager status
+
+manager-logs: ## Show Network Manager logs using Rich
+	@docker compose exec devbox devbox-manager network-manager logs
+
+# ==========================================
 # Logs
 # ==========================================
 
@@ -51,9 +69,6 @@ logs: ## Show DevBox container logs
 
 logs-follow: ## Follow DevBox container logs
 	@docker compose logs -f devbox
-
-manager-logs: ## Show Network Manager logs
-	@docker compose exec devbox cat /tmp/network-manager.log
 
 # ==========================================
 # Network commands
