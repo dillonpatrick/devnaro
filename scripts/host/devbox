@@ -61,8 +61,9 @@ config_get() {
 config_set() {
     local key="$1"
     local value="$2"
-    mkdir -p "$CONFIG_DIR"
+    install -d -m 700 "$CONFIG_DIR"
     touch "$CONFIG_FILE"
+    chmod 600 "$CONFIG_FILE"
     local temp_file
     temp_file="$(mktemp)"
     awk -F= -v key="$key" '$1 != key { print }' "$CONFIG_FILE" > "$temp_file"
