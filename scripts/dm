@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
-# Short alias for the DevBox Network Manager commands.
-SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-DEVBOX_DIR="$(cd -- "$(dirname "$SCRIPT_PATH")/.." && pwd)"
-
-exec "$DEVBOX_DIR/scripts/devbox" manager "$@"
