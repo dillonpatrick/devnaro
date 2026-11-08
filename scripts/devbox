@@ -26,6 +26,8 @@ Commands:
   logs              Show DevBox container logs
   networks          Show networks connected to DevBox
   doctor            Run DevBox health checks
+  config            Show machine-specific configuration
+  config set workspace PATH  Set workspace directory
   manager status    Show Network Manager process status
   manager logs      Show Network Manager logs
   help              Show this help message
@@ -47,6 +49,32 @@ require_running() {
         printf 'DevBox is not running. Start it with: devbox start\n' >&2
         exit 1
     fi
+}
+
+config_get() {
+    local key="$1"
+    [[ -f "$CONFIG_FILE" ]] || return 0
+    awk -F= -v key="$key" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "$CONFIG_FILE"
+}
+
+config_set() {
+    local key="$1"
+    local value="$2"
+    mkdir -p "$CONFIG_DIR"
+    touch "$CONFIG_FILE"
+    local temp_file
+    temp_file="$(mktemp)"
+    awk -F= -v key="$key" '$1 != key { print }' "$CONFIG_FILE" > "$temp_file"
+    printf '%s=%s\n' "$key" "$value" >> "$temp_file"
+    chmod 600 "$temp_file"
+    mv "$temp_file" "$CONFIG_FILE"
+}
+
+show_config() {
+    printf 'DevBox machine configuration\n'
+    printf '  Config file: %s\n' "$CONFIG_FILE"
+    printf '  Workspace:   %s\n' "$(config_get workspace_path)"
+    printf '  Repository:  %s\n' "$DEVBOX_DIR"
 }
 
 command="${1:-shell}"
@@ -75,6 +103,41 @@ case "$command" in
     networks)
         require_running
         exec docker compose --project-directory "$DEVBOX_DIR" exec devbox devbox-manager networks
+        ;;
+    config)
+        case "${2:-show}" in
+            show)
+                show_config
+                ;;
+            get)
+                case "${3:-}" in
+                    workspace) config_get workspace_path ;;
+                    *) printf 'Supported key: workspace\n' >&2; exit 2 ;;
+                esac
+                ;;
+            set)
+                case "${3:-}" in
+                    workspace)
+                        if [[ -z "${4:-}" ]]; then
+                            printf 'Usage: devbox config set workspace PATH\n' >&2
+                            exit 2
+                        fi
+                        mkdir -p "$4"
+                        workspace_path="$(cd -- "$4" && pwd)"
+                        config_set workspace_path "$workspace_path"
+                        printf 'Workspace set to: %s\n' "$workspace_path"
+                        ;;
+                    *)
+                        printf 'Supported key: workspace\n' >&2
+                        exit 2
+                        ;;
+                esac
+                ;;
+            *)
+                printf 'Usage: devbox config [show|get workspace|set workspace PATH]\n' >&2
+                exit 2
+                ;;
+        esac
         ;;
     doctor)
         require_running
