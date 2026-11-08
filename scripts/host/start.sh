@@ -30,7 +30,7 @@ fi
 APP_NAME="DEVBOX"
 APP_VERSION="1.0.0"
 
-TOTAL_STEPS=7
+TOTAL_STEPS=8
 
 # ==========================================
 # UI functions
