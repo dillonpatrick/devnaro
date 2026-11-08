@@ -158,13 +158,13 @@ Run these development and maintenance commands from the repository directory on 
 | `make install` | Install the host-side `devbox` command |
 | `make build` | Build the image |
 | `make rebuild` | Rebuild without cache |
-| `make test` | Run Python unit and smoke tests |
+| `make test` | Run Python unit tests (DevBox must be running) |
 | `make config` | Validate Compose configuration |
-| `make clean` | Remove DevBox containers, network, and home volume |
+| `make clean` | Remove DevBox container, Compose network, and `devbox_home` volume |
 
 ## Testing
 
-The test suite uses pytest and runs inside the DevBox container:
+The unit test suite uses pytest and runs inside an already-running DevBox container:
 
 ```bash
 make test
@@ -227,7 +227,7 @@ Stop DevBox:
 devbox stop
 ```
 
-This removes the DevBox container, its Compose network, and the persistent `devbox_home` volume. The workspace, project containers, project volumes, and images are preserved.
+This removes the DevBox container, its Compose network, and the `devbox_home` volume. The workspace, containers and volumes belonging to other Compose projects, and Docker images are preserved.
 
 **Warning:** removing `devbox_home` also removes the persisted shell configuration and Network Manager state.
 
@@ -237,6 +237,6 @@ The Docker socket grants extensive control over the host Docker Engine. Treat th
 
 ## Development
 
-The Python CLI source is in `src/devbox_manager/` Dependencies and the console entry point are declared in `pyproject.toml`.
+The Python CLI source is in `src/devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`.
 
 The container image installs the CLI into `/opt/devbox-venv`, keeping its Python dependencies isolated from Ubuntu's system Python packages.
