@@ -44,6 +44,7 @@ if [[ ! -f "$CLI_SOURCE" ]]; then
 fi
 
 mkdir -p "$BIN_DIR"
+BIN_DIR="$(cd -- "$BIN_DIR" && pwd)"
 
 # Remove the legacy alias block created by earlier DevBox installer versions.
 HOST_SHELL="$(basename "${SHELL:-bash}")"
@@ -84,7 +85,7 @@ fi
 ln -s "$CLI_SOURCE" "$CLI_TARGET"
 success "DevBox command installed: $CLI_TARGET"
 
-# Ensure ~/.local/bin is added to PATH for future interactive shells.
+# Ensure the selected binary directory is added to PATH for future interactive shells.
 PATH_LINE="export PATH=\"$BIN_DIR:\$PATH\""
 if [[ -n "$SHELL_CONFIG" ]]; then
     touch "$SHELL_CONFIG"
