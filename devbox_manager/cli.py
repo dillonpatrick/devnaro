@@ -38,8 +38,8 @@ def _format_started_at(value: str) -> str:
 
     normalized = value.replace("Z", "+00:00")
     normalized = re.sub(
-        r"(\\.\\d{6})\\d+(?=[+-]\\d{2}:\\d{2}$)",
-        r"\\1",
+        r"(\.\d{6})\d+(?=[+-]\d{2}:\d{2}$)",
+        r"\1",
         normalized,
     )
 
