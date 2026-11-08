@@ -1,21 +1,63 @@
 services:
-  terminal:
+  devbox:
+    # ==========================================
+    # Build configuration
+    # ==========================================
+
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        DOCKER_GID: "${DOCKER_GID}"
-    container_name: devbox-arch-omarchy
-    command: tail -f /dev/null
-    ports:
-      - "3001:3001"
-    volumes:
-      - .:/code-container
-      - /var/run/docker.sock:/var/run/docker.sock
-      # Mapeia o arquivo local do host para dentro do container
-      - ./.zsh_history:/home/devuser/.zsh_history
-    working_dir: /code-container
+        USERNAME: ${USERNAME:-devuser}
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+        DOCKER_GID: ${DOCKER_GID:-966}
+
+    # ==========================================
+    # Container configuration
+    # ==========================================
+
+    container_name: devbox
+    hostname: devbox
+
+    init: true
     stdin_open: true
     tty: true
 
-# O bloco 'volumes:' no final pode ser removido se não estiver sendo usado por mais nada.
+    command: sleep infinity
+
+    restart: unless-stopped
+
+    # ==========================================
+    # Environment variables
+    # ==========================================
+
+    environment:
+      TZ: ${TZ:-UTC}
+
+    # ==========================================
+    # Volumes
+    # ==========================================
+
+    volumes:
+      # Development workspace
+      - ${WORKSPACE_PATH:-../workspace}:/workspace
+
+      # Host Docker socket
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      # Persistent user home
+      - devbox_home:/home/${USERNAME:-devuser}
+
+    # ==========================================
+    # Working directory
+    # ==========================================
+
+    working_dir: /workspace
+
+# ==========================================
+# Persistent volumes
+# ==========================================
+
+volumes:
+  devbox_home:
