@@ -57,7 +57,7 @@ case "$command" in
         exec "$DEVBOX_DIR/stop.sh"
         ;;
     restart)
-        "$DEVBOX_DIR/stop.sh"
+        compose down --remove-orphans
         exec "$DEVBOX_DIR/start.sh"
         ;;
     shell|enter)
