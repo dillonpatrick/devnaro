@@ -93,7 +93,7 @@ case "$command" in
         ;;
     restart)
         compose down --remove-orphans
-        exec "$DEVBOX_DIR/start.sh"
+        exec "$DEVBOX_DIR/scripts/host/start.sh"
         ;;
     shell|enter)
         require_running
