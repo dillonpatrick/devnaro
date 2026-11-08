@@ -10,7 +10,7 @@ help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 	awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 
-install: ## Configure the host shell alias
+install: ## Install the host-side DevBox command
 	@bash ./install.sh
 
 start: ## Start DevBox using start.sh
