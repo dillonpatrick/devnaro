@@ -80,14 +80,16 @@ COPY --chown=root:root network_manager/ /opt/network-manager/
 
 WORKDIR /opt/devbox-cli
 
-COPY pyproject.toml ./
+COPY pyproject.toml uv.lock ./
 COPY src/devbox_manager/ ./src/devbox_manager/
 COPY tests/unit/ ./tests/unit/
 
-RUN python3 -m venv /opt/devbox-venv \
-    && /opt/devbox-venv/bin/pip install --no-cache-dir ".[dev]" "uv==${UV_VERSION}"
+RUN python3 -m venv /opt/uv-venv \
+    && /opt/uv-venv/bin/pip install --no-cache-dir "uv==${UV_VERSION}" \
+    && python3 -m venv /opt/devbox-venv \
+    && UV_PROJECT_ENVIRONMENT=/opt/devbox-venv /opt/uv-venv/bin/uv sync --locked --all-extras
 
-ENV PATH="/opt/devbox-venv/bin:$PATH"
+ENV PATH="/opt/devbox-venv/bin:/opt/uv-venv/bin:$PATH"
 
 # ==========================================
 # 7. User and group configuration
@@ -121,7 +123,7 @@ USER $USERNAME
 WORKDIR /home/$USERNAME
 
 # uv is installed at an exact version in the isolated CLI virtual environment.
-ENV PATH="/home/${USERNAME}/.local/bin:/opt/devbox-venv/bin:$PATH"
+ENV PATH="/home/${USERNAME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:$PATH"
 
 # Install a reviewed, immutable Oh My Zsh commit instead of tracking master.
 RUN git init /home/${USERNAME}/.oh-my-zsh \
