@@ -48,7 +48,7 @@ The workspace is mounted into the container at `/workspace`. The Network Manager
 
 | Component | Responsibility |
 |---|---|
-| `install.sh` | One-time host shell configuration and alias setup |\n| `start.sh` / `stop.sh` | DevBox startup and teardown |
+| `install.sh` | Installs the host-side `devbox` command |\n| `start.sh` / `stop.sh` | DevBox startup and teardown |
 | Docker Compose | Container, volume, and socket configuration |
 | Python CLI | Operational commands and diagnostics |
 | Network Manager | Periodic Docker network reconciliation |
@@ -82,7 +82,7 @@ chmod +x install.sh start.sh stop.sh
 make install
 ```
 
-The installer detects the user's login shell (Bash or Zsh) and adds the `devbox` alias to the corresponding configuration file. It is safe to run more than once. Open a new terminal to load the alias. Alternatively, source only the file printed by the installer: `~/.bashrc` for Bash or `~/.zshrc` for Zsh. Do not source `~/.bashrc` from Zsh; Bash prompt settings can appear as literal escape sequences.
+The installer creates or updates `~/.local/bin/devbox` as a symlink to the repository's host CLI and adds `~/.local/bin` to the supported shell's PATH configuration. It is safe to run more than once. Open a new terminal, or source the shell configuration file printed by the installer. The installer also removes the legacy DevBox alias block from previous versions.
 
 ### 3. Start DevBox
 
@@ -96,7 +96,7 @@ The startup script detects host and Docker socket IDs, creates or reuses the sib
 
 ### Enter the environment
 
-From the host, after installing and loading the alias, use:
+From the host, after installing the CLI and loading the updated PATH, use:
 
 ```bash
 devbox
@@ -144,7 +144,7 @@ Run these commands from the repository directory on the host:
 | Command | Description |
 |---|---|
 | `make` | Show available commands |
-| `make install` | Configure the host shell alias |\n| `make start` | Start DevBox without entering it |
+| `make install` | Install the host-side `devbox` command |\n| `make start` | Start DevBox without entering it |
 | `make stop` | Stop and remove DevBox resources |
 | `make restart` | Restart DevBox |
 | `make build` | Build the image |
