@@ -5,6 +5,11 @@ set -Eeuo pipefail
 # DevBox - Host installer
 # ==========================================
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+BIN_DIR="${DEVBOX_BIN_DIR:-$HOME/.local/bin}"
+CLI_SOURCE="$SCRIPT_DIR/scripts/devbox"
+CLI_TARGET="$BIN_DIR/devbox"
+
 if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
     RESET='\033[0m'
     BOLD='\033[1m'
@@ -21,82 +26,84 @@ else
     RED=''
 fi
 
-success() {
-    printf '%b✔%b %s\n' "$GREEN" "$RESET" "$1"
-}
+success() { printf '%b✔%b %s\n' "$GREEN" "$RESET" "$1"; }
+info()    { printf '%b➜%b %s\n' "$CYAN" "$RESET" "$1"; }
+warning() { printf '%b!%b %s\n' "$YELLOW" "$RESET" "$1"; }
+error()   { printf '%b✖%b %s\n' "$RED" "$RESET" "$1" >&2; }
 
-info() {
-    printf '%b➜%b %s\n' "$CYAN" "$RESET" "$1"
-}
+printf '\n%bDevBox host installation%b\n\n' "$BOLD" "$RESET"
 
-warning() {
-    printf '%b!%b %s\n' "$YELLOW" "$RESET" "$1"
-}
-
-error() {
-    printf '%b✖%b %s\n' "$RED" "$RESET" "$1" >&2
-}
-
-printf '\n%bDevBox host setup%b\n\n' "$BOLD" "$RESET"
-
-# The alias uses the Docker CLI on the host, so do not install
-# or modify Docker as part of this script.
 if ! command -v docker >/dev/null 2>&1; then
     error "Docker CLI was not found. Install Docker before configuring DevBox."
     exit 1
 fi
 
-HOST_SHELL="$(basename "${SHELL:-bash}")"
+if [[ ! -f "$CLI_SOURCE" ]]; then
+    error "Host CLI not found: $CLI_SOURCE"
+    exit 1
+fi
 
+mkdir -p "$BIN_DIR"
+chmod +x "$CLI_SOURCE"
+
+# Remove the legacy alias block created by earlier DevBox installer versions.
+HOST_SHELL="$(basename "${SHELL:-bash}")"
 case "$HOST_SHELL" in
-    bash)
-        SHELL_CONFIG="$HOME/.bashrc"
-        ;;
-    zsh)
-        SHELL_CONFIG="$HOME/.zshrc"
-        ;;
+    bash) SHELL_CONFIG="$HOME/.bashrc" ;;
+    zsh)  SHELL_CONFIG="$HOME/.zshrc" ;;
     *)
-        warning "Unsupported login shell: $HOST_SHELL"
-        warning "Add the DevBox alias manually to your shell configuration:"
-        printf "alias devbox='docker exec -it devbox zsh'\n"
-        exit 0
+        SHELL_CONFIG=""
+        warning "Could not identify a supported login shell. PATH may need manual configuration."
         ;;
 esac
 
-ALIAS_LINE="alias devbox='docker exec -it devbox zsh'"
-BEGIN_MARKER="# >>> DevBox alias >>>"
-END_MARKER="# <<< DevBox alias <<<"
-
-touch "$SHELL_CONFIG"
-
-if grep -Fq "$BEGIN_MARKER" "$SHELL_CONFIG"; then
-    # Replace the block managed by this installer, keeping the operation idempotent.
+if [[ -n "$SHELL_CONFIG" && -f "$SHELL_CONFIG" ]]; then
     TEMP_CONFIG="$(mktemp)"
-    awk -v begin="$BEGIN_MARKER" -v end="$END_MARKER" '
-        $0 == begin { skip = 1; next }
-        $0 == end { skip = 0; next }
+    awk '
+        $0 == "# >>> DevBox alias >>>" { skip = 1; next }
+        $0 == "# <<< DevBox alias <<<" { skip = 0; next }
+        $0 == "# >>> DevBox PATH >>>" { skip = 1; next }
+        $0 == "# <<< DevBox PATH <<<" { skip = 0; next }
         !skip { print }
     ' "$SHELL_CONFIG" > "$TEMP_CONFIG"
     cat "$TEMP_CONFIG" > "$SHELL_CONFIG"
     rm -f "$TEMP_CONFIG"
-elif grep -Fxq "$ALIAS_LINE" "$SHELL_CONFIG"; then
-    success "DevBox alias already exists in $SHELL_CONFIG."
-    info "Run 'source $SHELL_CONFIG' or open a new terminal to load it."
-    exit 0
 fi
 
-{
-    printf '\n%s\n' "$BEGIN_MARKER"
-    printf '%s\n' "$ALIAS_LINE"
-    printf '%s\n' "$END_MARKER"
-} >> "$SHELL_CONFIG"
+# Install/update the command symlink. The CLI resolves its real path,
+# so it always locates the repository even when invoked from another directory.
+if [[ -L "$CLI_TARGET" || -e "$CLI_TARGET" ]]; then
+    if [[ ! -L "$CLI_TARGET" ]]; then
+        error "$CLI_TARGET already exists and is not a symlink. Move it or choose another DEVBOX_BIN_DIR."
+        exit 1
+    fi
+    rm "$CLI_TARGET"
+fi
 
-success "DevBox alias configured."
-info "Shell configuration: $SHELL_CONFIG"
-info "Run 'source $SHELL_CONFIG' or open a new terminal."
-printf '\n'
-printf '%bUsage%b\n' "$BOLD" "$RESET"
-printf '  make start   # Start the DevBox container\n'
-printf '  devbox       # Enter the container\n'
-printf '  make stop    # Stop and remove DevBox resources\n'
+ln -s "$CLI_SOURCE" "$CLI_TARGET"
+success "DevBox command installed: $CLI_TARGET"
+
+# Ensure ~/.local/bin is added to PATH for future interactive shells.
+PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
+if [[ -n "$SHELL_CONFIG" ]]; then
+    touch "$SHELL_CONFIG"
+    if ! grep -Fq "$PATH_LINE" "$SHELL_CONFIG"; then
+        {
+            printf '\n# >>> DevBox PATH >>>\n'
+            printf '%s\n' "$PATH_LINE"
+            printf '# <<< DevBox PATH <<<\n'
+        } >> "$SHELL_CONFIG"
+    fi
+    success "PATH configuration updated in $SHELL_CONFIG"
+    info "Open a new terminal, or run: source $SHELL_CONFIG"
+else
+    warning "Add $BIN_DIR to PATH in your shell configuration."
+fi
+
+printf '\n%bAvailable commands%b\n' "$BOLD" "$RESET"
+printf '  devbox start\n'
+printf '  devbox status\n'
+printf '  devbox shell\n'
+printf '  devbox doctor\n'
+printf '  devbox stop\n'
 printf '\n'
