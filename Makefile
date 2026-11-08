@@ -11,7 +11,7 @@ help: ## Show available commands
 	awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 
 install: ## Configure the host shell alias
-	@./install.sh
+	@bash ./install.sh
 
 start: ## Start DevBox using start.sh
 	@./start.sh
