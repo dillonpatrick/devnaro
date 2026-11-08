@@ -67,7 +67,7 @@ def _docker_connection():
 @app.callback()
 def main(
     version: bool = typer.Option(
-        False, "--version", "-v", help="Show the CLI version and exit."
+        False, "--version", "-v", is_eager=True, help="Show the CLI version and exit."
     ),
 ) -> None:
     """DevBox command line tools."""
