@@ -3,28 +3,27 @@ set -euo pipefail
 
 echo "==> Stopping DevBox..."
 
-# Navigate to the DevBox project directory
 DEVBOX_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-# ==========================================
-# 1. Stop and remove DevBox resources
-# ==========================================
-
-echo "==> Removing DevBox containers, networks and volumes..."
+echo "==> Removing DevBox container, Compose network, and DevBox home volume..."
 
 docker compose --project-directory "$DEVBOX_DIR" -f "$DEVBOX_DIR/docker/docker-compose.yml" down --volumes --remove-orphans
 
-# ==========================================
-# 2. Finalization
-# ==========================================
-
 echo
 echo "=================================="
-echo " DevBox successfully removed!"
+echo " DevBox resources removed."
 echo "=================================="
 echo
-echo "Workspace preserved."
-echo "Project containers preserved."
-echo "Project volumes preserved."
-echo "Docker images preserved."
+echo "Preserved:"
+echo "  - Workspace files"
+echo "  - Containers from other Compose projects"
+echo "  - Volumes from other Compose projects"
+echo "  - Docker images"
+echo
+echo "Removed:"
+echo "  - DevBox container and its Compose network"
+echo "  - devbox_home volume"
+echo
+echo "The DevBox home volume contained shell configuration and Network Manager state."
+echo "These settings will be recreated with defaults the next time DevBox starts."
 echo
