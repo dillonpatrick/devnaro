@@ -6,12 +6,15 @@ services:
 
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       args:
         USERNAME: ${USERNAME:-devuser}
         USER_UID: ${USER_UID:-1000}
         USER_GID: ${USER_GID:-1000}
         DOCKER_GID: ${DOCKER_GID:-966}
+        TERRAFORM_VERSION: ${TERRAFORM_VERSION:-1.17.1}
+        UV_VERSION: ${UV_VERSION:-0.13.7}
+        OH_MY_ZSH_COMMIT: ${OH_MY_ZSH_COMMIT:-cca3bdfbef8c52ef8939ce7911ff68852b949daa}
 
     # ==========================================
     # Container configuration
@@ -27,6 +30,13 @@ services:
     command: sleep infinity
 
     restart: unless-stopped
+
+    # Reduce the container's kernel-level privileges. Docker socket access
+    # remains highly privileged and is required by DevBox.
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
     # ==========================================
     # Environment variables

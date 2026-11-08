@@ -30,7 +30,7 @@ fi
 APP_NAME="DEVBOX"
 APP_VERSION="1.0.0"
 
-TOTAL_STEPS=9
+TOTAL_STEPS=7
 
 # ==========================================
 # UI functions
@@ -123,13 +123,22 @@ printf '\n'
 
 section 1 "Environment configuration"
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 cd "$SCRIPT_DIR"
+compose() { docker compose --project-directory "$SCRIPT_DIR" -f "$SCRIPT_DIR/docker/docker-compose.yml" "$@"; }
 
 USERNAME="devuser"
 
-WORKSPACE_PATH="${WORKSPACE_PATH:-$SCRIPT_DIR/../workspace}"
+# Workspace precedence: explicit environment variable, machine config, default.
+CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/devbox/config"
+CONFIG_WORKSPACE=""
+
+if [[ -f "$CONFIG_FILE" ]]; then
+    CONFIG_WORKSPACE="$(awk -F= '$1 == "workspace_path" { sub(/^[^=]*=/, ""); print; exit }' "$CONFIG_FILE")"
+fi
+
+WORKSPACE_PATH="${WORKSPACE_PATH:-${CONFIG_WORKSPACE:-$SCRIPT_DIR/../workspace}}"
 
 USER_UID=$(id -u)
 USER_GID=$(id -g)
@@ -197,7 +206,7 @@ section 4 "Validating Docker Compose"
 
 info "Checking Docker Compose configuration..."
 
-docker compose config --quiet
+compose config --quiet
 
 success "Docker Compose configuration is valid."
 
@@ -209,7 +218,7 @@ section 5 "Building DevBox image"
 
 info "Building Docker image..."
 
-docker compose build
+compose build
 
 success "DevBox image built successfully."
 
@@ -221,7 +230,7 @@ section 6 "Starting DevBox container"
 
 info "Creating and starting container..."
 
-docker compose up -d
+compose up -d
 
 success "DevBox container is running."
 
@@ -233,7 +242,7 @@ section 7 "Network Manager"
 
 info "Checking Network Manager process..."
 
-if docker compose exec -T devbox \
+if compose exec -T devbox \
     sh -c 'pgrep -f "[/]opt/network-manager/manager.py" >/dev/null 2>&1'; then
 
     success "Network Manager is already running."
@@ -242,17 +251,17 @@ else
 
     info "Starting Network Manager..."
 
-    docker compose exec -T devbox \
+    compose exec -T devbox \
         sh -c ': > /tmp/network-manager.log'
 
-    docker compose exec -d -T devbox \
+    compose exec -d -T devbox \
         sh -c 'exec python3 -u /opt/network-manager/manager.py >> /tmp/network-manager.log 2>&1'
 
     MANAGER_STARTED=false
 
     for attempt in {1..5}; do
 
-        if docker compose exec -T devbox \
+        if compose exec -T devbox \
             sh -c 'pgrep -f "[/]opt/network-manager/manager.py" >/dev/null 2>&1'; then
 
             MANAGER_STARTED=true
@@ -269,7 +278,7 @@ else
     else
         error "Network Manager failed to start."
 
-        docker compose exec -T devbox \
+        compose exec -T devbox \
             sh -c 'cat /tmp/network-manager.log'
 
         exit 1
@@ -278,53 +287,7 @@ else
 fi
 
 # ==========================================
-# 8. Host shell alias configuration
-# ==========================================
-
-section 8 "Host shell configuration"
-
-HOST_SHELL="$(basename "${SHELL:-bash}")"
-
-case "$HOST_SHELL" in
-    zsh)
-        SHELL_CONFIG="$HOME/.zshrc"
-        ;;
-    bash)
-        SHELL_CONFIG="$HOME/.bashrc"
-        ;;
-    *)
-        warning "Unsupported shell: ${HOST_SHELL}"
-        SHELL_CONFIG=""
-        ;;
-esac
-
-if [[ -n "$SHELL_CONFIG" ]]; then
-
-    ALIAS_LINE="alias devbox='docker exec -it devbox zsh'"
-
-    touch "$SHELL_CONFIG"
-
-    if ! grep -Fxq "$ALIAS_LINE" "$SHELL_CONFIG"; then
-
-        {
-            echo ""
-            echo "# DevBox shortcut"
-            echo "$ALIAS_LINE"
-        } >> "$SHELL_CONFIG"
-
-        success "DevBox alias added."
-        detail "Configuration: ${SHELL_CONFIG}"
-
-    else
-
-        success "DevBox alias already configured."
-
-    fi
-
-fi
-
-# ==========================================
-# 9. Finalization
+# 8. Finalization
 # ==========================================
 
 printf '\n'
@@ -339,7 +302,6 @@ printf '  %bWorkspace%b       %s\n' "${CYAN}" "${RESET}" "$WORKSPACE_PATH"
 printf '  %bContainer%b      %s\n' "${CYAN}" "${RESET}" "devbox"
 printf '  %bUser%b           %s\n' "${CYAN}" "${RESET}" "$USERNAME"
 printf '  %bNetwork Manager%b %s\n' "${CYAN}" "${RESET}" "Running"
-printf '  %bShell alias%b    %s\n' "${CYAN}" "${RESET}" "devbox"
 
 printf '\n'
 line
@@ -347,19 +309,17 @@ line
 printf '\n'
 printf '%b\n' "${WHITE}${BOLD}  Quick commands${RESET}"
 printf '\n'
-printf '  %b%-18s%b %s\n' "${GREEN}" "devbox" "${RESET}" "Enter DevBox"
-printf '  %b%-18s%b %s\n' "${GREEN}" "make status" "${RESET}" "Container status"
-printf '  %b%-18s%b %s\n' "${GREEN}" "make manager-logs" "${RESET}" "Network Manager logs"
-printf '  %b%-18s%b %s\n' "${GREEN}" "make networks" "${RESET}" "Docker networks"
-printf '  %b%-18s%b %s\n' "${GREEN}" "make stop" "${RESET}" "Stop DevBox"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox shell" "${RESET}" "Enter DevBox"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox status" "${RESET}" "Container status"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox manager logs" "${RESET}" "Network Manager logs"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox networks" "${RESET}" "Docker networks"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Remove DevBox resources"
 
 printf '\n'
 line
 
 printf '\n'
-info "Entering DevBox shell..."
+info "DevBox is ready. Use devbox shell to enter the container."
 printf '\n'
 
 trap - ERR
-
-exec docker compose exec devbox zsh

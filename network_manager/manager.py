@@ -33,7 +33,7 @@ EXCLUDE_INTERNAL = os.getenv("NETWORK_EXCLUDE_INTERNAL", "true").lower() == "tru
 
 STATE_DIR = Path(
     os.getenv(
-        "NETWORK_MANAGER_STATE_DIR", "/home/devuser/.local/state/devbox-network-manager"
+        "NETWORK_MANAGER_STATE_DIR", str(Path.home() / ".local/state/devbox-network-manager")
     )
 )
 
@@ -60,13 +60,15 @@ def load_state():
 
 def save_state(state):
     try:
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+        STATE_DIR.chmod(0o700)
 
         temporary_file = STATE_FILE.with_suffix(".tmp")
 
         with temporary_file.open("w", encoding="utf-8") as file:
             json.dump(state, file, indent=2)
 
+        temporary_file.chmod(0o600)
         temporary_file.replace(STATE_FILE)
 
     except OSError as error:
@@ -142,6 +144,7 @@ def synchronize():
                 network.connect(container)
 
                 state[name] = network_id
+                current[name] = {}
 
                 print(f"[+] Connected: {name}", flush=True)
 
