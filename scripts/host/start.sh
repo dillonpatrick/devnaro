@@ -202,7 +202,7 @@ detail ".env"
 # 4. Docker Compose validation
 # ==========================================
 
-section 4 "Validating Docker Compose"
+section 5 "Validating Docker Compose"
 
 info "Checking Docker Compose configuration..."
 
@@ -214,7 +214,7 @@ success "Docker Compose configuration is valid."
 # 5. Build DevBox
 # ==========================================
 
-section 5 "Building DevBox image"
+section 6 "Building DevBox image"
 
 info "Building Docker image..."
 
@@ -226,7 +226,7 @@ success "DevBox image built successfully."
 # 6. Start DevBox
 # ==========================================
 
-section 6 "Starting DevBox container"
+section 7 "Starting DevBox container"
 
 info "Creating and starting container..."
 
@@ -238,7 +238,7 @@ success "DevBox container is running."
 # 7. Network Manager
 # ==========================================
 
-section 7 "Network Manager"
+section 8 "Network Manager"
 
 info "Checking Network Manager process..."
 
