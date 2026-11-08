@@ -155,7 +155,8 @@ RUN echo '\n# Zsh autosuggestions' >> /home/$USERNAME/.zshrc \
 # ==========================================
 # ==========================================
 
-COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint\nCOPY scripts/container/code /usr/local/bin/code
+COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint
+COPY scripts/container/code /usr/local/bin/code
 
 USER root
 RUN chmod +x /usr/local/bin/devbox-entrypoint \
