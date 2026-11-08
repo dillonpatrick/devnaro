@@ -93,6 +93,14 @@ case "$command" in
         exec "$DEVBOX_DIR/scripts/host/stop.sh"
         ;;
     restart)
+        USER_UID="$(id -u)"
+        RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+        CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
+        CODE_SOCKET_PATH="$RUNTIME_DIR/devbox-code-$USER_UID.sock"
+        if [[ -f "$CODE_BRIDGE_PID" ]]; then
+            kill "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null || true
+        fi
+        rm -f "$CODE_BRIDGE_PID" "$CODE_SOCKET_PATH"
         compose down --remove-orphans
         exec "$DEVBOX_DIR/scripts/host/start.sh"
         ;;

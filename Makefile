@@ -27,4 +27,4 @@ config: ## Validate Docker Compose configuration
 	@echo "Docker Compose configuration is valid."
 
 clean: ## Remove DevBox container, Compose network and devbox_home volume
-	@docker compose --project-directory . -f docker/docker-compose.yml down --volumes --remove-orphans
+	@bash ./scripts/host/stop.sh

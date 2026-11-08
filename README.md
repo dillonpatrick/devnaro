@@ -8,7 +8,7 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 
 - Containerized development tools based on Ubuntu 24.04.
 - Persistent workspace stored outside the DevBox container.
-- Host Docker integration through the mounted Docker socket.
+- Host Docker integration through the mounted Docker socket.\n- Open the current workspace path in the host VS Code with `code .` from inside DevBox.
 - Automatic discovery and connection to eligible Docker Compose bridge networks.
 - Persistent home directory across normal container restarts.
 - Host CLI for lifecycle operations and container-side CLI for diagnostics.
@@ -55,7 +55,7 @@ The workspace is mounted in the container at `/workspace`. Project Compose files
 - Bash, Git, and GNU Make.
 - Access to `/var/run/docker.sock`.
 
-The container image is based on Ubuntu 24.04. The host may use another Linux distribution if the requirements above are available.
+The container image is based on Ubuntu 24.04. The host may use another Linux distribution if the requirements above are available. Python 3 is also required on the host for the VS Code path bridge.
 
 ## Installation
 
@@ -103,7 +103,7 @@ Machine-specific settings are stored outside the repository in `~/.config/devbox
 
 After entering DevBox, the first interactive Zsh session after each container start or restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 
-The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`.
+The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`.\n\n### Open VS Code on the host\n\nThe `code` command inside DevBox forwards the current directory to the VS Code CLI installed on the Linux host. From any project directory, run:\n\n```bash\ncd /workspace/project-1\ncode .\n```\n\nThe host-side bridge is started by `devbox start` and stopped by `devbox stop`. The host must have the VS Code `code` command available on its `PATH`. The bridge only opens paths inside the configured workspace.
 
 | Command | Description |
 |---|---|
