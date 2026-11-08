@@ -12,6 +12,9 @@ services:
         USER_UID: ${USER_UID:-1000}
         USER_GID: ${USER_GID:-1000}
         DOCKER_GID: ${DOCKER_GID:-966}
+        TERRAFORM_VERSION: ${TERRAFORM_VERSION:-1.17.1}
+        UV_VERSION: ${UV_VERSION:-0.13.7}
+        OH_MY_ZSH_COMMIT: ${OH_MY_ZSH_COMMIT:-cca3bdfbef8c52ef8939ce7911ff68852b949daa}
 
     # ==========================================
     # Container configuration
