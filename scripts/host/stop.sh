@@ -4,7 +4,7 @@ set -euo pipefail
 echo "==> Stopping DevBox..."
 
 # Navigate to the DevBox project directory
-cd "$(dirname "${BASH_SOURCE[0]}")"
+DEVBOX_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # ==========================================
 # 1. Stop and remove DevBox resources
@@ -12,7 +12,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 echo "==> Removing DevBox containers, networks and volumes..."
 
-docker compose down --volumes --remove-orphans
+docker compose --project-directory "$DEVBOX_DIR" -f "$DEVBOX_DIR/docker/docker-compose.yml" down --volumes --remove-orphans
 
 # ==========================================
 # 2. Finalization

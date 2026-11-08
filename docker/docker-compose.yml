@@ -5,8 +5,8 @@ services:
     # ==========================================
 
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
       args:
         USERNAME: ${USERNAME:-devuser}
         USER_UID: ${USER_UID:-1000}

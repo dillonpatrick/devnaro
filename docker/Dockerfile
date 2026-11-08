@@ -70,7 +70,7 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 # 5. Network Manager
 # ==========================================
 
-COPY --chown=root:root network-manager/ /opt/network-manager/
+COPY --chown=root:root network_manager/ /opt/network-manager/
 
 # ==========================================
 # 6. DevBox Python CLI
@@ -79,8 +79,8 @@ COPY --chown=root:root network-manager/ /opt/network-manager/
 WORKDIR /opt/devbox-cli
 
 COPY pyproject.toml ./
-COPY devbox_manager/ ./devbox_manager/
-COPY tests/ ./tests/
+COPY src/devbox_manager/ ./src/devbox_manager/
+COPY tests/unit/ ./tests/unit/
 
 RUN python3 -m venv /opt/devbox-venv \
     && /opt/devbox-venv/bin/pip install --no-cache-dir ".[dev]"
@@ -143,13 +143,11 @@ RUN echo '\n# Zsh autosuggestions' >> /home/$USERNAME/.zshrc \
 # 9. Default shell
 # ==========================================
 
-CMD ["zsh"]
-
 # ==========================================
 # 9. Welcome screen and container entrypoint
 # ==========================================
 
-COPY scripts/container-entrypoint.sh /usr/local/bin/devbox-entrypoint
+COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint
 
 USER root
 RUN chmod +x /usr/local/bin/devbox-entrypoint \

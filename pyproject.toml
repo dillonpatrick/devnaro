@@ -22,8 +22,12 @@ dev = [
 devbox-manager = "devbox_manager.cli:app"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests/unit"]
 addopts = "-q"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["devbox_manager*"]

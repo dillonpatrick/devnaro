@@ -123,9 +123,10 @@ printf '\n'
 
 section 1 "Environment configuration"
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 cd "$SCRIPT_DIR"
+compose() { docker compose --project-directory "$SCRIPT_DIR" -f "$SCRIPT_DIR/docker/docker-compose.yml" "$@"; }
 
 USERNAME="devuser"
 
@@ -205,7 +206,7 @@ section 4 "Validating Docker Compose"
 
 info "Checking Docker Compose configuration..."
 
-docker compose config --quiet
+compose config --quiet
 
 success "Docker Compose configuration is valid."
 
@@ -217,7 +218,7 @@ section 5 "Building DevBox image"
 
 info "Building Docker image..."
 
-docker compose build
+compose build
 
 success "DevBox image built successfully."
 
@@ -229,7 +230,7 @@ section 6 "Starting DevBox container"
 
 info "Creating and starting container..."
 
-docker compose up -d
+compose up -d
 
 success "DevBox container is running."
 
@@ -241,7 +242,7 @@ section 7 "Network Manager"
 
 info "Checking Network Manager process..."
 
-if docker compose exec -T devbox \
+if compose exec -T devbox \
     sh -c 'pgrep -f "[/]opt/network-manager/manager.py" >/dev/null 2>&1'; then
 
     success "Network Manager is already running."
@@ -250,17 +251,17 @@ else
 
     info "Starting Network Manager..."
 
-    docker compose exec -T devbox \
+    compose exec -T devbox \
         sh -c ': > /tmp/network-manager.log'
 
-    docker compose exec -d -T devbox \
+    compose exec -d -T devbox \
         sh -c 'exec python3 -u /opt/network-manager/manager.py >> /tmp/network-manager.log 2>&1'
 
     MANAGER_STARTED=false
 
     for attempt in {1..5}; do
 
-        if docker compose exec -T devbox \
+        if compose exec -T devbox \
             sh -c 'pgrep -f "[/]opt/network-manager/manager.py" >/dev/null 2>&1'; then
 
             MANAGER_STARTED=true
@@ -277,7 +278,7 @@ else
     else
         error "Network Manager failed to start."
 
-        docker compose exec -T devbox \
+        compose exec -T devbox \
             sh -c 'cat /tmp/network-manager.log'
 
         exit 1

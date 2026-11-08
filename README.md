@@ -22,16 +22,16 @@ Host Machine
 +-- devbox/
 |   +-- .devcontainer/
 |   |   +-- devcontainer.json
-|   +-- devbox_manager/
+|   +-- src/devbox_manager/
 |   |   +-- cli.py
 |   |   +-- config.py
 |   |   +-- docker_client.py
 |   |   +-- network_manager.py
-|   +-- network-manager/
+|   +-- network_manager/
 |   |   +-- manager.py
 |   +-- scripts/
 |   |   +-- devbox
-|   +-- Dockerfile
+|   +-- docker/\n|   |   +-- Dockerfile\n|   |   +-- scripts/host/\n|   |   +-- devbox\n|   |   +-- install.sh\n|   |   +-- start.sh\n|   |   +-- stop.sh\n|   +-- scripts/container/\n|   |   +-- entrypoint.sh\n|   +-- tests/unit/
 |   +-- docker-compose.yml
 |   +-- pyproject.toml
 |   +-- Makefile
@@ -51,8 +51,8 @@ The workspace is mounted into the container at `/workspace`. The Network Manager
 
 | Component | Responsibility |
 |---|---|
-| `install.sh` | Installs the host-side `devbox` command |
-| `start.sh` / `stop.sh` | DevBox startup and teardown |
+| `scripts/host/install.sh` | Installs the host-side `devbox` command |
+| `scripts/host/start.sh` / `scripts/host/stop.sh` | DevBox startup and teardown |
 | Docker Compose | Container, volume, and socket configuration |
 | Python CLI | Operational commands and diagnostics |
 | Network Manager | Periodic Docker network reconciliation |
@@ -82,7 +82,6 @@ cd devbox
 ### 2. Configure the host
 
 ```bash
-chmod +x install.sh start.sh stop.sh
 make install
 ```
 
@@ -238,6 +237,6 @@ The Docker socket grants extensive control over the host Docker Engine. Treat th
 
 ## Development
 
-The Python CLI source is in `devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`.
+The Python CLI source is in `src/devbox_manager/` Dependencies and the console entry point are declared in `pyproject.toml`.
 
 The container image installs the CLI into `/opt/devbox-venv`, keeping its Python dependencies isolated from Ubuntu's system Python packages.

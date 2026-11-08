@@ -5,9 +5,9 @@ set -Eeuo pipefail
 # DevBox - Host installer
 # ==========================================
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 BIN_DIR="${DEVBOX_BIN_DIR:-$HOME/.local/bin}"
-CLI_SOURCE="$SCRIPT_DIR/scripts/devbox"
+CLI_SOURCE="$SCRIPT_DIR/scripts/host/devbox"
 CLI_TARGET="$BIN_DIR/devbox"
 
 if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
