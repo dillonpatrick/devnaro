@@ -62,7 +62,7 @@ case "$command" in
         ;;
     shell|enter)
         require_running
-        exec compose exec devbox zsh
+        exec docker compose --project-directory "$DEVBOX_DIR" exec devbox zsh
         ;;
     status)
         compose ps devbox
@@ -72,21 +72,21 @@ case "$command" in
         ;;
     networks)
         require_running
-        exec compose exec devbox devbox-manager networks
+        exec docker compose --project-directory "$DEVBOX_DIR" exec devbox devbox-manager networks
         ;;
     doctor)
         require_running
-        exec compose exec devbox devbox-manager doctor
+        exec docker compose --project-directory "$DEVBOX_DIR" exec devbox devbox-manager doctor
         ;;
     manager)
         subcommand="${2:-status}"
         require_running
         case "$subcommand" in
             status)
-                exec compose exec devbox devbox-manager network-manager status
+                exec docker compose --project-directory "$DEVBOX_DIR" exec devbox devbox-manager network-manager status
                 ;;
             logs)
-                exec compose exec devbox devbox-manager network-manager logs
+                exec docker compose --project-directory "$DEVBOX_DIR" exec devbox devbox-manager network-manager logs
                 ;;
             *)
                 printf 'Unknown manager command: %s\n' "$subcommand" >&2
