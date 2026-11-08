@@ -1,4 +1,4 @@
-name: Python CLI tests
+name: DevBox validation
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
       - main
 
 jobs:
-  tests:
+  python-tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -31,3 +31,41 @@ jobs:
 
       - name: Run tests
         run: python -m pytest
+
+  repository-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate shell scripts
+        run: |
+          bash -n scripts/host/install.sh
+          bash -n scripts/host/devbox
+          bash -n scripts/host/start.sh
+          bash -n scripts/host/stop.sh
+
+      - name: Validate Docker Compose configuration
+        run: docker compose --project-directory . -f docker/docker-compose.yml config --quiet
+
+  docker-image-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build DevBox image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          tags: devbox:ci
+          build-args: |
+            USERNAME=devuser
+            USER_UID=1000
+            USER_GID=1000
+            DOCKER_GID=966
