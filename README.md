@@ -155,6 +155,7 @@ Run these commands from the repository directory on the host:
 | `make rebuild` | Rebuild without cache |
 | `make status` | Show Compose container status |
 | `make doctor` | Run Python health checks |
+| `make test` | Run Python unit and smoke tests |
 | `make cli-status` | Show detailed DevBox status |
 | `make cli-networks` | Show attached networks |
 | `make manager-status` | Check Network Manager |
@@ -162,6 +163,16 @@ Run these commands from the repository directory on the host:
 | `make logs-follow` | Follow container logs |
 | `make config` | Validate Compose configuration |
 | `make clean` | Remove DevBox containers, network, and home volume |
+
+## Testing
+
+The test suite uses pytest and runs inside the DevBox container:
+
+```bash
+make test
+```
+
+Tests cover CLI help/version output and Network Manager process/log diagnostics. No external Docker daemon is required for these unit and smoke tests.
 
 ## Network Manager
 
