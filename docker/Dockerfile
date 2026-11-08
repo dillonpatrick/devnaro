@@ -151,11 +151,11 @@ RUN echo '\n# Zsh autosuggestions' >> /home/$USERNAME/.zshrc \
     && echo 'source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' >> /home/$USERNAME/.zshrc
 
 # ==========================================
-# 9. Welcome screen and container entrypoint
+# 9. Host integration and welcome screen
 # ==========================================
 # ==========================================
 
-COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint
+COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint\nCOPY scripts/container/code /usr/local/bin/code
 
 USER root
 RUN chmod +x /usr/local/bin/devbox-entrypoint \
