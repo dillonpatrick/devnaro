@@ -102,11 +102,12 @@ RUN set -eux; \
     if getent passwd "$USERNAME" > /dev/null; then \
     usermod --uid "$USER_UID" --gid "$USER_GID" --shell /usr/bin/zsh "$USERNAME"; \
     else \
-    if getent passwd "$USER_UID" > /dev/null; then \
-    echo "ERROR: UID $USER_UID is already assigned to another user."; \
-    exit 1; \
-    fi; \
+    EXISTING_USER="$(getent passwd "$USER_UID" | cut -d: -f1 || true)"; \
+    if [ -n "$EXISTING_USER" ]; then \
+    usermod --login "$USERNAME" --home "/home/$USERNAME" --move-home --gid "$USER_GID" --shell /usr/bin/zsh "$EXISTING_USER"; \
+    else \
     useradd --uid "$USER_UID" --gid "$USER_GID" --create-home --shell /usr/bin/zsh "$USERNAME"; \
+    fi; \
     fi; \
     if ! getent group "$DOCKER_GID" > /dev/null; then \
     groupadd --gid "$DOCKER_GID" docker_host; \
