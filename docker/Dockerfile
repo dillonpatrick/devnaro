@@ -131,6 +131,11 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \
     && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc
 
+# Fail the image build if a pinned tool does not match its requested version.
+RUN terraform version | grep -F "Terraform v${TERRAFORM_VERSION}" \\
+    && uv --version | grep -F "uv ${UV_VERSION}" \\
+    && test "$(git -C /home/${USERNAME}/.oh-my-zsh rev-parse HEAD)" = "${OH_MY_ZSH_COMMIT}"
+
 # Configure Oh My Zsh plugins
 RUN sed -i \
     's/^plugins=(git)$/plugins=(git docker terraform uv)/' \
