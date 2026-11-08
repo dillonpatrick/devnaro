@@ -104,8 +104,13 @@ fi
 
 printf '\n%bAvailable commands%b\n' "$BOLD" "$RESET"
 printf '  devbox start\n'
-printf '  devbox status\n'
 printf '  devbox shell\n'
+printf '  devbox status\n'
+printf '  devbox networks\n'
 printf '  devbox doctor\n'
+printf '  devbox manager status\n'
+printf '  devbox manager logs\n'
+printf '  devbox restart\n'
 printf '  devbox stop\n'
+printf '  devbox config\n'
 printf '\n'
