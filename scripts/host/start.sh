@@ -309,17 +309,17 @@ line
 printf '\n'
 printf '%b\n' "${WHITE}${BOLD}  Quick commands${RESET}"
 printf '\n'
-printf '  %b%-18s%b %s\n' "${GREEN}" "make shell" "${RESET}" "Enter DevBox"
-printf '  %b%-18s%b %s\n' "${GREEN}" "make status" "${RESET}" "Container status"
-printf '  %b%-18s%b %s\n' "${GREEN}" "make manager-logs" "${RESET}" "Network Manager logs"
-printf '  %b%-18s%b %s\n' "${GREEN}" "make networks" "${RESET}" "Docker networks"
-printf '  %b%-18s%b %s\n' "${GREEN}" "make stop" "${RESET}" "Stop DevBox"
+printf '  %b%-18s%b %s\n' "${GREEN}" "devbox shell" "${RESET}" "Enter DevBox"
+printf '  %b%-18s%b %s\n' "${GREEN}" "devbox status" "${RESET}" "Container status"
+printf '  %b%-18s%b %s\n' "${GREEN}" "devbox manager logs" "${RESET}" "Network Manager logs"
+printf '  %b%-18s%b %s\n' "${GREEN}" "devbox networks" "${RESET}" "Docker networks"
+printf '  %b%-18s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Stop DevBox"
 
 printf '\n'
 line
 
 printf '\n'
-info "DevBox is ready. Use make shell to enter the container."
+info "DevBox is ready. Use devbox shell to enter the container."
 printf '\n'
 
 trap - ERR
