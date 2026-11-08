@@ -82,7 +82,7 @@ COPY pyproject.toml ./
 COPY devbox_manager/ ./devbox_manager/
 
 RUN python3 -m venv /opt/devbox-venv \
-    && /opt/devbox-venv/bin/pip install --no-cache-dir .
+    && /opt/devbox-venv/bin/pip install --no-cache-dir ".[dev]"
 
 ENV PATH="/opt/devbox-venv/bin:$PATH"
 
