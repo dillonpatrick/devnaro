@@ -45,7 +45,7 @@ Host Machine
     +-- project-3/
 ```
 
-The workspace is mounted into the container at `/workspace`. The Network Manager discovers eligible Compose networks and connects the DevBox container automatically.
+The workspace is mounted into the container at `/workspace`. The Network Manager discovers eligible Compose networks and connects the DevBox container automatically. On the first interactive Zsh session after each container start or restart, DevBox displays a welcome panel with environment status and useful commands.
 
 ### Responsibilities
 
@@ -93,7 +93,7 @@ The installer creates or updates `~/.local/bin/devbox` as a symlink to the repos
 make start
 ```
 
-The startup script detects host and Docker socket IDs, creates or reuses the sibling `workspace` directory, generates the local `.env`, validates Compose, builds and starts the container, and starts the Network Manager. It does not configure the host shell or automatically enter the container.
+The startup script detects host and Docker socket IDs, creates or reuses the configured workspace directory, generates the local `.env`, validates Compose, builds and starts the container, and starts the Network Manager. It does not configure the host shell or automatically enter the container. The welcome panel is displayed when you enter the container for the first time after startup or restart.
 
 ## Using DevBox
 
