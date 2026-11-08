@@ -9,17 +9,26 @@ from devbox_manager.config import NETWORK_MANAGER_LOG, NETWORK_MANAGER_PROCESS
 
 def process_status() -> tuple[bool, str]:
     """Return whether the Network Manager process is running."""
-    result = subprocess.run(
-        ["pgrep", "-af", f"[{NETWORK_MANAGER_PROCESS[0]}]{NETWORK_MANAGER_PROCESS[1:]}"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return result.returncode == 0, result.stdout.strip()
+    process_pattern = f"[{NETWORK_MANAGER_PROCESS[0]}]{NETWORK_MANAGER_PROCESS[1:]}"
+
+    try:
+        result = subprocess.run(
+            ["pgrep", "-af", process_pattern],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return False, "pgrep is not installed (install the procps package)."
+
+    return result.returncode == 0, result.stdout.strip() or result.stderr.strip()
 
 
 def read_logs(lines: int = 50, path: Path = NETWORK_MANAGER_LOG) -> str:
     """Read the last requested number of Network Manager log lines."""
+    if lines < 1:
+        raise ValueError("lines must be greater than zero")
+
     if not path.is_file():
         raise FileNotFoundError(f"Network Manager log not found: {path}")
 
