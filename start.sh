@@ -293,7 +293,6 @@ printf '  %bWorkspace%b       %s\n' "${CYAN}" "${RESET}" "$WORKSPACE_PATH"
 printf '  %bContainer%b      %s\n' "${CYAN}" "${RESET}" "devbox"
 printf '  %bUser%b           %s\n' "${CYAN}" "${RESET}" "$USERNAME"
 printf '  %bNetwork Manager%b %s\n' "${CYAN}" "${RESET}" "Running"
-printf '  %bShell alias%b    %s\n' "${CYAN}" "${RESET}" "devbox"
 
 printf '\n'
 line
@@ -301,7 +300,7 @@ line
 printf '\n'
 printf '%b\n' "${WHITE}${BOLD}  Quick commands${RESET}"
 printf '\n'
-printf '  %b%-18s%b %s\n' "${GREEN}" "devbox" "${RESET}" "Enter DevBox"
+printf '  %b%-18s%b %s\n' "${GREEN}" "make shell" "${RESET}" "Enter DevBox"
 printf '  %b%-18s%b %s\n' "${GREEN}" "make status" "${RESET}" "Container status"
 printf '  %b%-18s%b %s\n' "${GREEN}" "make manager-logs" "${RESET}" "Network Manager logs"
 printf '  %b%-18s%b %s\n' "${GREEN}" "make networks" "${RESET}" "Docker networks"
@@ -311,9 +310,7 @@ printf '\n'
 line
 
 printf '\n'
-info "Entering DevBox shell..."
+info "DevBox is ready. Use make shell to enter the container."
 printf '\n'
 
 trap - ERR
-
-exec docker compose exec devbox zsh
