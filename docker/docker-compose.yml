@@ -56,6 +56,9 @@ services:
       # Host Docker socket
       - /var/run/docker.sock:/var/run/docker.sock
 
+      # Host VS Code bridge (Unix socket)
+      - ${CODE_SOCKET_PATH}:/run/devbox-host/code.sock
+
       # Persistent user home
       - devbox_home:/home/${USERNAME:-devuser}
 
