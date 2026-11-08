@@ -28,7 +28,7 @@ Host Machine
 │       └── manager.py
 │
 ├── workspace/
-│   ├── warranty-manager/
+│   ├── project-1/
 │   ├── project-2/
 │   └── project-3/
 │
@@ -67,7 +67,7 @@ The current configuration is designed for Ubuntu-based Docker environments.
 ### 1. Clone the repository
 
 ```bash
-git clone dillonpatrick/devbox
+git clone git@github.com:dillonpatrick/devbox.git
 cd devbox
 ```
 
@@ -131,7 +131,7 @@ Your projects are available under this directory.
 Navigate to a project directory:
 
 ```bash
-cd /workspace/warranty-manager
+cd /workspace/project-1
 ```
 
 Start its containers:
@@ -149,13 +149,13 @@ Containers can be accessed through their Docker DNS names.
 For example, to connect to a PostgreSQL container:
 
 ```bash
-psql -h warranty-manager-db -p 5432 -U appuser
+psql -h project-1-db -p 5432 -U appuser
 ```
 
 You can also test connectivity using Python:
 
 ```bash
-python3 -c "import socket; s=socket.create_connection(('warranty-manager-db', 5432), timeout=5); print('Connection successful'); s.close()"
+python3 -c "import socket; s=socket.create_connection(('project-1-db', 5432), timeout=5); print('Connection successful'); s.close()"
 ```
 
 No manual IP configuration is required.
@@ -330,7 +330,3 @@ Check that the project network is a Docker Compose-managed bridge network.
 - The workspace is intentionally stored outside the DevBox project directory.
 - Removing DevBox does not remove project data.
 - The Network Manager only discovers networks that match its eligibility rules.
-
-## License
-
-Add your preferred license before publishing this repository.
