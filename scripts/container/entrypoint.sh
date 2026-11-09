@@ -1,18 +1,20 @@
 #!/usr/bin/env sh
 set -eu
 
-# Add a persistent visual identity to interactive Zsh sessions. The home
-# directory is a named volume, so configure it at container startup rather
-# than relying only on the image's initial .zshrc.
+# Keep the prompt identity in the persistent home volume, but normalize older
+# versions of the DevBox prompt so repeated starts never stack prefixes.
 ZSHRC="${HOME}/.zshrc"
 PROMPT_MARKER="# DevBox prompt identity"
 
-if [ -f "$ZSHRC" ] && ! grep -Fq "$PROMPT_MARKER" "$ZSHRC"; then
+if [ -f "$ZSHRC" ]; then
+    sed -i '/^# DevBox prompt identity$/,/^PROMPT=/d' "$ZSHRC"
     cat >> "$ZSHRC" <<'EOF'
 
 # DevBox prompt identity
-# Keep the active Zsh theme and Git decorations, but make the container obvious.
-PROMPT="%F{green}[DEVBOX]%f ${PROMPT}"
+# Compact two-line prompt: container, current directory, Git branch, command.
+setopt PROMPT_SUBST
+PROMPT='%F{green}[DEVBOX]%f %F{cyan}%1~%f %F{yellow}$(git_prompt_info)%f
+%F{green}❯%f '
 EOF
 fi
 
