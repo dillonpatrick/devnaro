@@ -95,6 +95,8 @@ COPY scripts/container/code /usr/local/bin/code
 
 USER root
 RUN mkdir -p /run/devbox-host \
+    && sed -n '/^\[project\]/,/^\[/ s/^version = "\\(.*\\)"/\\1/p' /opt/devbox-cli/pyproject.toml > /etc/devbox-version \
+    && test -s /etc/devbox-version \
     && chmod +x /usr/local/bin/devbox-entrypoint /usr/local/bin/code \
     && cat >> /etc/zsh/zshrc <<'EOF'
 
@@ -110,6 +112,8 @@ if [[ -f /tmp/devbox-welcome-pending ]]; then
     printf '\033[1;36m                 DEVBOX READY                 \033[0m\n'
     printf '\033[1;36m==============================================\033[0m\n'
     printf '\n'
+    printf '  DevBox version:   %s\n' "$(cat /etc/devbox-version)"
+    printf '  Base image:       Alpine Linux %s\n' "$(cut -d. -f1,2 /etc/alpine-release)"
     printf '  User:             %s\n' "$(id -un 2>/dev/null || printf '%s' "${USERNAME:-devuser}")"
     printf '  Workspace:        %s\n' "$PWD"
     printf '  Home:             %s\n' "$HOME"
