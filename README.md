@@ -51,6 +51,20 @@ Host
 
 The workspace is mounted in the container at `/workspace`. Project Compose files remain in their own directories and do not need to be changed by DevBox.
 
+### Development port forwarding
+
+DevBox publishes common development ports from the container to the host, bound **only to `127.0.0.1`**. This lets the host browser open links printed by tools such as Uvicorn, Vite, and other local development servers without changing a project's Compose file.
+
+Published host/container ports are `3000–3010`, `4173`, `5000–5010`, `5173`, `8000–8010`, `8080–8090`, and `9000–9010`. The host and container use the same port number. For example, an API listening on container port `8000` is reachable on the host at `http://127.0.0.1:8000`.
+
+Applications started directly inside DevBox must bind to `0.0.0.0`, not `127.0.0.1`, so Docker can forward traffic to them. For example:
+
+```bash
+uv run uvicorn warranty_manager.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+The host-side bindings are loopback-only and are not exposed to other machines on the network. If a published host port is already occupied, Docker may refuse to start DevBox; stop the conflicting host service or adjust the published port list in `docker/docker-compose.yml`.
+
 ## Requirements
 
 - Linux host.
@@ -114,7 +128,7 @@ Use `devbox clean` only when you intentionally want to remove DevBox's persisted
 
 ## Inside the container
 
-After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.\n\nEvery interactive Zsh prompt inside the container is prefixed with a green `[DEVBOX]` marker. The existing theme, current directory, and Git branch/status decorations remain intact; the host terminal prompt is not changed.
+After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.\n\nEvery interactive Zsh prompt inside the container uses a compact two-line layout: a green `[DEVBOX]` marker, the current directory, the Git branch, and a separate command line. The host terminal prompt is not changed.
 
 The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`.
 
