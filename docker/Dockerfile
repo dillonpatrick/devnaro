@@ -98,6 +98,9 @@ RUN mkdir -p /run/devbox-host \
     && chmod +x /usr/local/bin/devbox-entrypoint /usr/local/bin/code \
     && cat >> /etc/zsh/zshrc <<'EOF'
 
+# Restore DevBox-managed tools after login profiles adjust PATH.
+export PATH="/home/${USERNAME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
+
 function dm() { devbox-manager "$@"; }
 
 if [[ -f /tmp/devbox-welcome-pending ]]; then
