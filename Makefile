@@ -8,9 +8,9 @@
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-	awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
+	awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $1, $$2}'
 
-install: ## Install the host-side DevBox command
+install: ## Install the host-side devbox command
 	@bash ./scripts/host/install.sh
 
 build: ## Build DevBox image
@@ -26,5 +26,5 @@ config: ## Validate Docker Compose configuration
 	@docker compose --project-directory . -f docker/docker-compose.yml config --quiet
 	@echo "Docker Compose configuration is valid."
 
-clean: ## Remove DevBox container, Compose network and devbox_home volume
-	@bash ./scripts/host/stop.sh
+clean: ## Remove DevBox containers, networks, volumes, and local images
+	@bash ./scripts/host/clean.sh

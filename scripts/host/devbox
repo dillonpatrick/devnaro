@@ -18,14 +18,15 @@ Usage:
   devbox [command]
 
 Commands:
-  start             Build and start DevBox
-  stop              Stop and remove DevBox resources
-  restart           Restart DevBox
-  shell             Enter the DevBox container (default)
-  status            Show DevBox container status
-  logs              Show DevBox container logs
+  start             Build (if needed) and start DevBox
+  stop              Stop the DevBox container without removing resources
+  clean             Remove DevBox containers, networks, volumes, and local images
+  restart           Recreate DevBox while preserving its home volume
+  shell             Enter the running DevBox container (default)
+  status            Show container status
+  logs              Show container logs
   networks          Show networks connected to DevBox
-  doctor            Run DevBox health checks
+  doctor            Run health checks
   config            Show machine-specific configuration
   config set workspace PATH  Set workspace directory
   manager status    Show Network Manager process status (or: dm status)
@@ -34,10 +35,10 @@ Commands:
 
 Examples:
   devbox start
+  devbox stop
+  devbox clean
   devbox status
   devbox
-  dm status
-  dm logs
 EOF
 }
 
@@ -92,6 +93,9 @@ case "$command" in
     stop)
         exec "$DEVBOX_DIR/scripts/host/stop.sh"
         ;;
+    clean)
+        exec bash "$DEVBOX_DIR/scripts/host/clean.sh"
+        ;;
     restart)
         USER_UID="$(id -u)"
         RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
@@ -143,6 +147,7 @@ case "$command" in
                         ;;
                     *)
                         printf 'Supported key: workspace\n' >&2
+                        usage >&2
                         exit 2
                         ;;
                 esac
