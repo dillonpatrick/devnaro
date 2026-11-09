@@ -120,7 +120,6 @@ if [[ -f /tmp/devbox-welcome-pending ]]; then
     fi
     printf '\n'
     printf '\033[1;37m  Useful commands\033[0m\n'
-    printf '  cd /workspace                         Browse your projects\n'
     printf '  code .                                Open current project in VS Code\n'
     printf '  dm status                             Container status\n'
     printf '  dm doctor                             Environment health checks\n'
