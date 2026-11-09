@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Host-side Unix socket bridge that opens DevBox paths in the host VS Code."""
+"""Host-side bridge that opens DevBox paths in VS Code with a DevBox terminal profile."""
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
 import socketserver
 import subprocess
-import threading
 from pathlib import Path
 
 
@@ -32,6 +32,11 @@ class BridgeHandler(socketserver.StreamRequestHandler):
             if not target.exists():
                 raise ValueError(f"Path does not exist: {container_path}")
 
+            # VS Code workspace folders must be directories. For a file request,
+            # open its containing project directory.
+            folder = target if target.is_dir() else target.parent
+            container_folder = Path("/workspace") / folder.relative_to(workspace)
+
             vscode = shutil.which("code")
             if not vscode:
                 raise RuntimeError(
@@ -39,8 +44,37 @@ class BridgeHandler(socketserver.StreamRequestHandler):
                     "Install VS Code and make its 'code' command available."
                 )
 
+            bridge_script = Path(__file__).with_name("vscode-terminal.sh").resolve()
+            if not bridge_script.is_file():
+                raise RuntimeError(f"VS Code terminal launcher not found: {bridge_script}")
+
+            cache_root = Path(
+                os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))
+            ) / "devbox" / "vscode-workspaces"
+            cache_root.mkdir(parents=True, exist_ok=True)
+
+            workspace_id = hashlib.sha256(str(folder).encode()).hexdigest()[:16]
+            workspace_file = cache_root / f"{workspace_id}.code-workspace"
+            workspace_config = {
+                "folders": [{"path": str(folder)}],
+                "settings": {
+                    "terminal.integrated.profiles.linux": {
+                        "DevBox": {
+                            "path": "/bin/bash",
+                            "args": [str(bridge_script), str(container_folder)],
+                            "icon": "terminal-linux",
+                        }
+                    },
+                    "terminal.integrated.defaultProfile.linux": "DevBox",
+                },
+            }
+            workspace_file.write_text(
+                json.dumps(workspace_config, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
             subprocess.Popen(
-                [vscode, "--reuse-window", str(target)],
+                [vscode, "--reuse-window", str(workspace_file)],
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
