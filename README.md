@@ -60,7 +60,7 @@ Published host/container ports are `3000–3010`, `4173`, `5000–5010`, `5173`,
 Applications started directly inside DevBox must bind to `0.0.0.0`, not `127.0.0.1`, so Docker can forward traffic to them. For example:
 
 ```bash
-uv run uvicorn warranty_manager.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn your_module:app --reload --host 0.0.0.0 --port 8000
 ```
 
 The host-side bindings are loopback-only and are not exposed to other machines on the network. If a published host port is already occupied, Docker may refuse to start DevBox; stop the conflicting host service or adjust the published port list in `docker/docker-compose.yml`.
