@@ -1,9 +1,5 @@
 services:
   devbox:
-    # ==========================================
-    # Build configuration
-    # ==========================================
-
     build:
       context: .
       dockerfile: docker/Dockerfile
@@ -15,74 +11,20 @@ services:
         TERRAFORM_VERSION: ${TERRAFORM_VERSION:-1.17.1}
         UV_VERSION: ${UV_VERSION:-0.13.7}
         OH_MY_ZSH_COMMIT: ${OH_MY_ZSH_COMMIT:-cca3bdfbef8c52ef8939ce7911ff68852b949daa}
-
-    # ==========================================
-    # Container configuration
-    # ==========================================
-
     container_name: devbox
     hostname: devbox
-
     init: true
     stdin_open: true
     tty: true
-
     command: sleep infinity
-
     restart: unless-stopped
-
-    # Publish common development ports on the host loopback only.
-    # Applications inside DevBox must listen on 0.0.0.0, not 127.0.0.1.
-    ports:
-      - "127.0.0.1:3000-3010:3000-3010"
-      - "127.0.0.1:4173:4173"
-      - "127.0.0.1:5000-5010:5000-5010"
-      - "127.0.0.1:5173:5173"
-      - "127.0.0.1:8000-8010:8000-8010"
-      - "127.0.0.1:8080-8090:8080-8090"
-      - "127.0.0.1:9000-9010:9000-9010"
-
-
-    # Reduce the container's kernel-level privileges. Docker socket access
-    # remains highly privileged and is required by DevBox.
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
-
-    # ==========================================
-    # Environment variables
-    # ==========================================
-
     environment:
       TZ: ${TZ:-UTC}
-
-    # ==========================================
-    # Volumes
-    # ==========================================
-
     volumes:
-      # Development workspace
       - ${WORKSPACE_PATH:-../workspace}:/workspace
-
-      # Host Docker socket
       - /var/run/docker.sock:/var/run/docker.sock
-
-      # Host VS Code bridge (Unix socket)
-      - ${CODE_SOCKET_PATH:-/tmp/devbox-code.sock}:/run/devbox-host/code.sock
-
-      # Persistent user home
       - devbox_home:/home/${USERNAME:-devuser}
-
-    # ==========================================
-    # Working directory
-    # ==========================================
-
     working_dir: /workspace
-
-# ==========================================
-# Persistent volumes
-# ==========================================
 
 volumes:
   devbox_home:
