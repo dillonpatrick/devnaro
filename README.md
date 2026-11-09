@@ -6,7 +6,7 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 
 ## Features
 
-- Containerized development tools based on Ubuntu 24.04.
+- Containerized development tools based on Alpine Linux 3.22.
 - Persistent workspace stored outside the DevBox container.
 - Host Docker integration through the mounted Docker socket.
 - Open the current workspace path in the host VS Code with `code .` from inside DevBox.
@@ -72,7 +72,7 @@ The host-side bindings are loopback-only and are not exposed to other machines o
 - Bash, Git, and GNU Make.
 - Access to `/var/run/docker.sock`.
 
-The container image is based on Ubuntu 24.04. The host may use another Linux distribution if the requirements above are available. Python 3 is also required on the host for the VS Code path bridge.
+The container image is based on Alpine Linux 3.22. The host may use another Linux distribution if the requirements above are available. Python 3 is also required on the host for the VS Code path bridge.
 
 ## Installation
 
