@@ -94,7 +94,7 @@ case "$command" in
         exec "$DEVBOX_DIR/scripts/host/stop.sh"
         ;;
     clean)
-        exec "$DEVBOX_DIR/scripts/host/clean.sh"
+        exec bash "$DEVBOX_DIR/scripts/host/clean.sh"
         ;;
     restart)
         USER_UID="$(id -u)"
