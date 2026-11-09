@@ -8,9 +8,11 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 
 - Containerized development tools based on Ubuntu 24.04.
 - Persistent workspace stored outside the DevBox container.
-- Host Docker integration through the mounted Docker socket.\n- Open the current workspace path in the host VS Code with `code .` from inside DevBox.
+- Host Docker integration through the mounted Docker socket.
+- Open the current workspace path in the host VS Code with `code .` from inside DevBox.
 - Automatic discovery and connection to eligible Docker Compose bridge networks.
-- Persistent home directory across normal container restarts.
+- Persistent home directory across normal container stops and restarts.
+- Separate stop and clean lifecycle operations.
 - Host CLI for lifecycle operations and container-side CLI for diagnostics.
 - Zsh, Oh My Zsh (pinned commit), Terraform 1.17.1, Docker CLI, Python 3.12+, uv 0.13.7, Typer, and Rich.
 
@@ -33,6 +35,7 @@ Host
 |   |   |   +-- install.sh
 |   |   |   +-- start.sh
 |   |   |   +-- stop.sh
+|   |   |   +-- clean.sh
 |   |   +-- container/
 |   |       +-- entrypoint.sh
 |   +-- src/devbox_manager/
@@ -84,26 +87,47 @@ Run these commands in a host terminal:
 | Command | Description |
 |---|---|
 | `devbox` or `devbox shell` | Enter the running DevBox container |
-| `devbox start` | Build and start DevBox |
-| `devbox stop` | Remove DevBox container, Compose network, and home volume |
+| `devbox start` | Build (if needed) and start DevBox |
+| `devbox stop` | Stop the container without removing resources |
+| `devbox clean` | Remove DevBox containers, networks, volumes, and local images |
 | `devbox restart` | Recreate DevBox while preserving its home volume |
 | `devbox status` | Show container status |
-| `devbox logs` | Show DevBox container logs |
+| `devbox logs` | Show container logs |
 | `devbox networks` | Show networks connected to DevBox |
 | `devbox doctor` | Run container-side health checks |
 | `devbox manager status` | Show Network Manager process status |
 | `devbox manager logs` | Show Network Manager logs |
 | `devbox config` | Show machine-specific configuration |
 | `devbox config set workspace PATH` | Set the workspace directory |
-| `devbox help` | Show host CLI help |
+| `devbox help` | Show this help message |
 
 Machine-specific settings are stored outside the repository in `~/.config/devbox/config` (or `$XDG_CONFIG_HOME/devbox/config`). An explicitly exported `WORKSPACE_PATH` takes precedence over the saved workspace setting.
 
+### Lifecycle behavior
+
+- **Stop:** runs `docker compose stop devbox`. The container remains stopped, and its image, Compose network, `devbox_home` volume, workspace, and host VS Code bridge are preserved. Use `devbox start` to bring it back.
+- **Start:** runs the normal startup flow. Docker Compose reuses the existing stopped container and persistent volume when possible.
+- **Restart:** recreates the container and Compose network while preserving `devbox_home`; the host VS Code bridge is restarted.
+- **Clean:** runs Compose cleanup for the DevBox project, removes its Compose-managed volumes and locally built images, and stops/removes the host VS Code bridge. It does not delete the workspace or resources belonging to other Compose projects.
+
+Use `devbox clean` only when you intentionally want to remove DevBox's persisted home configuration and local image. A subsequent `devbox start` rebuilds what is needed.
+
 ## Inside the container
 
-After entering DevBox, the first interactive Zsh session after each container start or restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
+After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 
-The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`.\n\n### Open VS Code on the host\n\nThe `code` command inside DevBox forwards the current directory to the VS Code CLI installed on the Linux host. From any project directory, run:\n\n```bash\ncd /workspace/project-1\ncode .\n```\n\nThe host-side bridge is started by `devbox start` and stopped by `devbox stop`. The host must have the VS Code `code` command available on its `PATH`. The bridge only opens paths inside the configured workspace.
+The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`.
+
+### Open VS Code on the host
+
+The `code` command inside DevBox forwards the current directory to the VS Code CLI installed on the Linux host. From any project directory, run:
+
+```bash
+cd /workspace/project-1
+code .
+```
+
+The host-side bridge is started by `devbox start` and removed by `devbox clean`. The host must have the VS Code `code` command available on its `PATH`. The bridge only opens paths inside the configured workspace.
 
 | Command | Description |
 |---|---|
@@ -111,8 +135,7 @@ The `dm` command is a Zsh function available **inside the container only**. It i
 | `dm doctor` | Run environment health checks |
 | `dm networks` | List networks connected to DevBox |
 | `dm network-manager status` | Check Network Manager process |
-| `dm network-manager logs` | Show recent Network Manager logs |
-| `dm network-manager logs -n 100` | Show the last 100 log lines |
+| `dm network-manager logs` | Show recent log lines |
 | `docker ps` | List running containers |
 | `docker compose up -d` | Start services in the current project directory |
 
@@ -135,7 +158,7 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 | `make rebuild` | Rebuild the image without cache |
 | `make test` | Run Python unit tests (DevBox must be running) |
 | `make config` | Validate Docker Compose configuration |
-| `make clean` | Remove DevBox container, Compose network, and `devbox_home` volume |
+| `make clean` | Remove DevBox containers, networks, volumes, and local images |
 
 ## Python CLI
 
@@ -195,29 +218,6 @@ The Network Manager also supports:
 | `NETWORK_COMPOSE_ONLY` | `true` | Only manage Compose networks |
 | `NETWORK_EXCLUDE_INTERNAL` | `true` | Ignore internal networks |
 | `NETWORK_MANAGER_STATE_DIR` | User state directory | Persistent manager state location |
-
-## Stopping and cleanup
-
-Run on the host:
-
-```bash
-devbox stop
-```
-
-This removes:
-
-- The DevBox container.
-- The DevBox Compose network.
-- The `devbox_home` volume.
-
-It preserves:
-
-- Workspace files.
-- Containers belonging to other Compose projects.
-- Volumes belonging to other Compose projects.
-- Docker images.
-
-**Important:** removing `devbox_home` also removes the persisted Zsh configuration and Network Manager state. These are recreated from defaults the next time DevBox starts. Use `devbox restart` instead if you want to recreate the container while preserving this volume.
 
 ## Security
 
