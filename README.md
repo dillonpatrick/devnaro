@@ -120,7 +120,11 @@ The `dm` command is a Zsh function available **inside the container only**. It i
 
 ### Open VS Code on the host
 
-The `code` command inside DevBox forwards the current directory to the VS Code CLI installed on the Linux host. From any project directory, run:
+The `code` command inside DevBox forwards the current directory to the VS Code CLI installed on the Linux host. It opens the project as a temporary VS Code workspace (stored under the host cache, not inside the project) and configures **DevBox** as that workspace's default integrated terminal profile. Open the terminal with <kbd>Ctrl</kbd>+<kbd>`</kbd> or **Terminal → New Terminal**; it starts a Zsh session inside the running DevBox container at the matching `/workspace/...` directory. Additional terminals in that workspace use the same profile.
+
+If DevBox is stopped, the terminal displays an instruction to run `devbox start` from a host terminal; it does not start or recreate the container automatically. The host must have Docker Compose access and the VS Code `code` command available.
+
+From any project directory, run:
 
 ```bash
 cd /workspace/project-1
