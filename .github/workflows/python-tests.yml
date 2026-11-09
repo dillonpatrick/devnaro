@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - feat/python-cli-foundation
-      - feat/stop-clean-lifecycle
+      - feat/stop-clean-lifecycle\n      - feat/alpine-linux-experiment
   pull_request:
     branches:
       - main
