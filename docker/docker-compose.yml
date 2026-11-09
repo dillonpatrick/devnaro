@@ -24,6 +24,11 @@ services:
       - ${WORKSPACE_PATH:-../workspace}:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
       - devbox_home:/home/${USERNAME:-devuser}
+      - type: bind
+        source: ${CODE_SOCKET_PATH:-/tmp/devbox-code-1000.sock}
+        target: /run/devbox-host/code.sock
+        bind:
+          create_host_path: false
     working_dir: /workspace
 
 volumes:
