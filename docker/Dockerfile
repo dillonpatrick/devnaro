@@ -94,7 +94,8 @@ COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint
 COPY scripts/container/code /usr/local/bin/code
 
 USER root
-RUN chmod +x /usr/local/bin/devbox-entrypoint /usr/local/bin/code \
+RUN mkdir -p /run/devbox-host \
+    && chmod +x /usr/local/bin/devbox-entrypoint /usr/local/bin/code \
     && cat >> /etc/zsh/zshrc <<'EOF'
 
 function dm() { devbox-manager "$@"; }
