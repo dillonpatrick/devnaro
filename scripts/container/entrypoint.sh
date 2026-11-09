@@ -11,6 +11,9 @@ if [ -f "$ZSHRC" ]; then
 
 # DevBox prompt identity
 PROMPT="%F{green}[DEVBOX]%f ${PROMPT}"
+
+# Ensure DevBox-managed tools remain available after user Zsh configuration.
+export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
 EOF
 fi
 

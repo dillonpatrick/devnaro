@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - feat/python-cli-foundation
-      - feat/stop-clean-lifecycle
+      - feat/stop-clean-lifecycle\n      - feat/alpine-linux-experiment
   pull_request:
     branches:
       - main
@@ -49,6 +49,7 @@ jobs:
           bash -n scripts/host/start.sh
           bash -n scripts/host/stop.sh
           bash -n scripts/host/clean.sh
+          sh -n scripts/container/entrypoint.sh
           python3 -m py_compile scripts/host/code_bridge.py scripts/container/code
 
       - name: Validate Docker Compose configuration
