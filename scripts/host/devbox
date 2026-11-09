@@ -62,9 +62,11 @@ config_get() {
 config_set() {
     local key="$1"
     local value="$2"
+
     install -d -m 700 "$CONFIG_DIR"
     touch "$CONFIG_FILE"
     chmod 600 "$CONFIG_FILE"
+
     local temp_file
     temp_file="$(mktemp)"
     awk -F= -v key="$key" '$1 != key { print }' "$CONFIG_FILE" > "$temp_file"
@@ -76,10 +78,14 @@ config_set() {
 show_config() {
     printf 'DevBox machine configuration\n'
     printf '  Config file: %s\n' "$CONFIG_FILE"
+
+    local workspace_path
     workspace_path="$(config_get workspace_path)"
+
     if [[ -z "$workspace_path" ]]; then
         workspace_path="$DEVBOX_DIR/../workspace (default)"
     fi
+
     printf '  Workspace:   %s\n' "$workspace_path"
     printf '  Repository:  %s\n' "$DEVBOX_DIR"
 }
@@ -101,16 +107,18 @@ case "$command" in
         RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
         CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
         CODE_SOCKET_PATH="$RUNTIME_DIR/devbox-code-$USER_UID.sock"
+
         if [[ -f "$CODE_BRIDGE_PID" ]]; then
             kill "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null || true
         fi
+
         rm -f "$CODE_BRIDGE_PID" "$CODE_SOCKET_PATH"
         compose down --remove-orphans
         exec "$DEVBOX_DIR/scripts/host/start.sh"
         ;;
     shell|enter)
         require_running
-        exec docker compose --project-directory "$DEVBOX_DIR" -f "$DEVBOX_DIR/docker/docker-compose.yml" exec devbox zsh
+        exec compose exec devbox zsh
         ;;
     status)
         compose ps devbox
@@ -120,7 +128,7 @@ case "$command" in
         ;;
     networks)
         require_running
-        exec docker compose --project-directory "$DEVBOX_DIR" -f "$DEVBOX_DIR/docker/docker-compose.yml" exec devbox devbox-manager networks
+        exec compose exec devbox devbox-manager networks
         ;;
     config)
         case "${2:-show}" in
@@ -130,7 +138,10 @@ case "$command" in
             get)
                 case "${3:-}" in
                     workspace) config_get workspace_path ;;
-                    *) printf 'Supported key: workspace\n' >&2; exit 2 ;;
+                    *)
+                        printf 'Supported key: workspace\n' >&2
+                        exit 2
+                        ;;
                 esac
                 ;;
             set)
@@ -140,6 +151,7 @@ case "$command" in
                             printf 'Usage: devbox config set workspace PATH\n' >&2
                             exit 2
                         fi
+
                         mkdir -p "$4"
                         workspace_path="$(cd -- "$4" && pwd)"
                         config_set workspace_path "$workspace_path"
@@ -160,17 +172,18 @@ case "$command" in
         ;;
     doctor)
         require_running
-        exec docker compose --project-directory "$DEVBOX_DIR" -f "$DEVBOX_DIR/docker/docker-compose.yml" exec devbox devbox-manager doctor
+        exec compose exec devbox devbox-manager doctor
         ;;
     manager)
         subcommand="${2:-status}"
         require_running
+
         case "$subcommand" in
             status)
-                exec docker compose --project-directory "$DEVBOX_DIR" -f "$DEVBOX_DIR/docker/docker-compose.yml" exec devbox devbox-manager network-manager status
+                exec compose exec devbox devbox-manager network-manager status
                 ;;
             logs)
-                exec docker compose --project-directory "$DEVBOX_DIR" -f "$DEVBOX_DIR/docker/docker-compose.yml" exec devbox devbox-manager network-manager logs
+                exec compose exec devbox devbox-manager network-manager logs
                 ;;
             *)
                 printf 'Unknown manager command: %s\n' "$subcommand" >&2
