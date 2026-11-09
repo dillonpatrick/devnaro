@@ -1,20 +1,16 @@
 #!/usr/bin/env sh
 set -eu
 
-# Keep the prompt identity in the persistent home volume, but normalize older
-# versions of the DevBox prompt so repeated starts never stack prefixes.
+# Keep a single-line prompt and preserve the active Oh My Zsh theme/Git info.
+# Normalize any previous DevBox prompt snippets in the persistent home volume.
 ZSHRC="${HOME}/.zshrc"
-PROMPT_MARKER="# DevBox prompt identity"
 
 if [ -f "$ZSHRC" ]; then
     sed -i '/^# DevBox prompt identity$/,/^PROMPT=/d' "$ZSHRC"
     cat >> "$ZSHRC" <<'EOF'
 
 # DevBox prompt identity
-# Compact two-line prompt: container, current directory, Git branch, command.
-setopt PROMPT_SUBST
-PROMPT='%F{green}[DEVBOX]%f %F{cyan}%1~%f %F{yellow}$(git_prompt_info)%f
-%F{green}❯%f '
+PROMPT="%F{green}[DEVBOX]%f ${PROMPT}"
 EOF
 fi
 
