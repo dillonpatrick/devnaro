@@ -108,8 +108,9 @@ if [[ -f /tmp/devbox-welcome-pending ]]; then
     printf '\n\033[1;36m==============================================\033[0m\n'
     printf '\033[1;36m           DEVBOX READY             \033[0m\n'
     printf '\033[1;36m==============================================\033[0m\n\n'
-    printf '  User:       %s\n' "$USER"
-    printf '  Workspace:  %s\n\n' "$PWD"
+    printf '  User:       %s\n' "$(id -un 2>/dev/null || printf '%s' "${USERNAME:-devuser}")"
+    printf '  Workspace:  %s\n' "$PWD"
+    printf '  Home:       %s\n\n' "$HOME"
 fi
 EOF
 
