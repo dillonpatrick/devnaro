@@ -95,7 +95,7 @@ COPY scripts/container/code /usr/local/bin/code
 
 USER root
 RUN mkdir -p /run/devbox-host \
-    && sed -n '/^\[project\]/,/^\[/ s/^version = "\\(.*\\)"/\\1/p' /opt/devbox-cli/pyproject.toml > /etc/devbox-version \
+    && awk -F '"' '/^\[project\]/ { in_project=1; next } /^\[/ { in_project=0 } in_project && /^version = / { print $2; exit }' /opt/devbox-cli/pyproject.toml > /etc/devbox-version \
     && test -s /etc/devbox-version \
     && chmod +x /usr/local/bin/devbox-entrypoint /usr/local/bin/code \
     && cat >> /etc/zsh/zshrc <<'EOF'
