@@ -136,7 +136,7 @@ After entering DevBox, the first interactive Zsh session after each container st
 
 Every interactive Zsh prompt inside the container stays on one line, with a green `[DEVBOX]` marker before the existing theme, current directory, and Git branch/status decorations. The host terminal prompt is not changed.
 
-The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`.
+The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`. Zsh tab completion for `devbox-manager` is enabled automatically; no manual installation command is needed.
 
 ### Open VS Code on the host
 
