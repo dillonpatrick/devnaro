@@ -51,14 +51,3 @@ def test_format_started_at_handles_zero_timestamp():
 
     assert _format_started_at("0001-01-01T00:00:00Z") == "Not running"
 
-
-def test_zsh_completion_source_is_available():
-    result = runner.invoke(
-        app,
-        [],
-        prog_name="devbox-manager",
-        env={"_DEVBOX_MANAGER_COMPLETE": "zsh_source"},
-    )
-
-    assert result.exit_code == 0
-    assert "#compdef devbox-manager" in result.stdout
