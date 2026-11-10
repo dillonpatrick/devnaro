@@ -17,13 +17,39 @@ export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
 EOF
 fi
 
-# Enable devbox-manager Zsh completion automatically for the container user.
-if [ -f "$ZSHRC" ] && ! grep -q '^# DevBox CLI completion$' "$ZSHRC"; then
-    cat >> "$ZSHRC" <<'EOF'
+# Replace any previous completion setup and register native Zsh completions.
+if [ -f "$ZSHRC" ]; then
+    sed -i '/^# DevBox CLI completion$/,/^EOF_DEVBOX_COMPLETION$/d' "$ZSHRC"
+    if ! grep -q '^# DevBox CLI completion
+# A fresh marker is created whenever the container starts or restarts.
+: > /tmp/devbox-welcome-pending
+exec "$@"
+ "$ZSHRC"; then
+        cat >> "$ZSHRC" <<'EOF'
 
 # DevBox CLI completion
-eval "$(_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager)"
+autoload -Uz compinit
+if (( ! $+functions[compdef] )); then
+    compinit
+fi
+
+_devbox_manager_completion() {
+    local -a commands
+    commands=(status networks doctor network-manager)
+
+    if (( CURRENT == 2 )); then
+        compadd -- $commands
+    elif [[ "${words[2]}" == "network-manager" && CURRENT == 3 ]]; then
+        compadd -- status logs
+    elif [[ "${words[2]}" == "network-manager" && "${words[3]}" == "logs" && CURRENT == 4 ]]; then
+        compadd -- --lines -n
+    fi
+}
+
+compdef _devbox_manager_completion devbox-manager
+compdef _devbox_manager_completion dm
 EOF
+    fi
 fi
 
 # A fresh marker is created whenever the container starts or restarts.
