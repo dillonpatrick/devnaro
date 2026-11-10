@@ -13,6 +13,7 @@ def test_cli_help():
 
     assert result.exit_code == 0
     assert "Inspect and troubleshoot your DevBox environment" in result.stdout
+    assert "--install-completion" not in result.stdout
 
 
 def test_cli_version():
