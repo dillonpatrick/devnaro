@@ -92,7 +92,7 @@ Start the environment:
 devbox start
 ```
 
-The startup script detects host and Docker socket IDs, prepares the workspace, writes the local `.env`, validates the Compose configuration, builds and starts the container, and starts the Network Manager. It does not automatically enter the container.
+The startup script detects host and Docker socket IDs, prepares the workspace, writes the local `.env`, and validates the Compose configuration. If the container is already running, it leaves it untouched; if it exists but is stopped, it starts that container without rebuilding; if it does not exist, it builds the image and creates the container. It then ensures the host VS Code bridge and Network Manager are running. It does not automatically enter the container.
 
 ## Host commands
 
@@ -101,7 +101,7 @@ Run these commands in a host terminal:
 | Command | Description |
 |---|---|
 | `devbox` or `devbox shell` | Enter the running DevBox container |
-| `devbox start` | Build (if needed) and start DevBox |
+| `devbox start` | Start an existing container or build and create one if absent |
 | `devbox stop` | Stop the container without removing resources |
 | `devbox clean` | Remove DevBox containers, networks, volumes, and local images |
 | `devbox restart` | Recreate DevBox while preserving its home volume |
@@ -121,7 +121,7 @@ Machine-specific settings are stored outside the repository in `~/.config/devbox
 ### Lifecycle behavior
 
 - **Stop:** runs `docker compose stop devbox`. The container remains stopped, and its image, Compose network, `devbox_home` volume, workspace, and host VS Code bridge are preserved. Use `devbox start` to bring it back.
-- **Start:** runs the normal startup flow. Docker Compose reuses the existing stopped container and persistent volume when possible.
+- **Start:** leaves an already-running container untouched; starts an existing stopped container without rebuilding; builds the image and creates a container only when no container exists. It does not apply Dockerfile or Compose changes to an existing container. Use `devbox restart` to recreate the container and apply those changes while preserving `devbox_home`.
 - **Restart:** recreates the container and Compose network while preserving `devbox_home`; the host VS Code bridge is restarted.
 - **Recreate all:** asks for confirmation, then removes the DevBox container, Compose network, `devbox_home` volume, local image, and host VS Code bridge before running the full startup flow. Workspace files and resources from other Compose projects are preserved. Files and settings stored in `devbox_home` are permanently lost.
 - **Clean:** runs Compose cleanup for the DevBox project, removes its Compose-managed volumes and locally built images, and stops/removes the host VS Code bridge. It does not delete the workspace or resources belonging to other Compose projects.
