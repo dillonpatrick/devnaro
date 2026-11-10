@@ -362,7 +362,8 @@ printf '  %b%-22s%b %s\n' "${GREEN}" "devbox shell" "${RESET}" "Enter DevBox"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox status" "${RESET}" "Container status"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox manager logs" "${RESET}" "Network Manager logs"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox networks" "${RESET}" "Docker networks"
-printf '  %b%-22s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Remove DevBox resources"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Stop DevBox container"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox recreate-all" "${RESET}" "Recreate all DevBox resources"
 
 printf '\n'
 line
