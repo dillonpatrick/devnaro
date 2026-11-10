@@ -383,8 +383,8 @@ printf '  %b%-22s%b %s\n' "${GREEN}" "devbox manager logs" "${RESET}" "Network M
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox networks" "${RESET}" "Docker networks"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Stop DevBox container"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox recreate-all" "${RESET}" "Recreate all DevBox resources"
-printf '  %b%-22s%b %s\\n' "${GREEN}" "devbox restart" "${RESET}" "Restart container only"
-printf '  %b%-22s%b %s\\n' "${GREEN}" "devbox recreate" "${RESET}" "Recreate container and network"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox restart" "${RESET}" "Restart container only"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox recreate" "${RESET}" "Recreate container and network"
 
 printf '\n'
 line
