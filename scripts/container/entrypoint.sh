@@ -48,6 +48,7 @@ _devbox_manager_completion() {
 
 compdef _devbox_manager_completion devbox-manager
 compdef _devbox_manager_completion dm
+# END DEVBOX CLI COMPLETION
 EOF
     fi
 fi
