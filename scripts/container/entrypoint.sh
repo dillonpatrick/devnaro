@@ -17,6 +17,11 @@ export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
 EOF
 fi
 
+# Make the mounted workspace easy to reach from the container home directory.
+if [ -d "/workspace" ] && [ ! -e "${HOME}/workspace" ] && [ ! -L "${HOME}/workspace" ]; then
+    ln -s /workspace "${HOME}/workspace"
+fi
+
 # Replace the previous unsupported Click shell-source hook with native Zsh completion.
 if [ -f "$ZSHRC" ]; then
     sed -i '/^# DevBox CLI completion$/d; /_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager/d' "$ZSHRC"
