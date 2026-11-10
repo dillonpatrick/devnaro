@@ -31,6 +31,15 @@ APP_NAME="DEVBOX"
 
 TOTAL_STEPS=8
 
+# Resolve the repository and package version before rendering the banner.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+APP_VERSION="$(awk -F '"' '/^\[project\]/ { in_project=1; next } /^\[/ { in_project=0 } in_project && /^version = / { print $2; exit }' "$SCRIPT_DIR/pyproject.toml")"
+
+if [[ -z "$APP_VERSION" ]]; then
+    printf 'Unable to determine DevBox version from pyproject.toml.\n' >&2
+    exit 1
+fi
+
 # ==========================================
 # UI functions
 # ==========================================
@@ -122,15 +131,6 @@ printf '\n'
 
 section 1 "Environment configuration"
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-
-# Keep the host banner version aligned with the package metadata.
-APP_VERSION="$(awk -F '"' '/^\[project\]/ { in_project=1; next } /^\[/ { in_project=0 } in_project && /^version = / { print $2; exit }' "$SCRIPT_DIR/pyproject.toml")"
-
-if [[ -z "$APP_VERSION" ]]; then
-    error "Unable to determine DevBox version from pyproject.toml."
-    exit 1
-fi
 
 cd "$SCRIPT_DIR"
 compose() { docker compose --project-directory "$SCRIPT_DIR" -f "$SCRIPT_DIR/docker/docker-compose.yml" "$@"; }
