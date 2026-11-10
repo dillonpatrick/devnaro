@@ -125,7 +125,7 @@ section 1 "Environment configuration"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Keep the host banner version aligned with the package metadata.
-APP_VERSION="$(awk -F '"' '/^\[project\]/ { in_project=1; next } /^\[/ { in_project=0 } in_project && /^version = / { print $2; exit }'"'"' "$SCRIPT_DIR/pyproject.toml")"
+APP_VERSION="$(awk -F '"' '/^\[project\]/ { in_project=1; next } /^\[/ { in_project=0 } in_project && /^version = / { print $2; exit }' "$SCRIPT_DIR/pyproject.toml")"
 
 if [[ -z "$APP_VERSION" ]]; then
     error "Unable to determine DevBox version from pyproject.toml."
