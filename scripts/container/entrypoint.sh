@@ -17,17 +17,14 @@ export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
 EOF
 fi
 
-# Replace any previous completion setup and register native Zsh completions.
+# Replace the previous unsupported Click shell-source hook with native Zsh completion.
 if [ -f "$ZSHRC" ]; then
-    sed -i '/^# DevBox CLI completion$/,/^EOF_DEVBOX_COMPLETION$/d' "$ZSHRC"
-    if ! grep -q '^# DevBox CLI completion
-# A fresh marker is created whenever the container starts or restarts.
-: > /tmp/devbox-welcome-pending
-exec "$@"
- "$ZSHRC"; then
+    sed -i '/^# DevBox CLI completion$/d; /_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager/d' "$ZSHRC"
+    sed -i '/^# BEGIN DEVBOX CLI COMPLETION$/,/^# END DEVBOX CLI COMPLETION$/d' "$ZSHRC"
+    if ! grep -q '^# BEGIN DEVBOX CLI COMPLETION$' "$ZSHRC"; then
         cat >> "$ZSHRC" <<'EOF'
 
-# DevBox CLI completion
+# BEGIN DEVBOX CLI COMPLETION
 autoload -Uz compinit
 if (( ! $+functions[compdef] )); then
     compinit
