@@ -105,6 +105,7 @@ Run these commands in a host terminal:
 | `devbox stop` | Stop the container without removing resources |
 | `devbox clean` | Remove DevBox containers, networks, volumes, and local images |
 | `devbox restart` | Recreate DevBox while preserving its home volume |
+| `devbox recreate-all` | Rebuild all DevBox resources, including the home volume |
 | `devbox status` | Show container status |
 | `devbox logs` | Show container logs |
 | `devbox networks` | Show networks connected to DevBox |
@@ -122,6 +123,7 @@ Machine-specific settings are stored outside the repository in `~/.config/devbox
 - **Stop:** runs `docker compose stop devbox`. The container remains stopped, and its image, Compose network, `devbox_home` volume, workspace, and host VS Code bridge are preserved. Use `devbox start` to bring it back.
 - **Start:** runs the normal startup flow. Docker Compose reuses the existing stopped container and persistent volume when possible.
 - **Restart:** recreates the container and Compose network while preserving `devbox_home`; the host VS Code bridge is restarted.
+- **Recreate all:** asks for confirmation, then removes the DevBox container, Compose network, `devbox_home` volume, local image, and host VS Code bridge before running the full startup flow. Workspace files and resources from other Compose projects are preserved. Files and settings stored in `devbox_home` are permanently lost.
 - **Clean:** runs Compose cleanup for the DevBox project, removes its Compose-managed volumes and locally built images, and stops/removes the host VS Code bridge. It does not delete the workspace or resources belonging to other Compose projects.
 
 Use `devbox clean` only when you intentionally want to remove DevBox's persisted home configuration and local image. A subsequent `devbox start` rebuilds what is needed.
