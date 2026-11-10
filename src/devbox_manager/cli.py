@@ -21,6 +21,7 @@ app = typer.Typer(
     name="devbox-manager",
     help="Inspect and troubleshoot your DevBox environment.",
     no_args_is_help=True,
+    add_completion=False,
     invoke_without_command=True,
     rich_markup_mode="rich",
 )
