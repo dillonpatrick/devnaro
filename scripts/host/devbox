@@ -21,7 +21,8 @@ Commands:
   start             Build (if needed) and start DevBox
   stop              Stop the DevBox container without removing resources
   clean             Remove DevBox containers, networks, volumes, and local images
-  restart           Recreate DevBox while preserving its home volume
+  restart           Restart the existing DevBox container only
+  recreate          Recreate the container and network while preserving its home volume
   recreate-all      Rebuild all DevBox resources, including network and home volume
   shell             Enter the running DevBox container (default)
   status            Show container status
@@ -121,6 +122,13 @@ case "$command" in
         exec "$DEVBOX_DIR/scripts/host/start.sh"
         ;;
     restart)
+        if ! compose ps --all --services | grep -Fxq devbox; then
+            printf 'DevBox container does not exist. Use: devbox start\n' >&2
+            exit 1
+        fi
+        compose restart devbox
+        ;;
+    recreate)
         USER_UID="$(id -u)"
         RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
         CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
