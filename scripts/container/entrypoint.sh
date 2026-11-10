@@ -36,9 +36,9 @@ _devbox_manager_completion() {
 
     if (( CURRENT == 2 )); then
         compadd -- $commands
-    elif [[ "${words[2]}" == "network-manager" && CURRENT == 3 ]]; then
+    elif [[ "${words[2]}" == "network-manager" ]] && (( CURRENT == 3 )); then
         compadd -- status logs
-    elif [[ "${words[2]}" == "network-manager" && "${words[3]}" == "logs" && CURRENT == 4 ]]; then
+    elif [[ "${words[2]}" == "network-manager" && "${words[3]}" == "logs" ]] && (( CURRENT == 4 )); then
         compadd -- --lines -n
     fi
 }
