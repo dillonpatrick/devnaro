@@ -13,6 +13,8 @@ def test_cli_help():
 
     assert result.exit_code == 0
     assert "Inspect and troubleshoot your DevBox environment" in result.stdout
+    assert "--install-completion" not in result.stdout
+    assert "--show-completion" not in result.stdout
 
 
 def test_cli_version():
@@ -48,3 +50,4 @@ def test_format_started_at_handles_zero_timestamp():
     from devbox_manager.cli import _format_started_at
 
     assert _format_started_at("0001-01-01T00:00:00Z") == "Not running"
+

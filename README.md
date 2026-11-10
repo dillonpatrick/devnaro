@@ -92,7 +92,7 @@ Start the environment:
 devbox start
 ```
 
-The startup script detects host and Docker socket IDs, prepares the workspace, writes the local `.env`, validates the Compose configuration, builds and starts the container, and starts the Network Manager. It does not automatically enter the container.
+The startup script detects host and Docker socket IDs, prepares the workspace, writes the local `.env`, and validates the Compose configuration. If the container is already running, it leaves it untouched; if it exists but is stopped, it starts that container without rebuilding; if it does not exist, it builds the image and creates the container. It then ensures the host VS Code bridge and Network Manager are running. It does not automatically enter the container.
 
 ## Host commands
 
@@ -101,10 +101,12 @@ Run these commands in a host terminal:
 | Command | Description |
 |---|---|
 | `devbox` or `devbox shell` | Enter the running DevBox container |
-| `devbox start` | Build (if needed) and start DevBox |
+| `devbox start` | Start an existing container or build and create one if absent |
 | `devbox stop` | Stop the container without removing resources |
 | `devbox clean` | Remove DevBox containers, networks, volumes, and local images |
-| `devbox restart` | Recreate DevBox while preserving its home volume |
+| `devbox restart` | Restart the existing container only |
+| `devbox recreate` | Recreate the container and network while preserving its home volume |
+| `devbox recreate-all` | Rebuild all DevBox resources, including the home volume |
 | `devbox status` | Show container status |
 | `devbox logs` | Show container logs |
 | `devbox networks` | Show networks connected to DevBox |
@@ -120,17 +122,21 @@ Machine-specific settings are stored outside the repository in `~/.config/devbox
 ### Lifecycle behavior
 
 - **Stop:** runs `docker compose stop devbox`. The container remains stopped, and its image, Compose network, `devbox_home` volume, workspace, and host VS Code bridge are preserved. Use `devbox start` to bring it back.
-- **Start:** runs the normal startup flow. Docker Compose reuses the existing stopped container and persistent volume when possible.
-- **Restart:** recreates the container and Compose network while preserving `devbox_home`; the host VS Code bridge is restarted.
+- **Start:** leaves an already-running container untouched; starts an existing stopped container without rebuilding; builds the image and creates a container only when no container exists. It does not apply Dockerfile or Compose changes to an existing container. Use `devbox recreate` to recreate the container and network and apply those changes while preserving `devbox_home`.
+- **Restart:** runs `docker compose restart devbox`. It only restarts the existing container; it does not recreate the container or network, rebuild the image, or change volumes.
+- **Recreate:** removes and recreates the container and Compose network while preserving `devbox_home`; the host VS Code bridge is restarted.
+- **Recreate all:** asks for confirmation, then removes the DevBox container, Compose network, `devbox_home` volume, local image, and host VS Code bridge before running the full startup flow. Workspace files and resources from other Compose projects are preserved. Files and settings stored in `devbox_home` are permanently lost.
 - **Clean:** runs Compose cleanup for the DevBox project, removes its Compose-managed volumes and locally built images, and stops/removes the host VS Code bridge. It does not delete the workspace or resources belonging to other Compose projects.
 
 Use `devbox clean` only when you intentionally want to remove DevBox's persisted home configuration and local image. A subsequent `devbox start` rebuilds what is needed.
 
 ## Inside the container
 
-After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.\n\nEvery interactive Zsh prompt inside the container stays on one line, with a green `[DEVBOX]` marker before the existing theme, current directory, and Git branch/status decorations. The host terminal prompt is not changed.
+After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 
-The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`.
+Every interactive Zsh prompt inside the container stays on one line, with a green `[DEVBOX]` marker before the existing theme, current directory, and Git branch/status decorations. The host terminal prompt is not changed.
+
+The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`. Zsh tab completion for `devbox-manager` is enabled automatically; no manual installation command is needed.
 
 ### Open VS Code on the host
 

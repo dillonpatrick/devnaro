@@ -28,9 +28,17 @@ else
 fi
 
 APP_NAME="DEVBOX"
-APP_VERSION="1.0.0"
 
 TOTAL_STEPS=8
+
+# Resolve the repository and package version before rendering the banner.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+APP_VERSION="$(awk -F '"' '/^\[project\]/ { in_project=1; next } /^\[/ { in_project=0 } in_project && /^version = / { print $2; exit }' "$SCRIPT_DIR/pyproject.toml")"
+
+if [[ -z "$APP_VERSION" ]]; then
+    printf 'Unable to determine DevBox version from pyproject.toml.\n' >&2
+    exit 1
+fi
 
 # ==========================================
 # UI functions
@@ -123,7 +131,6 @@ printf '\n'
 
 section 1 "Environment configuration"
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 cd "$SCRIPT_DIR"
 compose() { docker compose --project-directory "$SCRIPT_DIR" -f "$SCRIPT_DIR/docker/docker-compose.yml" "$@"; }
@@ -253,28 +260,47 @@ compose config --quiet
 success "Docker Compose configuration is valid."
 
 # ==========================================
-# 5. Build DevBox
+# 5. Determine the current container state
 # ==========================================
 
-section 6 "Building DevBox image"
+CONTAINER_ID="$(compose ps --all --quiet devbox)"
+CONTAINER_RUNNING=false
 
-info "Building Docker image..."
-
-compose build
-
-success "DevBox image built successfully."
+if [[ -n "$CONTAINER_ID" ]] && compose ps --status running --services | grep -Fxq devbox; then
+    CONTAINER_RUNNING=true
+fi
 
 # ==========================================
-# 6. Start DevBox
+# 6. Build only when the container is absent
+# ==========================================
+
+section 6 "Preparing DevBox"
+
+if [[ -z "$CONTAINER_ID" ]]; then
+    info "No existing container found. Building the DevBox image..."
+    compose build
+    success "DevBox image built successfully."
+else
+    info "Existing DevBox container found. Skipping image build."
+fi
+
+# ==========================================
+# 7. Start without recreating existing containers
 # ==========================================
 
 section 7 "Starting DevBox container"
 
-info "Creating and starting container..."
-
-compose up -d
-
-success "DevBox container is running."
+if [[ "$CONTAINER_RUNNING" == true ]]; then
+    success "DevBox is already running. No restart or recreation needed."
+elif [[ -n "$CONTAINER_ID" ]]; then
+    info "Existing DevBox container is stopped. Starting it..."
+    compose start devbox
+    success "Existing DevBox container started."
+else
+    info "Creating and starting DevBox for the first time..."
+    compose up -d
+    success "DevBox container created and started."
+fi
 
 # ==========================================
 # 7. Network Manager
@@ -355,7 +381,10 @@ printf '  %b%-22s%b %s\n' "${GREEN}" "devbox shell" "${RESET}" "Enter DevBox"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox status" "${RESET}" "Container status"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox manager logs" "${RESET}" "Network Manager logs"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox networks" "${RESET}" "Docker networks"
-printf '  %b%-22s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Remove DevBox resources"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Stop DevBox container"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox recreate-all" "${RESET}" "Recreate all DevBox resources"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox restart" "${RESET}" "Restart container only"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox recreate" "${RESET}" "Recreate container and network"
 
 printf '\n'
 line

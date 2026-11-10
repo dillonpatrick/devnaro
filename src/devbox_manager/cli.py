@@ -17,10 +17,24 @@ from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 
 console = Console()
+
+
+class DevBoxTyperGroup(typer.core.TyperGroup):
+    """Keep built-in shell completion active without exposing setup flags in help."""
+
+    def get_params(self, ctx):
+        params = super().get_params(ctx)
+        for param in params:
+            if param.name in {"install_completion", "show_completion"}:
+                param.hidden = True
+        return params
+
+
 app = typer.Typer(
     name="devbox-manager",
     help="Inspect and troubleshoot your DevBox environment.",
     no_args_is_help=True,
+    cls=DevBoxTyperGroup,
     invoke_without_command=True,
     rich_markup_mode="rich",
 )
@@ -28,6 +42,7 @@ network_app = typer.Typer(
     name="network-manager",
     help="Inspect the automatic Docker network manager.",
     no_args_is_help=True,
+    cls=DevBoxTyperGroup,
 )
 app.add_typer(network_app, name="network-manager")
 
