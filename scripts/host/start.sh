@@ -260,28 +260,47 @@ compose config --quiet
 success "Docker Compose configuration is valid."
 
 # ==========================================
-# 5. Build DevBox
+# 5. Determine the current container state
 # ==========================================
 
-section 6 "Building DevBox image"
+CONTAINER_ID="$(compose ps --all --quiet devbox)"
+CONTAINER_RUNNING=false
 
-info "Building Docker image..."
-
-compose build
-
-success "DevBox image built successfully."
+if [[ -n "$CONTAINER_ID" ]] && compose ps --status running --services | grep -Fxq devbox; then
+    CONTAINER_RUNNING=true
+fi
 
 # ==========================================
-# 6. Start DevBox
+# 6. Build only when the container is absent
+# ==========================================
+
+section 6 "Preparing DevBox"
+
+if [[ -z "$CONTAINER_ID" ]]; then
+    info "No existing container found. Building the DevBox image..."
+    compose build
+    success "DevBox image built successfully."
+else
+    info "Existing DevBox container found. Skipping image build."
+fi
+
+# ==========================================
+# 7. Start without recreating existing containers
 # ==========================================
 
 section 7 "Starting DevBox container"
 
-info "Creating and starting container..."
-
-compose up -d
-
-success "DevBox container is running."
+if [[ "$CONTAINER_RUNNING" == true ]]; then
+    success "DevBox is already running. No restart or recreation needed."
+elif [[ -n "$CONTAINER_ID" ]]; then
+    info "Existing DevBox container is stopped. Starting it..."
+    compose start devbox
+    success "Existing DevBox container started."
+else
+    info "Creating and starting DevBox for the first time..."
+    compose up -d
+    success "DevBox container created and started."
+fi
 
 # ==========================================
 # 7. Network Manager
