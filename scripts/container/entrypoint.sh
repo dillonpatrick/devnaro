@@ -17,6 +17,17 @@ export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
 EOF
 fi
 
+# Enable devbox-manager Zsh completion automatically for the container user.
+if [ -f "$ZSHRC" ] && ! grep -q '^# DevBox CLI completion: > /tmp/devbox-welcome-pending
+exec "$@"
+ "$ZSHRC"; then
+    cat >> "$ZSHRC" <<'EOF'
+
+# DevBox CLI completion
+eval "$(_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager)"
+EOF
+fi
+
 # A fresh marker is created whenever the container starts or restarts.
 : > /tmp/devbox-welcome-pending
 exec "$@"
