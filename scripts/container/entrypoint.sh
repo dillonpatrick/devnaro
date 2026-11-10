@@ -18,9 +18,7 @@ EOF
 fi
 
 # Enable devbox-manager Zsh completion automatically for the container user.
-if [ -f "$ZSHRC" ] && ! grep -q '^# DevBox CLI completion: > /tmp/devbox-welcome-pending
-exec "$@"
- "$ZSHRC"; then
+if [ -f "$ZSHRC" ] && ! grep -q '^# DevBox CLI completion$' "$ZSHRC"; then
     cat >> "$ZSHRC" <<'EOF'
 
 # DevBox CLI completion
