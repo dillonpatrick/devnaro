@@ -128,6 +128,9 @@ def _read_version(command: list[str]) -> str:
     except (OSError, subprocess.TimeoutExpired):
         return "Version unavailable"
 
+    if result.returncode != 0:
+        return "Version unavailable"
+
     output = (result.stdout or result.stderr).strip()
     if not output:
         return "Version unavailable"
@@ -522,6 +525,7 @@ def welcome() -> None:
     commands.add_column(style="accent", no_wrap=True)
     commands.add_column(style="muted")
     commands.add_row("code .", "Open current project in VS Code")
+    commands.add_row("dm info", "DevBox stack and installed tools")
     commands.add_row("dm status", "Container status")
     commands.add_row("dm doctor", "Environment health checks")
     commands.add_row("dm networks", "Docker networks")
