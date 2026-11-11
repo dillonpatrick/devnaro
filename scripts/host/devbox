@@ -28,7 +28,7 @@ else
     DIM=''
 fi
 
-HELP_WIDTH=88
+HELP_WIDTH=86
 HELP_BORDER="$(printf '%*s' "$HELP_WIDTH" '' | tr ' ' '─')"
 
 print_box_line() {
