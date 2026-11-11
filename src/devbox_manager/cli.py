@@ -283,9 +283,16 @@ def network_manager_status() -> None:
             ("Running", "bold green"),
             ("  Process ID (PID) uniquely identifies this running process.", "muted"),
         )
+        legend = Text(
+            "PID = process ID  •  PPID = parent process ID  •  "
+            "User = account running it  •  Uptime = time since it started\\n"
+            "State: S = sleeping/waiting (normal while idle); R = running; "
+            "D = uninterruptible wait; Z = zombie.",
+            style="muted",
+        )
         console.print(
             Panel(
-                Group(summary, table),
+                Group(summary, table, legend),
                 title="[heading]Network Manager[/heading]",
                 subtitle=f"{len(details)} process(es) found",
                 border_style="green",
