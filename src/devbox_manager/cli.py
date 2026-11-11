@@ -572,10 +572,6 @@ def welcome() -> None:
         details,
         Text("QUICK COMMANDS · INSIDE CONTAINER", style="heading"),
         commands,
-        Text(
-            "Host commands: devbox start · shell · stop · clean · restart · recreate · recreate-all · status · info · logs · networks · doctor · config · manager status/logs",
-            style="muted",
-        ),
     )
     render_panel(
         console,
