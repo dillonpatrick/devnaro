@@ -181,7 +181,10 @@ def _tool_source(executable: str) -> str:
         resolved.relative_to(user_bin)
         return "User"
     except ValueError:
-        return "Image"
+        core_directories = {Path("/bin"), Path("/sbin"), Path("/usr/bin"), Path("/usr/sbin")}
+        if resolved.parent in core_directories:
+            return "Image"
+        return "Custom PATH"
 
 
 @app.command()
@@ -267,7 +270,7 @@ def info() -> None:
             Text("HOST INTEGRATIONS", style="heading"),
             host_tools,
         ),
-        subtitle="Image = provided by DevBox · User = installed in ~/.local/bin · Host = external integration",
+        subtitle="Image = core system paths · User = installed in ~/.local/bin · Custom PATH = discovered in other PATH directories · Host = external integration",
     )
 
 
