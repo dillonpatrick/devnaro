@@ -28,17 +28,39 @@ else
     DIM=''
 fi
 
+HELP_WIDTH=88
+HELP_BORDER="$(printf '%*s' "$HELP_WIDTH" '' | tr ' ' '─')"
+
+print_box_line() {
+    local plain="$1"
+    local rendered="$2"
+    local padding=$((HELP_WIDTH - \${#plain}))
+    (( padding < 0 )) && padding=0
+    printf "│ %b%*s │\n" "$rendered" "$padding" ""
+}
+
 print_command() {
-    printf "  %b%-18s%b %b%s%b\n" "$GREEN" "$1" "$RESET" "$DIM" "$2" "$RESET"
+    local command_name="$1"
+    local description="$2"
+    local command_padding=$((18 - \${#command_name}))
+    (( command_padding < 0 )) && command_padding=0
+    print_box_line "  $command_name  $description" \
+        "  \${GREEN}\${command_name}$(printf '%*s' "$command_padding" '')\${RESET} \${DIM}\${description}\${RESET}"
 }
 
 usage() {
-    printf "\n%bDevBox%b %b- Docker development environment%b\n\n" "$BOLD$CYAN" "$RESET" "$DIM" "$RESET"
-    printf "%bUsage:%b\n" "$BOLD$CYAN" "$RESET"
-    printf "  %bdevbox%b [command]\n" "$GREEN" "$RESET"
-    printf "  %bdevbox%b config [show|get workspace|set workspace PATH]\n" "$GREEN" "$RESET"
-    printf "  %bdevbox%b manager [status|logs]\n\n" "$GREEN" "$RESET"
-    printf "%bHost commands:%b\n" "$BOLD$CYAN" "$RESET"
+    printf "\n╭%s╮\n" "$HELP_BORDER"
+    print_box_line "DevBox - Docker development environment" \
+        "\${BOLD}\${CYAN}DevBox\${RESET} \${DIM}- Docker development environment\${RESET}"
+    printf "├%s┤\n" "$HELP_BORDER"
+    print_box_line "Usage:" "\${BOLD}\${CYAN}Usage:\${RESET}"
+    print_box_line "  devbox [command]" "  \${GREEN}devbox\${RESET} [command]"
+    print_box_line "  devbox config [show|get workspace|set workspace PATH]" \
+        "  \${GREEN}devbox\${RESET} config [show|get workspace|set workspace PATH]"
+    print_box_line "  devbox manager [status|logs]" \
+        "  \${GREEN}devbox\${RESET} manager [status|logs]"
+    print_box_line "" ""
+    print_box_line "Host commands:" "\${BOLD}\${CYAN}Host commands:\${RESET}"
     print_command start "Build (if needed) and start DevBox"
     print_command shell "Enter the running DevBox container (default)"
     print_command stop "Stop the container without removing resources"
@@ -55,13 +77,16 @@ usage() {
     print_command "manager status" "Show Network Manager process status"
     print_command "manager logs" "Show Network Manager logs"
     print_command help "Show this help message"
-    printf "\n%bExamples:%b\n" "$BOLD$CYAN" "$RESET"
-    printf "  %bdevbox start%b\n" "$GREEN" "$RESET"
-    printf "  %bdevbox shell%b\n" "$GREEN" "$RESET"
-    printf "  %bdevbox recreate%b\n" "$GREEN" "$RESET"
-    printf "  %bdevbox status%b\n" "$GREEN" "$RESET"
-    printf "  %bdevbox config set workspace PATH%b\n" "$GREEN" "$RESET"
-    printf "  %bdevbox manager logs%b\n\n" "$GREEN" "$RESET"
+    print_box_line "" ""
+    print_box_line "Examples:" "\${BOLD}\${CYAN}Examples:\${RESET}"
+    print_box_line "  devbox start" "  \${GREEN}devbox start\${RESET}"
+    print_box_line "  devbox shell" "  \${GREEN}devbox shell\${RESET}"
+    print_box_line "  devbox recreate" "  \${GREEN}devbox recreate\${RESET}"
+    print_box_line "  devbox status" "  \${GREEN}devbox status\${RESET}"
+    print_box_line "  devbox config set workspace PATH" \
+        "  \${GREEN}devbox config set workspace PATH\${RESET}"
+    print_box_line "  devbox manager logs" "  \${GREEN}devbox manager logs\${RESET}"
+    printf "╰%s╯\n\n" "$HELP_BORDER"
 }
 
 compose() {
