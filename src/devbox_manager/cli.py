@@ -218,35 +218,34 @@ def info() -> None:
         ("Bash", "bash", ["--version"]),
     ]
     reported: set[str] = set()
+    discovered_tools: list[tuple[str, str, str]] = []
 
     for label, executable, arguments in known_tools:
         path = shutil.which(executable)
         if not path:
-            tools.add_row(label, "[warning]Not installed[/warning]", "-")
+            discovered_tools.append(("-", label, "[warning]Not installed[/warning]"))
             continue
-        tools.add_row(
-            label,
-            _read_version([path, *arguments]),
-            _tool_source(path),
+
+        discovered_tools.append(
+            (_tool_source(path), label, _read_version([path, *arguments]))
         )
         reported.add(Path(path).name)
 
     oh_my_zsh = Path.home() / ".oh-my-zsh"
     if (oh_my_zsh / ".git").exists():
-        revision = _read_version(["git", "-C", str(oh_my_zsh), "rev-parse", "--short", "HEAD"])
-        tools.add_row("Oh My Zsh (Git revision)", revision, "Image")
-
-    discovered_tools: list[tuple[str, str, str]] = []
-
-    for row in tools.rows:
-        discovered_tools.append((row.cells[2], row.cells[0], row.cells[1]))
+        revision = _read_version(
+            ["git", "-C", str(oh_my_zsh), "rev-parse", "--short", "HEAD"]
+        )
+        discovered_tools.append(("Image", "Oh My Zsh (Git revision)", revision))
 
     for name, executable in _additional_path_tools(reported):
         source = _tool_source(executable)
         # Unknown executables may launch applications or perform arbitrary
         # actions when invoked. Detect them, but never execute them to guess
         # their version.
-        discovered_tools.append((source, name, "Detected (version not queried)"))
+        discovered_tools.append(
+            (source, name, "Detected (version not queried)")
+        )
 
     for source, name, version in sorted(
         discovered_tools,
