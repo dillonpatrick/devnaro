@@ -236,12 +236,23 @@ def info() -> None:
         revision = _read_version(["git", "-C", str(oh_my_zsh), "rev-parse", "--short", "HEAD"])
         tools.add_row("Oh My Zsh (Git revision)", revision, "Image")
 
+    discovered_tools: list[tuple[str, str, str]] = []
+
+    for row in tools.rows:
+        discovered_tools.append((row.cells[2], row.cells[0], row.cells[1]))
+
     for name, executable in _additional_path_tools(reported):
-        tools.add_row(
-            name,
-            _read_version([executable, "--version"]),
-            _tool_source(executable),
-        )
+        source = _tool_source(executable)
+        # Unknown executables may launch applications or perform arbitrary
+        # actions when invoked. Detect them, but never execute them to guess
+        # their version.
+        discovered_tools.append((source, name, "Detected (version not queried)"))
+
+    for source, name, version in sorted(
+        discovered_tools,
+        key=lambda item: (item[0].casefold(), item[1].casefold()),
+    ):
+        tools.add_row(name, version, source)
 
     host_tools = Table(box=box.SIMPLE, show_header=False)
     host_tools.add_column("Integration", style="cyan")
