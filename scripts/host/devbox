@@ -32,6 +32,7 @@ Host commands:
   recreate          Recreate the container and network, preserving its home volume
   recreate-all      Rebuild all DevBox resources, including the home volume
   status            Show container status
+  info              Show DevBox stack, base image, and installed tools
   logs              Show container logs
   networks          List networks connected to DevBox
   doctor            Run health checks inside the container
@@ -156,6 +157,12 @@ case "$command" in
         ;;
     status)
         compose ps devbox
+        ;;
+    info)
+        require_running
+        exec docker compose --project-directory "$DEVBOX_DIR" \
+            -f "$DEVBOX_DIR/docker/docker-compose.yml" \
+            -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager info
         ;;
     logs)
         compose logs devbox
