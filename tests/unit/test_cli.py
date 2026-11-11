@@ -85,9 +85,9 @@ def test_welcome_separates_host_and_container_quick_commands(monkeypatch):
     assert result.exit_code == 0
     assert "QUICK COMMANDS" in result.stdout
     assert "INSIDE CONTAINER" in result.stdout
-    assert "HOST COMMANDS" in result.stdout
-    assert "OUTSIDE CONTAINER" in result.stdout
-    assert "devbox info" in result.stdout
+    assert "Host terminal: devbox info" in result.stdout
+    assert "HOST COMMANDS" not in result.stdout
+    assert "OUTSIDE CONTAINER" not in result.stdout
     assert "dm info" in result.stdout
     assert "dm status" in result.stdout
     assert "dm doctor" in result.stdout
