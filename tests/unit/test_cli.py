@@ -81,3 +81,28 @@ def test_format_started_at_handles_zero_timestamp():
 
     assert _format_started_at("0001-01-01T00:00:00Z") == "Not running"
 
+
+
+def test_network_manager_status_shows_explained_process_details(monkeypatch):
+    from devbox_manager import cli
+    from devbox_manager.network_manager import NetworkManagerProcess
+
+    process = NetworkManagerProcess(
+        pid=27,
+        ppid=1,
+        user="root",
+        state="S",
+        elapsed="00:12",
+        command="python3 -u /opt/network-manager/manager.py",
+    )
+    monkeypatch.setattr(cli, "process_status", lambda: (True, [process]))
+
+    result = runner.invoke(app, ["network-manager", "status"])
+
+    assert result.exit_code == 0
+    assert "PID" in result.stdout
+    assert "PPID" in result.stdout
+    assert "Uptime" in result.stdout
+    assert "27" in result.stdout
+    assert "00:12" in result.stdout
+    assert "Process ID (PID)" in result.stdout
