@@ -98,7 +98,7 @@ cd devbox
 make install
 ```
 
-The installer creates a `devbox` symlink in `~/.local/bin` by default and adds that directory to PATH for Bash or Zsh. Set `DEVBOX_BIN_DIR` to install the command in a different directory; the installer adds that selected directory to PATH when it can identify a supported shell. Open a new terminal or source the shell configuration file printed by the installer. The installer is safe to run more than once.
+The installer requests sudo authentication before proceeding, but runs as your regular user so files in your home directory and repository keep the correct ownership. It creates a `devbox` symlink in `~/.local/bin` by default and adds that directory to PATH for Bash or Zsh. Set `DEVBOX_BIN_DIR` to install the command in a different directory; the installer adds that selected directory to PATH when it can identify a supported shell. Open a new terminal or source the shell configuration file printed by the installer. The installer is safe to run more than once.
 
 Start the environment:
 
@@ -182,7 +182,7 @@ Machine-specific settings are stored outside the repository in `~/.config/devbox
 
 Use `devbox clean` only when you intentionally want to remove DevBox's persisted home configuration and local image. A subsequent `devbox start` rebuilds what is needed.
 
-- **Uninstall:** run `make uninstall` from the DevBox repository. It asks for confirmation before completely removing DevBox from the host. It removes the DevBox container, Compose network, `devbox_home` volume, locally built image, host VS Code bridge, command symlink, installer-managed PATH entries, machine-specific configuration, and generated local files. The DevBox repository and configured workspace are both preserved. If DevBox was installed to a custom directory with `DEVBOX_BIN_DIR`, pass the same variable to `make uninstall`.
+- **Uninstall:** run `make uninstall` from the DevBox repository. It requests sudo authentication, then asks for confirmation before completely removing DevBox from the host. The script runs as your regular user to preserve file ownership. It removes the DevBox container, Compose network, `devbox_home` volume, locally built image, host VS Code bridge, command symlink, installer-managed PATH entries, machine-specific configuration, and generated local files. The DevBox repository and configured workspace are both preserved. If DevBox was installed to a custom directory with `DEVBOX_BIN_DIR`, pass the same variable to `make uninstall`.
 
 ## Inside the container
 
@@ -231,8 +231,8 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 | Command | Description |
 |---|---|
 | `make` | Show available tasks |
-| `make install` | Install the host-side `devbox` command |
-| `make uninstall` | Completely remove DevBox while preserving the workspace |
+| `make install` | Authenticate with sudo and install the host-side `devbox` command |
+| `make uninstall` | Authenticate with sudo and completely remove DevBox while preserving the repository and workspace |
 | `make build` | Build the DevBox image |
 | `make rebuild` | Rebuild the image without cache |
 | `make test` | Run Python unit tests (DevBox must be running) |
