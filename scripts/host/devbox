@@ -35,9 +35,9 @@ HELP_BORDER="${HELP_BORDER// /─}"
 print_box_line() {
     local plain="$1"
     local rendered="$2"
-    local padding=$((HELP_WIDTH - ${#plain}))
+    local padding=$((HELP_WIDTH - ${#plain} - 1))
     (( padding < 0 )) && padding=0
-    printf "%b│%b %b%*s %b│%b\n" "$CYAN" "$RESET" "$rendered" "$padding" "" "$CYAN" "$RESET"
+    printf "%b│%b %b%*s%b│%b\n" "$CYAN" "$RESET" "$rendered" "$padding" "" "$CYAN" "$RESET"
 }
 
 print_command() {
