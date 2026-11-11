@@ -1,0 +1,12 @@
+services:
+  devbox:
+    # Default development ports, bound only to the host loopback interface.
+    # Edit this list to add/remove ports, or use "ports: []" to disable publishing.
+    ports:
+      - "127.0.0.1:3000-3010:3000-3010"
+      - "127.0.0.1:4173:4173"
+      - "127.0.0.1:5000-5010:5000-5010"
+      - "127.0.0.1:5173:5173"
+      - "127.0.0.1:8000-8010:8000-8010"
+      - "127.0.0.1:8080-8090:8080-8090"
+      - "127.0.0.1:9000-9010:9000-9010"
