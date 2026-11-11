@@ -49,3 +49,14 @@ def test_devbox_theme_uses_named_semantic_palette():
     assert DEVBOX_THEME.styles["warning"].color.name == "yellow"
     assert DEVBOX_THEME.styles["error"].color.name == "red"
     assert DEVBOX_THEME.styles["value"].color.name == "white"
+
+
+
+def test_render_panel_fits_content_instead_of_terminal_width():
+    output = StringIO()
+    console = Console(file=output, width=100, force_terminal=False, color_system=None)
+
+    render_panel(console, "Compact panel", "Short output")
+
+    rendered_lines = output.getvalue().splitlines()
+    assert max(map(len, rendered_lines)) < 100
