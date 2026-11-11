@@ -192,7 +192,7 @@ def info() -> None:
 
     tools = Table(box=box.ROUNDED, header_style="heading")
     tools.add_column("Tool", style="info")
-    tools.add_column("Path")
+    tools.add_column("Path", no_wrap=True, overflow="fold")
     tools.add_column("Source", style="muted")
 
     known_tools = [
