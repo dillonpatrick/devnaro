@@ -1,7 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "==> Cleaning DevBox resources..."
+if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
+    RESET='\033[0m'
+    CYAN='\033[0;96m'
+    GREEN='\033[0;32m'
+    BOLD='\033[1m'
+else
+    RESET=''
+    CYAN=''
+    GREEN=''
+    BOLD=''
+fi
+
+info() { printf '%b➜%b %s\n' "$CYAN" "$RESET" "$1"; }
+success() { printf '%b✔%b %s\n' "$GREEN" "$RESET" "$1"; }
+heading() { printf '\n%b%s%b\n' "${CYAN}${BOLD}" "$1" "$RESET"; }
+
+info "Cleaning DevBox resources..."
 
 DEVBOX_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 USER_UID="$(id -u)"
@@ -21,16 +37,14 @@ fi
 rm -f "$CODE_BRIDGE_PID" "$CODE_SOCKET_PATH"
 
 echo
-echo "=================================="
-echo " DevBox resources cleaned."
-echo "=================================="
+success "DevBox resources cleaned."
 echo
-echo "Preserved:"
+heading "Preserved:"
 echo "  - Workspace files"
 echo "  - Containers and volumes from other Compose projects"
 echo "  - Images not built by the DevBox Compose project"
 echo
-echo "Removed:"
+heading "Removed:"
 echo "  - DevBox container and Compose network"
 echo "  - DevBox Compose-managed volumes (including devbox_home)"
 echo "  - DevBox-local images"
