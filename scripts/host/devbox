@@ -29,7 +29,8 @@ else
 fi
 
 HELP_WIDTH=86
-HELP_BORDER="$(printf '%*s' "$HELP_WIDTH" '' | tr ' ' '─')"
+HELP_BORDER="$(printf '%*s' "$HELP_WIDTH" '')"
+HELP_BORDER="${HELP_BORDER// /─}"
 
 print_box_line() {
     local plain="$1"
