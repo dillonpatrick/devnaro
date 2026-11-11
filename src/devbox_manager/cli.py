@@ -107,7 +107,6 @@ def main(
             console,
             "DevBox Manager",
             f"[accent]v{__version__}[/accent]",
-            border_style="cyan",
         )
         raise typer.Exit()
 
@@ -284,7 +283,6 @@ def doctor() -> None:
         console,
         "DevBox health check",
         table,
-        
         subtitle=f"{passed_count} passed · {failed_count} failed",
     )
 
@@ -337,7 +335,6 @@ def network_manager_status() -> None:
             console,
             "Network Manager",
             Group(summary, table, legend),
-            border_style="green",
             subtitle=f"{len(details)} process(es) found",
         )
     else:
@@ -345,7 +342,6 @@ def network_manager_status() -> None:
             console,
             "Network Manager",
             f"[warning]Network Manager is not running.[/warning]\n\n[muted]{details}[/muted]",
-            border_style="yellow",
         )
         raise typer.Exit(code=1)
 
