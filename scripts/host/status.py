@@ -30,6 +30,10 @@ def paint(value: str, style: str, enabled: bool) -> str:
     return f"{style}{value}{RESET}" if enabled else value
 
 
+def field_label(value: str, enabled: bool) -> str:
+    return paint(f"{value:<10}", CYAN, enabled)
+
+
 def load_containers(raw: str) -> list[dict[str, Any]]:
     """Accept Compose JSON array/object and newline-delimited JSON."""
     raw = raw.strip()
@@ -172,15 +176,15 @@ def render(containers: list[dict[str, Any]], color: bool | None = None, width: i
             created = format_created(container)
             body.extend([
                 paint(name.upper(), BOLD + CYAN, color),
-                f"  {paint('Service', CYAN, color):<10} {service}",
-                f"  {paint('Image', CYAN, color):<10} {image}",
-                f"  {paint('Status', CYAN, color):<10} {paint(state, status_style(state), color)}",
-                f"  {paint('Created', CYAN, color):<10} {created}",
+                f"  {field_label('Service', color)} {service}",
+                f"  {field_label('Image', color)} {image}",
+                f"  {field_label('Status', color)} {paint(state, status_style(state), color)}",
+                f"  {field_label('Created', color)} {created}",
             ])
             ports = format_ports(container.get("Publishers"))
             port_text = ",  ".join(ports) if ports else "None"
             wrapped_ports = textwrap.wrap(port_text, width=max(20, inner_width - 13), break_long_words=False, break_on_hyphens=False)
-            body.append(f"  {paint('Ports', CYAN, color):<10} {wrapped_ports[0] if wrapped_ports else 'None'}")
+            body.append(f"  {field_label('Ports', color)} {wrapped_ports[0] if wrapped_ports else 'None'}")
             for line in wrapped_ports[1:]:
                 body.append(f"  {'':<10} {line}")
             if index < len(containers) - 1:
