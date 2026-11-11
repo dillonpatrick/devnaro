@@ -10,13 +10,15 @@ from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from rich.theme import Theme
 
 from devbox_manager import __version__
 from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 
-console = Console()
+DEVBOX_THEME = Theme({"info": "cyan", "success": "bold green", "warning": "bold yellow", "error": "bold red", "muted": "dim", "heading": "bold bright_cyan", "accent": "bold green"})
+console = Console(theme=DEVBOX_THEME, highlight=False)
 
 
 class DevBoxTyperGroup(typer.core.TyperGroup):
@@ -73,7 +75,7 @@ def _docker_connection():
         console.print(
             Panel(
                 f"[red]Unable to connect to Docker:[/red]\n{error}",
-                title="Docker connection failed",
+                title="[heading]Docker connection failed[/heading]",
                 border_style="red",
             )
         )
@@ -109,7 +111,7 @@ def status() -> None:
     networks = attrs.get("NetworkSettings", {}).get("Networks", {})
     started = _format_started_at(state.get("StartedAt", ""))
 
-    table = Table(title="DevBox status", box=box.ROUNDED, show_header=False)
+    table = Table(title="[heading]DevBox status[/heading]", box=box.ROUNDED, show_header=False)
     table.add_column("Property", style="cyan", no_wrap=True)
     table.add_column("Value")
 
@@ -144,7 +146,7 @@ def networks() -> None:
         raise typer.Exit(code=1) from error
 
     attached = container.attrs.get("NetworkSettings", {}).get("Networks", {})
-    table = Table(title="DevBox networks", box=box.ROUNDED)
+    table = Table(title="[heading]DevBox networks[/heading]", box=box.ROUNDED)
     table.add_column("Network", style="cyan")
     table.add_column("Driver")
     table.add_column("Compose project")
@@ -224,7 +226,7 @@ def doctor() -> None:
         )
     )
 
-    table = Table(title="DevBox health check", box=box.ROUNDED)
+    table = Table(title="[heading]DevBox health check[/heading]", box=box.ROUNDED)
     table.add_column("Check", style="cyan")
     table.add_column("Result")
     table.add_column("Details")
