@@ -102,3 +102,33 @@ def test_format_created_converts_absolute_timestamp_to_relative_age():
 
     assert result.endswith("ago")
     assert "2020-01-01" not in result
+
+
+
+def test_render_uses_standard_panel_and_compact_ports():
+    container = {
+        "Name": "devbox",
+        "Service": "devbox",
+        "Image": "devbox-devbox",
+        "Status": "Up 10 seconds",
+        "RunningFor": "10 seconds",
+        "Publishers": [
+            {
+                "URL": "127.0.0.1",
+                "PublishedPort": port,
+                "TargetPort": port,
+                "Protocol": "tcp",
+            }
+            for port in [3000, 3001, 3002, 4173]
+        ],
+    }
+
+    output = status.render([container], color=False, width=90)
+
+    assert output.startswith("╭")
+    assert "DevBox status" in output
+    assert "│ DEVBOX" in output
+    assert "127.0.0.1:3000-3002->3000-3002/tcp" in output
+    assert "127.0.0.1:4173->4173/tcp" in output
+    assert output.endswith("╯")
+    assert "\\\\n" not in output
