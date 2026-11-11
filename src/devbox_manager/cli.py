@@ -568,18 +568,14 @@ def welcome() -> None:
     commands.add_row("docker ps", "Running containers")
     commands.add_row("docker compose up -d", "Start project services")
 
-    host_commands = Table.grid(padding=(0, 2))
-    host_commands.add_column(style="accent", no_wrap=True)
-    host_commands.add_column(style="muted")
-    host_commands.add_row("devbox info", "Show DevBox details (run from the host terminal)")
-
     content = Group(
         details,
         Text("QUICK COMMANDS · INSIDE CONTAINER", style="heading"),
         commands,
-        Text("HOST COMMANDS · OUTSIDE CONTAINER", style="heading"),
-        host_commands,
-        Text("Tip: run project commands from inside each project directory.", style="muted"),
+        Text(
+            "Host terminal: devbox info  ·  Run project commands from inside each project directory.",
+            style="muted",
+        ),
     )
     render_panel(
         console,
