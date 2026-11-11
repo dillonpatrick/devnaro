@@ -6,6 +6,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+import re
+import shutil
+import textwrap
 from datetime import datetime, timezone
 from typing import Any
 
@@ -137,43 +140,54 @@ def format_created(container: dict[str, Any]) -> str:
     return f"{days} day{'s' if days != 1 else ''} ago"
 
 
-def render(containers: list[dict[str, Any]], color: bool | None = None) -> str:
+def render(containers: list[dict[str, Any]], color: bool | None = None, width: int | None = None) -> str:
     if color is None:
         color = color_enabled()
+    if width is None:
+        width = shutil.get_terminal_size((100, 24)).columns
+    width = max(48, min(width, 120))
+
+    inner_width = width - 4
+    title = "DevBox status"
+    title_text = f" {title} "
+    side = max(0, (inner_width - len(title_text)) // 2)
+    top = "╭" + "─" * side + paint(title_text, BOLD + CYAN, color) + "─" * max(0, inner_width - side - len(title_text)) + "╮"
+    bottom = "╰" + "─" * inner_width + "╯"
+    lines = [top]
 
     if not containers:
-        return (
-            paint("DevBox container", BOLD, color)
-            + "\n"
-            + paint("  No container found. Start it with: devbox start", YELLOW, color)
-        )
+        body = [paint("No container found. Start it with: devbox start", YELLOW, color)]
+    else:
+        body = []
+        for index, container in enumerate(containers):
+            name = str(container.get("Name") or container.get("Service") or "devbox")
+            service = str(container.get("Service") or "devbox")
+            image = str(container.get("Image") or "Unknown")
+            state = str(container.get("Status") or container.get("State") or "Unknown")
+            created = format_created(container)
+            body.extend([
+                paint(name.upper(), BOLD + CYAN, color),
+                f"  {'Service':<10} {service}",
+                f"  {'Image':<10} {image}",
+                f"  {'Status':<10} {paint(state, status_style(state), color)}",
+                f"  {'Created':<10} {created}",
+            ])
+            ports = format_ports(container.get("Publishers"))
+            port_text = ",  ".join(ports) if ports else "None"
+            wrapped_ports = textwrap.wrap(port_text, width=max(20, inner_width - 13), break_long_words=False, break_on_hyphens=False)
+            body.append(f"  {'Ports':<10} {wrapped_ports[0] if wrapped_ports else 'None'}")
+            for line in wrapped_ports[1:]:
+                body.append(f"  {'':<10} {line}")
+            if index < len(containers) - 1:
+                body.append("")
 
-    lines: list[str] = []
-    for index, container in enumerate(containers):
-        name = str(container.get("Name") or container.get("Service") or "devbox")
-        image = str(container.get("Image") or "Unknown")
-        state = str(container.get("Status") or container.get("State") or "Unknown")
-        created = format_created(container)
-        service = str(container.get("Service") or "devbox")
-
-        lines.append(paint(f"DEVBOX  {name}", BOLD + CYAN, color))
-        lines.append(f"  {'Service':<10} {service}")
-        lines.append(f"  {'Image':<10} {image}")
-        lines.append(f"  {'Status':<10} {paint(state, status_style(state), color)}")
-        lines.append(f"  {'Created':<10} {created}")
-
-        ports = format_ports(container.get("Publishers"))
-        if ports:
-            lines.append(f"  {'Ports':<10} {ports[0]}")
-            for port in ports[1:]:
-                lines.append(f"  {'':<10} {port}")
-        else:
-            lines.append(f"  {'Ports':<10} None")
-
-        if index < len(containers) - 1:
-            lines.append("")
-    return "\n".join(lines)
-
+    for line in body:
+        plain_length = len(re.sub(r'\\x1b\\[[0-9;]*m', '', line))
+        if plain_length > inner_width:
+            line = line[:inner_width]
+        lines.append("│ " + line + " " * max(0, inner_width - plain_length) + " │")
+    lines.append(bottom)
+    return "\\n".join(lines)
 
 def main() -> int:
     try:
