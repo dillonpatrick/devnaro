@@ -56,7 +56,7 @@ setopt LIST_PACKED
 
 _devbox_manager_completion() {
     local -a commands help_options
-    commands=(status networks doctor network-manager welcome)
+    commands=(info status networks doctor network-manager welcome)
     help_options=(--help -h)
 
     if (( CURRENT == 2 )); then
@@ -66,7 +66,7 @@ _devbox_manager_completion() {
             network-manager)
                 compadd -- $help_options status logs
                 ;;
-            status|networks|doctor|welcome)
+            info|status|networks|doctor|welcome)
                 compadd -- $help_options
                 ;;
         esac
