@@ -182,12 +182,10 @@ def render(containers: list[dict[str, Any]], color: bool | None = None, width: i
                 body.append("")
 
     for line in body:
-        plain_length = len(re.sub(r'\\x1b\\[[0-9;]*m', '', line))
-        if plain_length > inner_width:
-            line = line[:inner_width]
+        plain_length = len(re.sub(r'\x1b\[[0-9;]*m', '', line))
         lines.append("│ " + line + " " * max(0, inner_width - plain_length) + " │")
     lines.append(bottom)
-    return "\\n".join(lines)
+    return "\n".join(lines)
 
 def main() -> int:
     try:
