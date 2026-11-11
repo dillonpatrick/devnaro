@@ -37,6 +37,7 @@ def test_typer_help_uses_devbox_theme():
     assert rich_utils.STYLE_OPTIONS_PANEL_BORDER == "bright_cyan"
     assert rich_utils.STYLE_COMMANDS_PANEL_BORDER == "bright_cyan"
     assert rich_utils.STYLE_COMMANDS_TABLE_FIRST_COLUMN == "bold bright_cyan"
+    assert rich_utils.MAX_WIDTH == 88
 
 
 
