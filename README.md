@@ -27,6 +27,8 @@ Host
 |   +-- docker/
 |   |   +-- Dockerfile
 |   |   +-- docker-compose.yml
+|   |   +-- docker-compose.ports.example.yml
+|   |   +-- docker-compose.ports.yml (generated locally, ignored by Git)
 |   +-- network_manager/
 |   |   +-- manager.py
 |   +-- scripts/
@@ -55,7 +57,19 @@ The workspace is mounted in the container at `/workspace`. Project Compose files
 
 DevBox publishes common development ports from the container to the host, bound **only to `127.0.0.1`**. This lets the host browser open links printed by tools such as Uvicorn, Vite, and other local development servers without changing a project's Compose file.
 
-Published host/container ports are `3000–3010`, `4173`, `5000–5010`, `5173`, `8000–8010`, `8080–8090`, and `9000–9010`. The host and container use the same port number. For example, an API listening on container port `8000` is reachable on the host at `http://127.0.0.1:8000`.
+The default host/container ports are `3000–3010`, `4173`, `5000–5010`, `5173`, `8000–8010`, `8080–8090`, and `9000–9010`. The host and container use the same port number. For example, an API listening on container port `8000` is reachable on the host at `http://127.0.0.1:8000`.
+
+Port publishing is kept separate from the main Compose definition. On first use, DevBox copies `docker/docker-compose.ports.example.yml` to the local, Git-ignored `docker/docker-compose.ports.yml`. Edit that local file to add, remove, or change published ports. The generated file is not overwritten on subsequent starts, so your choices survive updates to the DevBox repository.
+
+To disable host port publishing entirely, replace the local file contents with:
+
+```yaml
+services:
+  devbox:
+    ports: []
+```
+
+To publish only selected ports, keep only the desired entries under `services.devbox.ports`. Keep the host binding on `127.0.0.1` unless you intentionally want to expose a development service on another network interface. For example, an entry such as `127.0.0.1:9000:8000` maps host port `9000` to container port `8000`.
 
 Applications started directly inside DevBox must bind to `0.0.0.0`, not `127.0.0.1`, so Docker can forward traffic to them. For example:
 
@@ -63,7 +77,7 @@ Applications started directly inside DevBox must bind to `0.0.0.0`, not `127.0.0
 uvicorn your_module:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The host-side bindings are loopback-only and are not exposed to other machines on the network. If a published host port is already occupied, Docker may refuse to start DevBox; stop the conflicting host service or adjust the published port list in `docker/docker-compose.yml`.
+The default host-side bindings are loopback-only and are not exposed to other machines on the network. If a published host port is already occupied, Docker may refuse to start DevBox; remove or change that entry in `docker/docker-compose.ports.yml`. After changing port mappings, run `devbox recreate` to apply them to the container.
 
 ## Requirements
 
@@ -214,7 +228,7 @@ View logs from the host with `devbox manager logs`, or from inside the container
 
 ## Configuration
 
-The startup script generates a local `.env` file, which is ignored by Git.
+The startup script generates a local `.env` file and, on first use, a local `docker/docker-compose.ports.yml` file. Both are ignored by Git. The port override is copied from the tracked `docker/docker-compose.ports.example.yml` only when it does not already exist; editing the local file is the supported way to customize published ports.
 
 | Variable | Description |
 |---|---|
