@@ -53,7 +53,6 @@ def render_panel(
     border_style: str = "info",
     subtitle: str | None = None,
     padding: tuple[int, int] = (1, 1),
-    expand: bool = False,
 ) -> None:
     """Render command output inside the standard DevBox panel."""
     console.print(
@@ -64,6 +63,6 @@ def render_panel(
             border_style=border_style,
             box=box.ROUNDED,
             padding=padding,
-            expand=expand,
+            expand=False,
         )
     )
