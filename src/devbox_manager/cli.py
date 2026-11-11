@@ -1,15 +1,17 @@
 """Rich-powered command line interface for DevBox."""
 
 from datetime import datetime
+import getpass
 import re
 from pathlib import Path
 
 import typer
 from docker.errors import DockerException, NotFound
 from rich import box
-from rich.console import Console
+from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 from rich.theme import Theme
 
 from devbox_manager import __version__
@@ -287,6 +289,56 @@ def network_manager_logs(
             content or "[dim]Log file is empty.[/dim]",
             title=f"Network Manager logs (last {lines} lines)",
             border_style="cyan",
+        )
+    )
+
+
+@app.command()
+def welcome() -> None:
+    """Display the DevBox welcome screen."""
+    manager_running, _ = process_status()
+    try:
+        alpine_version = Path("/etc/alpine-release").read_text(encoding="utf-8").strip()
+        alpine_version = ".".join(alpine_version.split(".")[:2])
+    except OSError:
+        alpine_version = "unknown"
+
+    details = Table.grid(padding=(0, 2))
+    details.add_column(style="muted", width=18, no_wrap=True)
+    details.add_column()
+    details.add_row("DevBox version", f"[bold white]{__version__}[/bold white]")
+    details.add_row("Base image", f"Alpine Linux {alpine_version}")
+    details.add_row("User", getpass.getuser())
+    details.add_row("Workspace", str(Path.cwd()))
+    details.add_row("Home", str(Path.home()))
+    manager_status = "[success]Running[/success]" if manager_running else "[warning]Not detected[/warning]"
+    details.add_row("Network Manager", manager_status)
+
+    commands = Table.grid(padding=(0, 2))
+    commands.add_column(style="accent", no_wrap=True)
+    commands.add_column(style="muted")
+    commands.add_row("code .", "Open current project in VS Code")
+    commands.add_row("dm status", "Container status")
+    commands.add_row("dm doctor", "Environment health checks")
+    commands.add_row("dm networks", "Docker networks")
+    commands.add_row("dm network-manager logs", "Network Manager logs")
+    commands.add_row("docker ps", "Running containers")
+    commands.add_row("docker compose up -d", "Start project services")
+
+    content = Group(
+        details,
+        Text("QUICK COMMANDS", style="heading"),
+        commands,
+        Text("Tip: run commands from inside each project directory.", style="muted"),
+    )
+    console.print(
+        Panel(
+            content,
+            title="[bold green]DEVBOX[/bold green] [bold white]DEVELOPMENT ENVIRONMENT[/bold white]",
+            border_style="bright_cyan",
+            box=box.ROUNDED,
+            padding=(1, 2),
+            expand=True,
         )
     )
 
