@@ -11,6 +11,7 @@ help: ## Show available commands
 	awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $1, $$2}'
 
 install: ## Install the host-side devbox command
+	@sudo -k && sudo -v
 	@bash ./scripts/host/install.sh
 
 build: ## Build DevBox image
@@ -34,4 +35,5 @@ clean: ## Remove DevBox containers, networks, volumes, and local images
 	@bash ./scripts/host/clean.sh
 
 uninstall: ## Completely remove DevBox while preserving the workspace
+	@sudo -k && sudo -v
 	@bash ./scripts/host/uninstall.sh
