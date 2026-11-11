@@ -20,35 +20,33 @@ DevBox - Docker development environment
 
 Usage:
   devbox [command]
+  devbox config [show|get workspace|set workspace PATH]
+  devbox manager [status|logs]
 
-Commands:
+Host commands:
   start             Build (if needed) and start DevBox
-  stop              Stop the DevBox container without removing resources
-  clean             Remove DevBox containers, networks, volumes, and local images
-  restart           Restart the existing DevBox container only
-  recreate          Recreate the container and network while preserving its home volume
-  recreate-all      Rebuild all DevBox resources, including network and home volume
   shell             Enter the running DevBox container (default)
+  stop              Stop the container without removing resources
+  clean             Remove DevBox containers, networks, volumes, and local images
+  restart           Restart the existing container
+  recreate          Recreate the container and network, preserving its home volume
+  recreate-all      Rebuild all DevBox resources, including the home volume
   status            Show container status
   logs              Show container logs
-  networks          Show networks connected to DevBox
-  doctor            Run health checks
+  networks          List networks connected to DevBox
+  doctor            Run health checks inside the container
   config            Show machine-specific configuration
-  config set workspace PATH  Set workspace directory
   manager status    Show Network Manager process status
   manager logs      Show Network Manager logs
   help              Show this help message
 
-Inside the container:
-  dm network-manager status
-  dm network-manager logs
-
 Examples:
   devbox start
-  devbox stop
-  devbox clean
+  devbox shell
+  devbox recreate
   devbox status
-  devbox
+  devbox config set workspace /path/to/workspace
+  devbox manager logs
 EOF
 }
 
