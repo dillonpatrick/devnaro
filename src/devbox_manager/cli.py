@@ -51,12 +51,14 @@ app = typer.Typer(
     cls=DevBoxTyperGroup,
     invoke_without_command=True,
     rich_markup_mode="rich",
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 network_app = typer.Typer(
     name="network-manager",
     help="Inspect the automatic Docker network manager.",
     no_args_is_help=True,
     cls=DevBoxTyperGroup,
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 app.add_typer(network_app, name="network-manager")
 
