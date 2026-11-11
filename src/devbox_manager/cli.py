@@ -3,6 +3,8 @@
 from datetime import datetime
 import getpass
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import typer
@@ -111,6 +113,130 @@ def main(
             f"[accent]v{__version__}[/accent]",
         )
         raise typer.Exit()
+
+
+def _read_version(command: list[str]) -> str:
+    """Return the first useful version line for an installed executable."""
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "Version unavailable"
+
+    output = (result.stdout or result.stderr).strip()
+    if not output:
+        return "Version unavailable"
+
+    return output.splitlines()[0].strip()
+
+
+def _tool_source(executable: str) -> str:
+    """Classify tools in the user's local bin directory separately."""
+    resolved = Path(executable).resolve()
+    user_bin = (Path.home() / ".local" / "bin").resolve()
+    try:
+        resolved.relative_to(user_bin)
+        return "User"
+    except ValueError:
+        return "Image"
+
+
+@app.command()
+def info() -> None:
+    """Show the DevBox stack, base image, and installed development tools."""
+    try:
+        alpine_version = Path("/etc/alpine-release").read_text(encoding="utf-8").strip()
+        base_image = f"Alpine Linux {alpine_version}"
+    except OSError:
+        base_image = "Unknown"
+
+    summary = Table.grid(padding=(0, 2))
+    summary.add_column(style="muted", no_wrap=True)
+    summary.add_column()
+    summary.add_row("Stack", f"[bold white]DevBox[/bold white] v{__version__}")
+    summary.add_row("Base", base_image)
+
+    tools = Table(box=box.ROUNDED, header_style="heading")
+    tools.add_column("Tool", style="cyan")
+    tools.add_column("Version")
+    tools.add_column("Source", style="muted")
+
+    known_tools = [
+        ("Terraform", "terraform", ["version"]),
+        ("Docker CLI", "docker", ["--version"]),
+        ("Docker Compose", "docker", ["compose", "version", "--short"]),
+        ("Python", "python3", ["--version"]),
+        ("uv", "uv", ["--version"]),
+        ("Git", "git", ["--version"]),
+        ("Zsh", "zsh", ["--version"]),
+        ("Bash", "bash", ["--version"]),
+    ]
+    reported: set[str] = set()
+
+    for label, executable, arguments in known_tools:
+        path = shutil.which(executable)
+        if not path:
+            tools.add_row(label, "[warning]Not installed[/warning]", "-")
+            continue
+        tools.add_row(
+            label,
+            _read_version([path, *arguments]),
+            _tool_source(path),
+        )
+        reported.add(Path(path).name)
+
+    oh_my_zsh = Path.home() / ".oh-my-zsh"
+    if (oh_my_zsh / ".git").exists():
+        commit = _read_version(["git", "-C", str(oh_my_zsh), "rev-parse", "--short", "HEAD"])
+        tools.add_row("Oh My Zsh", commit, "Image")
+
+    user_bin = Path.home() / ".local" / "bin"
+    if user_bin.is_dir():
+        for executable in sorted(user_bin.iterdir()):
+            if not executable.is_file() or not executable.stat().st_mode & 0o111:
+                continue
+            if executable.name in reported:
+                continue
+            tools.add_row(
+                executable.name,
+                _read_version([str(executable), "--version"]),
+                "User",
+            )
+
+    host_tools = Table(box=box.SIMPLE, show_header=False)
+    host_tools.add_column("Integration", style="cyan")
+    host_tools.add_column("Status")
+    try:
+        docker_engine = _read_version(
+            ["docker", "version", "--format", "{{.Server.Version}}"]
+        )
+    except OSError:
+        docker_engine = "Not available"
+    host_tools.add_row("Docker Engine", docker_engine,)
+
+    code_socket = Path("/run/devbox-host/code.sock")
+    host_tools.add_row(
+        "VS Code bridge",
+        "[success]Available[/success]" if code_socket.exists() else "[warning]Not detected[/warning]",
+    )
+
+    render_panel(
+        console,
+        "DevBox info",
+        Group(
+            summary,
+            Text("INSTALLED TOOLS", style="heading"),
+            tools,
+            Text("HOST INTEGRATIONS", style="heading"),
+            host_tools,
+        ),
+        subtitle="Image = provided by DevBox · User = installed in ~/.local/bin · Host = external integration",
+    )
 
 
 @app.command()
