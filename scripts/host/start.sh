@@ -224,25 +224,31 @@ detail ".env"
 
 section 4 "Host VS Code bridge"
 
-if [[ ! -x "$CODE_BRIDGE_BINARY" ]]; then
+BRIDGE_CONTAINER_ID="$(compose ps --all --quiet devbox)"
+IMAGE_PREBUILT=false
+if [[ -n "$BRIDGE_CONTAINER_ID" ]]; then
+    IMAGE_ID="$(docker inspect --format '{{.Image}}' "$BRIDGE_CONTAINER_ID")"
+else
     info "Building the image to prepare the host VS Code bridge..."
     compose build devbox
-
     IMAGE_ID="$(compose images -q devbox | head -n 1)"
-    if [[ -z "$IMAGE_ID" ]]; then
-        error "Unable to resolve the DevBox image after build."
-        exit 1
-    fi
-
-    TEMP_CONTAINER="$(docker create "$IMAGE_ID")"
-    if ! docker cp "$TEMP_CONTAINER:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY"; then
-        docker rm "$TEMP_CONTAINER" >/dev/null
-        error "Unable to extract the host VS Code bridge from the DevBox image."
-        exit 1
-    fi
-    docker rm "$TEMP_CONTAINER" >/dev/null
-    chmod 700 "$CODE_BRIDGE_BINARY"
+    IMAGE_PREBUILT=true
 fi
+
+if [[ -z "$IMAGE_ID" ]]; then
+    error "Unable to resolve the DevBox image for the host VS Code bridge."
+    exit 1
+fi
+
+TEMP_CONTAINER="$(docker create "$IMAGE_ID")"
+rm -f "$CODE_BRIDGE_BINARY"
+if ! docker cp "$TEMP_CONTAINER:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY"; then
+    docker rm "$TEMP_CONTAINER" >/dev/null
+    error "Unable to extract the host VS Code bridge from the DevBox image."
+    exit 1
+fi
+docker rm "$TEMP_CONTAINER" >/dev/null
+chmod 700 "$CODE_BRIDGE_BINARY"
 
 if [[ ! -S "$CODE_SOCKET_PATH" ]] || [[ ! -f "$CODE_BRIDGE_PID" ]] || ! kill -0 "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null; then
     rm -f "$CODE_SOCKET_PATH" "$CODE_BRIDGE_PID"
@@ -301,7 +307,9 @@ section 6 "Preparing DevBox"
 
 if [[ -z "$CONTAINER_ID" ]]; then
     info "No existing container found. Building the DevBox image..."
-    compose build
+    if [[ "$IMAGE_PREBUILT" != true ]]; then
+        compose build
+    fi
     success "DevBox image built successfully."
 else
     info "Existing DevBox container found. Skipping image build."
