@@ -7,10 +7,18 @@ ZSHRC="${HOME}/.zshrc"
 
 if [ -f "$ZSHRC" ]; then
     sed -i '/^# DevBox prompt identity$/,/^PROMPT=/d' "$ZSHRC"
+    sed -i '/^# BEGIN DEVBOX PROMPT THEME$/,/^# END DEVBOX PROMPT THEME$/d' "$ZSHRC"
     cat >> "$ZSHRC" <<'EOF'
 
 # DevBox prompt identity
-PROMPT="%F{green}[DEVBOX]%f ${PROMPT}"
+# BEGIN DEVBOX PROMPT THEME
+autoload -Uz vcs_info
+zstyle ':vcs_info:git:*' formats '(%b)'
+precmd_functions+=(devbox_vcs_info)
+devbox_vcs_info() { vcs_info }
+setopt PROMPT_SUBST
+PROMPT='%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f ${vcs_info_msg_0_}\n%F{green}╰─❯%f '
+# END DEVBOX PROMPT THEME
 
 # Ensure DevBox-managed tools remain available after user Zsh configuration.
 export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
