@@ -108,6 +108,45 @@ devbox start
 
 The startup script detects host and Docker socket IDs, prepares the workspace, writes the local `.env`, and validates the Compose configuration. If the container is already running, it leaves it untouched; if it exists but is stopped, it starts that container without rebuilding; if it does not exist, it builds the image and creates the container. It then ensures the host VS Code bridge and Network Manager are running. It does not automatically enter the container.
 
+### First-time setup: clone a project into the workspace
+
+Starting DevBox only prepares the development environment. It does **not** clone your application repositories. Clone each project into the shared workspace from the **host terminal before entering the container**.
+
+1. Start DevBox from the host:
+
+   ```bash
+   devbox start
+   ```
+
+2. Clone your project into the workspace on the host. By default, the workspace is a `workspace` directory alongside the DevBox repository:
+
+   ```bash
+   mkdir -p ../workspace
+   git clone <YOUR_PROJECT_GIT_URL> ../workspace/<PROJECT_NAME>
+   ```
+
+   Replace `<YOUR_PROJECT_GIT_URL>` with your repository URL and `<PROJECT_NAME>` with the directory name you want to use. If you configured a custom workspace with `devbox config set workspace PATH`, clone the project into that directory instead.
+
+3. Enter the running container:
+
+   ```bash
+   devbox shell
+   ```
+
+4. Inside the container, go to the project directory. The host workspace is mounted at `/workspace`:
+
+   ```bash
+   cd /workspace/<PROJECT_NAME>
+   ```
+
+5. Start working. For example, to open the project in host VS Code:
+
+   ```bash
+   code .
+   ```
+
+The project files are stored on the host and shared with the container. You can also clone additional repositories into the workspace from the host at any time; they will appear under `/workspace` inside DevBox.
+
 ## Host commands
 
 Run these commands in a host terminal:
