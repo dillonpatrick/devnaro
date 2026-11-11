@@ -204,54 +204,46 @@ def info() -> None:
 
     tools = Table(box=box.ROUNDED, header_style="heading")
     tools.add_column("Tool", style="cyan")
-    tools.add_column("Version")
+    tools.add_column("Path")
     tools.add_column("Source", style="muted")
 
     known_tools = [
-        ("Terraform", "terraform", ["version"]),
-        ("Docker CLI", "docker", ["--version"]),
-        ("Docker Compose", "docker", ["compose", "version", "--short"]),
-        ("Python", "python3", ["--version"]),
-        ("uv", "uv", ["--version"]),
-        ("Git", "git", ["--version"]),
-        ("Zsh", "zsh", ["--version"]),
-        ("Bash", "bash", ["--version"]),
+        ("Terraform", "terraform"),
+        ("Docker CLI", "docker"),
+        ("Docker Compose", "docker"),
+        ("Python", "python3"),
+        ("uv", "uv"),
+        ("Git", "git"),
+        ("Zsh", "zsh"),
+        ("Bash", "bash"),
     ]
     reported: set[str] = set()
     discovered_tools: list[tuple[str, str, str]] = []
 
-    for label, executable, arguments in known_tools:
+    for label, executable in known_tools:
         path = shutil.which(executable)
         if not path:
             discovered_tools.append(("-", label, "[warning]Not installed[/warning]"))
             continue
 
-        discovered_tools.append(
-            (_tool_source(path), label, _read_version([path, *arguments]))
-        )
+        discovered_tools.append((_tool_source(path), label, str(Path(path).resolve())))
         reported.add(Path(path).name)
 
     oh_my_zsh = Path.home() / ".oh-my-zsh"
     if (oh_my_zsh / ".git").exists():
-        revision = _read_version(
-            ["git", "-C", str(oh_my_zsh), "rev-parse", "--short", "HEAD"]
+        discovered_tools.append(
+            ("Image", "Oh My Zsh", str(oh_my_zsh.resolve()))
         )
-        discovered_tools.append(("Image", "Oh My Zsh (Git revision)", revision))
 
     for name, executable in _additional_path_tools(reported):
         source = _tool_source(executable)
-        # Unknown executables may launch applications or perform arbitrary
-        # actions when invoked. Detect them, but never execute them to guess
-        # their version.
-        discovered_tools.append(
-            (source, name, "Detected (version not queried)")
-        )
+        discovered_tools.append((source, name, str(Path(executable).resolve())))
 
-    for source, name, version in sorted(
+    for source, name, path in sorted(
         discovered_tools,
         key=lambda item: (item[0].casefold(), item[1].casefold()),
     ):
-        tools.add_row(name, version, source)
+        tools.add_row(name, path, source)
 
     host_tools = Table(box=box.SIMPLE, show_header=False)
     host_tools.add_column("Integration", style="cyan")
