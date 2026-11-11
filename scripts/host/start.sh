@@ -140,6 +140,20 @@ compose() {
         -f "$SCRIPT_DIR/docker/docker-compose.ports.yml" "$@"
 }
 
+resolve_bridge_image() {
+    local image_name
+
+    compose build devbox
+
+    image_name="$(compose config --images | head -n 1)"
+    if [[ -z "$image_name" ]]; then
+        error "Unable to resolve the DevBox image name from Docker Compose."
+        return 1
+    fi
+
+    docker image inspect --format '{{.Id}}' "$image_name"
+}
+
 USERNAME="devuser"
 
 # Workspace precedence: explicit environment variable, machine config, default.
@@ -230,10 +244,7 @@ if [[ -n "$BRIDGE_CONTAINER_ID" ]]; then
     IMAGE_ID="$(docker inspect --format '{{.Image}}' "$BRIDGE_CONTAINER_ID")"
 else
     info "Building the image to prepare the host VS Code bridge..."
-    IMAGE_ID_FILE="$(mktemp "$RUNTIME_DIR/devbox-image.XXXXXX")"
-    compose build --iidfile "$IMAGE_ID_FILE" devbox
-    IMAGE_ID="$(cat "$IMAGE_ID_FILE")"
-    rm -f "$IMAGE_ID_FILE"
+    IMAGE_ID="$(resolve_bridge_image)"
     IMAGE_PREBUILT=true
 fi
 
@@ -247,10 +258,7 @@ rm -f "$CODE_BRIDGE_BINARY"
 if ! docker cp "$TEMP_CONTAINER:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY"; then
     docker rm "$TEMP_CONTAINER" >/dev/null
     info "The existing image does not contain the standalone bridge. Rebuilding..."
-    IMAGE_ID_FILE="$(mktemp "$RUNTIME_DIR/devbox-image.XXXXXX")"
-    compose build --iidfile "$IMAGE_ID_FILE" devbox
-    IMAGE_ID="$(cat "$IMAGE_ID_FILE")"
-    rm -f "$IMAGE_ID_FILE"
+    IMAGE_ID="$(resolve_bridge_image)"
     if [[ -z "$IMAGE_ID" ]]; then
         error "Unable to resolve the rebuilt DevBox image."
         exit 1
