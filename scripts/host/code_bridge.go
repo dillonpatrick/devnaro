@@ -28,7 +28,7 @@ type response struct {
 }
 
 type bridge struct {
-	workspace     string
+	workspace      string
 	terminalScript string
 }
 
