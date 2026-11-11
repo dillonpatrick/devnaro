@@ -111,6 +111,7 @@ printf '  %-24s %s\n' 'devbox restart' 'Restart the existing container'
 printf '  %-24s %s\n' 'devbox recreate' 'Recreate the container, preserving its home volume'
 printf '  %-24s %s\n' 'devbox recreate-all' 'Rebuild all resources, including the home volume'
 printf '  %-24s %s\n' 'devbox status' 'Show container status'
+printf '  %-24s %s\n' 'devbox info' 'Show stack, base image, installed tools, and host integrations'
 printf '  %-24s %s\n' 'devbox config' 'Show or change machine-specific settings'
 printf '  %-24s %s\n' 'devbox help' 'Show command help'
 printf '\n%bInside the container%b\n' "$BOLD" "$RESET"
