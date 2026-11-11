@@ -12,7 +12,7 @@ def render_panel(
     title: str,
     content: Any,
     *,
-    border_style: str = "cyan",
+    border_style: str = "bright_cyan",
     subtitle: str | None = None,
     padding: tuple[int, int] = (1, 1),
     expand: bool = False,
