@@ -1,13 +1,19 @@
 #!/usr/bin/env sh
 set -eu
 
-# Install a compact DevBox prompt while preserving Git branch information.
-# Normalize previous DevBox prompt snippets in the persistent home volume.
+# Normalize DevBox-managed Zsh configuration in the persistent home volume.
 ZSHRC="${HOME}/.zshrc"
 
 if [ -f "$ZSHRC" ]; then
-    sed -i '/^# DevBox prompt identity$/d' "$ZSHRC"
-    sed -i '/^# BEGIN DEVBOX PROMPT THEME$/,/^# END DEVBOX PROMPT THEME$/d' "$ZSHRC"
+    # Remove the legacy prompt block, if present.
+    sed -i '/^# DevBox prompt identity$/,/^PROMPT=/d' "$ZSHRC"
+
+    # Older broken prompt writes could leave shell-script fragments after the
+    # managed marker. Rebuild the managed tail instead of trying to patch it.
+    sed -i '/^# BEGIN DEVBOX PROMPT THEME$/,$d' "$ZSHRC"
+    sed -i '/^# BEGIN DEVBOX CLI COMPLETION$/,$d' "$ZSHRC"
+    sed -i '/^# DevBox CLI completion$/d; /_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager/d' "$ZSHRC"
+
     cat >> "$ZSHRC" <<'EOF'
 
 # BEGIN DEVBOX PROMPT THEME
@@ -22,6 +28,7 @@ devbox_update_prompt() {
     PROMPT="%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f ${branch}%f"$'\n'"%F{green}╰─❯%f "
 }
 precmd_functions+=(devbox_update_prompt)
+devbox_update_prompt
 # END DEVBOX PROMPT THEME
 
 # Ensure DevBox-managed tools remain available after user Zsh configuration.
@@ -34,12 +41,9 @@ if [ -d "/workspace" ] && [ ! -e "${HOME}/workspace" ] && [ ! -L "${HOME}/worksp
     ln -s /workspace "${HOME}/workspace"
 fi
 
-# Replace the previous unsupported Click shell-source hook with native Zsh completion.
+# Install native Zsh completion for the DevBox CLI.
 if [ -f "$ZSHRC" ]; then
-    sed -i '/^# DevBox CLI completion$/d; /_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager/d' "$ZSHRC"
-    sed -i '/^# BEGIN DEVBOX CLI COMPLETION$/,/^# END DEVBOX CLI COMPLETION$/d' "$ZSHRC"
-    if ! grep -q '^# BEGIN DEVBOX CLI COMPLETION$' "$ZSHRC"; then
-        cat >> "$ZSHRC" <<'EOF'
+    cat >> "$ZSHRC" <<'EOF'
 
 # BEGIN DEVBOX CLI COMPLETION
 autoload -Uz compinit
@@ -49,7 +53,7 @@ fi
 
 _devbox_manager_completion() {
     local -a commands
-    commands=(status networks doctor network-manager)
+    commands=(status networks doctor network-manager welcome)
 
     if (( CURRENT == 2 )); then
         compadd -- $commands
@@ -64,7 +68,6 @@ compdef _devbox_manager_completion devbox-manager
 compdef _devbox_manager_completion dm
 # END DEVBOX CLI COMPLETION
 EOF
-    fi
 fi
 
 # A fresh marker is created whenever the container starts or restarts.
