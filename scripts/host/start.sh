@@ -384,6 +384,7 @@ printf '%b\n' "${WHITE}${BOLD}  Quick commands${RESET}"
 printf '\n'
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox shell" "${RESET}" "Enter DevBox"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox status" "${RESET}" "Container status"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox info" "${RESET}" "DevBox environment and installed tools"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox manager logs" "${RESET}" "Network Manager logs"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox networks" "${RESET}" "Docker networks"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Stop DevBox container"
