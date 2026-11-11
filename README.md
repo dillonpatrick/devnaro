@@ -156,7 +156,7 @@ Run these commands in a host terminal:
 | `devbox start` | Start an existing container or build and create one if absent |
 | `devbox stop` | Stop the container without removing resources |
 | `devbox clean` | Remove DevBox containers, networks, volumes, and local images |
-| `devbox uninstall` | Remove the host command shortcut and DevBox PATH entries |
+| `devbox uninstall` | Completely remove DevBox while preserving the workspace |
 | `devbox restart` | Restart the existing container only |
 | `devbox recreate` | Recreate the container and network while preserving its home volume |
 | `devbox recreate-all` | Rebuild all DevBox resources, including the home volume |
@@ -183,7 +183,7 @@ Machine-specific settings are stored outside the repository in `~/.config/devbox
 
 Use `devbox clean` only when you intentionally want to remove DevBox's persisted home configuration and local image. A subsequent `devbox start` rebuilds what is needed.
 
-- **Uninstall:** runs `devbox uninstall` (or `make uninstall` from the repository). It removes the `devbox` command symlink installed on the host and the PATH block managed by the installer. It does not remove the DevBox repository, workspace, Docker containers, images, volumes, or machine configuration. If DevBox was installed to a custom directory with `DEVBOX_BIN_DIR`, pass the same variable when uninstalling.
+- **Uninstall:** runs `devbox uninstall` (or `make uninstall` from the repository) and asks for confirmation before completely removing DevBox from the host. It removes the DevBox container, Compose network, `devbox_home` volume, locally built image, host VS Code bridge, command symlink, installer-managed PATH entries, machine-specific configuration, generated local files, and the DevBox repository itself. The configured workspace is preserved. If the workspace is inside the DevBox repository, uninstall stops without deleting anything; move it outside the repository first. If DevBox was installed to a custom directory with `DEVBOX_BIN_DIR`, pass the same variable when uninstalling.
 
 ## Inside the container
 
