@@ -155,7 +155,8 @@ Run these commands in a host terminal:
 | `devbox` or `devbox shell` | Enter the running DevBox container |
 | `devbox start` | Start an existing container or build and create one if absent |
 | `devbox stop` | Stop the container without removing resources |
-| `devbox clean` | Remove DevBox containers, networks, volumes, and local images |\n| `devbox uninstall` | Remove the host command shortcut and DevBox PATH entries |
+| `devbox clean` | Remove DevBox containers, networks, volumes, and local images |
+| `devbox uninstall` | Remove the host command shortcut and DevBox PATH entries |
 | `devbox restart` | Restart the existing container only |
 | `devbox recreate` | Recreate the container and network while preserving its home volume |
 | `devbox recreate-all` | Rebuild all DevBox resources, including the home volume |
@@ -180,7 +181,9 @@ Machine-specific settings are stored outside the repository in `~/.config/devbox
 - **Recreate all:** asks for confirmation, then removes the DevBox container, Compose network, `devbox_home` volume, local image, and host VS Code bridge before running the full startup flow. Workspace files and resources from other Compose projects are preserved. Files and settings stored in `devbox_home` are permanently lost.
 - **Clean:** runs Compose cleanup for the DevBox project, removes its Compose-managed volumes and locally built images, and stops/removes the host VS Code bridge. It does not delete the workspace or resources belonging to other Compose projects.
 
-Use `devbox clean` only when you intentionally want to remove DevBox's persisted home configuration and local image. A subsequent `devbox start` rebuilds what is needed.\n\n- **Uninstall:** runs `devbox uninstall` (or `make uninstall` from the repository). It removes the `devbox` command symlink installed on the host and the PATH block managed by the installer. It does not remove the DevBox repository, workspace, Docker containers, images, volumes, or machine configuration. If DevBox was installed to a custom directory with `DEVBOX_BIN_DIR`, pass the same variable when uninstalling.
+Use `devbox clean` only when you intentionally want to remove DevBox's persisted home configuration and local image. A subsequent `devbox start` rebuilds what is needed.
+
+- **Uninstall:** runs `devbox uninstall` (or `make uninstall` from the repository). It removes the `devbox` command symlink installed on the host and the PATH block managed by the installer. It does not remove the DevBox repository, workspace, Docker containers, images, volumes, or machine configuration. If DevBox was installed to a custom directory with `DEVBOX_BIN_DIR`, pass the same variable when uninstalling.
 
 ## Inside the container
 
@@ -229,7 +232,8 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 | Command | Description |
 |---|---|
 | `make` | Show available tasks |
-| `make install` | Install the host-side `devbox` command |\n| `make uninstall` | Remove the host-side `devbox` command shortcut |
+| `make install` | Install the host-side `devbox` command |
+| `make uninstall` | Remove the host-side `devbox` command shortcut |
 | `make build` | Build the DevBox image |
 | `make rebuild` | Rebuild the image without cache |
 | `make test` | Run Python unit tests (DevBox must be running) |
