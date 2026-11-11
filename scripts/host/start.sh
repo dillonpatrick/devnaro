@@ -133,7 +133,12 @@ section 1 "Environment configuration"
 
 
 cd "$SCRIPT_DIR"
-compose() { docker compose --project-directory "$SCRIPT_DIR" -f "$SCRIPT_DIR/docker/docker-compose.yml" "$@"; }
+bash "$SCRIPT_DIR/scripts/host/ensure-ports-config.sh"
+compose() {
+    docker compose --project-directory "$SCRIPT_DIR" \
+        -f "$SCRIPT_DIR/docker/docker-compose.yml" \
+        -f "$SCRIPT_DIR/docker/docker-compose.ports.yml" "$@"
+}
 
 USERNAME="devuser"
 
