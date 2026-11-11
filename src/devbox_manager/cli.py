@@ -432,21 +432,20 @@ def doctor() -> None:
 
     passed_count = sum(1 for _, passed, _ in checks if passed)
     failed_count = len(checks) - passed_count
+    content = (
+        Group(table, Text("All checks passed.", style="success"))
+        if failed_count == 0
+        else table
+    )
     render_panel(
         console,
         "DevBox health check",
-        table,
+        content,
         subtitle=f"{passed_count} passed · {failed_count} failed",
     )
 
-    if not all(passed for _, passed, _ in checks):
+    if failed_count:
         raise typer.Exit(code=1)
-
-    render_panel(
-        console,
-        "Health check result",
-        "[success]All checks passed.[/success]",
-    )
 
 
 @network_app.command("status")
@@ -567,7 +566,6 @@ def welcome() -> None:
         content,
         border_style="info",
         padding=(1, 2),
-        expand=True,
     )
 
 
