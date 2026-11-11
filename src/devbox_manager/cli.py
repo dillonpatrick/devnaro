@@ -285,7 +285,7 @@ def network_manager_status() -> None:
         )
         legend = Text(
             "PID = process ID  •  PPID = parent process ID  •  "
-            "User = account running it  •  Uptime = time since it started\\n"
+            "User = account running it  •  Uptime = time since it started\n"
             "State: S = sleeping/waiting (normal while idle); R = running; "
             "D = uninterruptible wait; Z = zombie.",
             style="muted",
