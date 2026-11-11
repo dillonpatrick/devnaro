@@ -22,6 +22,9 @@ WORKSPACE_PATH="$(printenv WORKSPACE_PATH || true)"
 if [[ -z "$WORKSPACE_PATH" ]]; then
     WORKSPACE_PATH="$CONFIG_WORKSPACE"
 fi
+if [[ -z "$WORKSPACE_PATH" && -f "$SCRIPT_DIR/.env" ]]; then
+    WORKSPACE_PATH="$(awk -F= '$1 == "WORKSPACE_PATH" { sub(/^[^=]*=/, ""); print; exit }' "$SCRIPT_DIR/.env")"
+fi
 if [[ -z "$WORKSPACE_PATH" ]]; then
     WORKSPACE_PATH="$SCRIPT_DIR/../workspace"
 fi
