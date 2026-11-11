@@ -15,7 +15,6 @@ def test_render_panel_uses_consistent_framed_layout():
         console,
         "Example command",
         "Command output",
-        border_style="green",
         subtitle="1 item found",
     )
 
