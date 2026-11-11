@@ -24,3 +24,16 @@ def test_render_panel_uses_consistent_framed_layout():
     assert "1 item found" in rendered
     assert "╭" in rendered
     assert "╰" in rendered
+
+
+def test_typer_help_uses_devbox_theme():
+    from typer import rich_utils
+
+    from devbox_manager.presentation import configure_typer_help
+
+    configure_typer_help()
+
+    assert rich_utils.STYLE_USAGE == "bold bright_cyan"
+    assert rich_utils.STYLE_OPTIONS_PANEL_BORDER == "bright_cyan"
+    assert rich_utils.STYLE_COMMANDS_PANEL_BORDER == "bright_cyan"
+    assert rich_utils.STYLE_COMMANDS_TABLE_FIRST_COLUMN == "bold bright_cyan"
