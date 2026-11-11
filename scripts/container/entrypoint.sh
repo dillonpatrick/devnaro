@@ -12,14 +12,118 @@ if [ -f "$ZSHRC" ]; then
 
 # DevBox prompt identity
 # BEGIN DEVBOX PROMPT THEME
-setopt PROMPT_SUBST
-devbox_git_branch() {
-    local branch
-    branch=$(command git symbolic-ref --quiet --short HEAD 2>/dev/null) || branch=$(command git rev-parse --short HEAD 2>/dev/null) || return
-    [[ -n "$branch" ]] && print -r -- "($branch)"
+unsetopt PROMPT_SUBST
+devbox_update_prompt() {
+    local branch=""
+    if command git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        branch=$(command git symbolic-ref --quiet --short HEAD 2>/dev/null || command git rev-parse --short HEAD 2>/dev/null || true)
+    fi
+
+    if [[ -n "$branch" ]]; then
+        PROMPT="%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f %F{yellow}(${branch})%f"
+# END DEVBOX PROMPT THEME
+
+# Ensure DevBox-managed tools remain available after user Zsh configuration.
+export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
+EOF
+fi
+
+# Make the mounted workspace easy to reach from the container home directory.
+if [ -d "/workspace" ] && [ ! -e "${HOME}/workspace" ] && [ ! -L "${HOME}/workspace" ]; then
+    ln -s /workspace "${HOME}/workspace"
+fi
+
+# Replace the previous unsupported Click shell-source hook with native Zsh completion.
+if [ -f "$ZSHRC" ]; then
+    sed -i '/^# DevBox CLI completion$/d; /_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager/d' "$ZSHRC"
+    sed -i '/^# BEGIN DEVBOX CLI COMPLETION$/,/^# END DEVBOX CLI COMPLETION$/d' "$ZSHRC"
+    if ! grep -q '^# BEGIN DEVBOX CLI COMPLETION$' "$ZSHRC"; then
+        cat >> "$ZSHRC" <<'EOF'
+
+# BEGIN DEVBOX CLI COMPLETION
+autoload -Uz compinit
+if (( ! $+functions[compdef] )); then
+    compinit
+fi
+
+_devbox_manager_completion() {
+    local -a commands
+    commands=(status networks doctor network-manager)
+
+    if (( CURRENT == 2 )); then
+        compadd -- $commands
+    elif [[ "${words[2]}" == "network-manager" ]] && (( CURRENT == 3 )); then
+        compadd -- status logs
+    elif [[ "${words[2]}" == "network-manager" && "${words[3]}" == "logs" ]] && (( CURRENT == 4 )); then
+        compadd -- --lines -n
+    fi
 }
-PROMPT='%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f $(devbox_git_branch)
-%F{green}╰─❯%f '
+
+compdef _devbox_manager_completion devbox-manager
+compdef _devbox_manager_completion dm
+# END DEVBOX CLI COMPLETION
+EOF
+    fi
+fi
+
+# A fresh marker is created whenever the container starts or restarts.
+: > /tmp/devbox-welcome-pending
+exec "$@"
+\n'"%F{green}╰─❯%f "
+    else
+        PROMPT='%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f'
+# END DEVBOX PROMPT THEME
+
+# Ensure DevBox-managed tools remain available after user Zsh configuration.
+export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
+EOF
+fi
+
+# Make the mounted workspace easy to reach from the container home directory.
+if [ -d "/workspace" ] && [ ! -e "${HOME}/workspace" ] && [ ! -L "${HOME}/workspace" ]; then
+    ln -s /workspace "${HOME}/workspace"
+fi
+
+# Replace the previous unsupported Click shell-source hook with native Zsh completion.
+if [ -f "$ZSHRC" ]; then
+    sed -i '/^# DevBox CLI completion$/d; /_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager/d' "$ZSHRC"
+    sed -i '/^# BEGIN DEVBOX CLI COMPLETION$/,/^# END DEVBOX CLI COMPLETION$/d' "$ZSHRC"
+    if ! grep -q '^# BEGIN DEVBOX CLI COMPLETION$' "$ZSHRC"; then
+        cat >> "$ZSHRC" <<'EOF'
+
+# BEGIN DEVBOX CLI COMPLETION
+autoload -Uz compinit
+if (( ! $+functions[compdef] )); then
+    compinit
+fi
+
+_devbox_manager_completion() {
+    local -a commands
+    commands=(status networks doctor network-manager)
+
+    if (( CURRENT == 2 )); then
+        compadd -- $commands
+    elif [[ "${words[2]}" == "network-manager" ]] && (( CURRENT == 3 )); then
+        compadd -- status logs
+    elif [[ "${words[2]}" == "network-manager" && "${words[3]}" == "logs" ]] && (( CURRENT == 4 )); then
+        compadd -- --lines -n
+    fi
+}
+
+compdef _devbox_manager_completion devbox-manager
+compdef _devbox_manager_completion dm
+# END DEVBOX CLI COMPLETION
+EOF
+    fi
+fi
+
+# A fresh marker is created whenever the container starts or restarts.
+: > /tmp/devbox-welcome-pending
+exec "$@"
+\n''%F{green}╰─❯%f '
+    fi
+}
+precmd_functions+=(devbox_update_prompt)
 # END DEVBOX PROMPT THEME
 
 # Ensure DevBox-managed tools remain available after user Zsh configuration.
