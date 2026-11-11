@@ -10,8 +10,6 @@ runner = CliRunner()
 
 
 def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
-    from types import SimpleNamespace
-
     from devbox_manager import cli
 
     user_bin = tmp_path / ".local" / "bin"
@@ -34,16 +32,6 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
         "which",
         lambda executable: f"/usr/bin/{executable}",
     )
-    monkeypatch.setattr(
-        cli.subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(
-            stdout="tool version 1.2.3\n",
-            stderr="",
-            returncode=0,
-        ),
-    )
-
     result = runner.invoke(app, ["info"])
 
     assert result.exit_code == 0
@@ -52,11 +40,14 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     assert "Alpine Linux" in result.stdout
     assert "Terraform" in result.stdout
     assert "Docker Compose" in result.stdout
+    assert "Path" in result.stdout
+    assert "/usr/bin/terraform" in result.stdout
     assert "Image" in result.stdout
     assert "custom-tool" in result.stdout
     assert "custom-sdk" in result.stdout
     assert "Custom PATH" in result.stdout
-    assert "Detected (version not queried)" in result.stdout
+    assert str(sdk_tool.resolve()) in result.stdout
+    assert str(user_tool.resolve()) in result.stdout
     assert result.stdout.index("Custom PATH") < result.stdout.index("Image") < result.stdout.index("User")
     assert "User" in result.stdout
     assert "Docker Engine" in result.stdout
