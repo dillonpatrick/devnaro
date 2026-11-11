@@ -196,7 +196,7 @@ case "$command" in
             -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox zsh
         ;;
     status)
-        compose ps --format json devbox | python3 "$DEVBOX_DIR/scripts/host/status.py"
+        compose ps --all --format table devbox
         ;;
     info)
         require_running
