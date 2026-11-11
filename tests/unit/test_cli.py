@@ -31,6 +31,22 @@ def test_network_manager_short_help():
     assert "Inspect the automatic Docker network manager" in result.stdout
 
 
+def test_welcome_lists_all_container_quick_commands(monkeypatch):
+    from devbox_manager import cli
+
+    monkeypatch.setattr(cli, "process_status", lambda: (True, "Network Manager running"))
+    result = runner.invoke(app, ["welcome"])
+
+    assert result.exit_code == 0
+    assert "dm status" in result.stdout
+    assert "dm doctor" in result.stdout
+    assert "dm networks" in result.stdout
+    assert "dm network-manager status" in result.stdout
+    assert "dm network-manager logs" in result.stdout
+    assert "docker ps" in result.stdout
+    assert "docker compose up -d" in result.stdout
+
+
 def test_cli_version():
     result = runner.invoke(app, ["--version"])
 
