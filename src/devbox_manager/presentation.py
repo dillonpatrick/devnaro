@@ -55,14 +55,15 @@ def render_panel(
     padding: tuple[int, int] = (1, 1),
 ) -> None:
     """Render command output inside the standard DevBox panel."""
-    console.print(
-        Panel(
-            content,
-            title=f"[heading]{title}[/heading]",
-            subtitle=subtitle,
-            border_style=border_style,
-            box=box.ROUNDED,
-            padding=padding,
-            expand=False,
+    with console.use_theme(DEVBOX_THEME):
+        console.print(
+            Panel(
+                content,
+                title=f"[heading]{title}[/heading]",
+                subtitle=subtitle,
+                border_style=border_style,
+                box=box.ROUNDED,
+                padding=padding,
+                expand=False,
+            )
         )
-    )
