@@ -108,9 +108,9 @@ function dm() { devbox-manager "$@"; }
 if [[ -f /tmp/devbox-welcome-pending ]]; then
     rm -f /tmp/devbox-welcome-pending
     printf '\n'
-    printf '\033[1;36m==============================================\033[0m\n'
-    printf '\033[1;36m                 DEVBOX READY                 \033[0m\n'
-    printf '\033[1;36m==============================================\033[0m\n'
+    printf '\033[1;36m  +--------------------------------------------------+\033[0m\n'
+    printf '\033[1;36m  |\033[0m  \033[1;32mDEVBOX\033[0m  \033[1;37mDEVELOPMENT ENVIRONMENT\033[0m             \033[1;36m|\033[0m\n'
+    printf '\033[1;36m  +--------------------------------------------------+\033[0m\n'
     printf '\n'
     printf '  DevBox version:   %s\n' "$(cat /etc/devbox-version)"
     printf '  Base image:       Alpine Linux %s\n' "$(cut -d. -f1,2 /etc/alpine-release)"
@@ -122,8 +122,9 @@ if [[ -f /tmp/devbox-welcome-pending ]]; then
     else
         printf '  Network Manager:  \033[1;33mNot detected\033[0m\n'
     fi
+    printf '\033[1;36m  +--------------------------------------------------+\033[0m\n'
     printf '\n'
-    printf '\033[1;37m  Useful commands\033[0m\n'
+    printf '\033[1;37m  QUICK COMMANDS\033[0m\n'
     printf '  code .                                Open current project in VS Code\n'
     printf '  dm status                             Container status\n'
     printf '  dm doctor                             Environment health checks\n'
@@ -132,6 +133,7 @@ if [[ -f /tmp/devbox-welcome-pending ]]; then
     printf '  docker ps                             Running containers\n'
     printf '  docker compose up -d                  Start project services\n'
     printf '\n'
+    printf '\033[1;36m  +--------------------------------------------------+\033[0m\n'
     printf '\033[2m  Tip: run commands from inside each project directory.\033[0m\n'
     printf '\n'
 fi
