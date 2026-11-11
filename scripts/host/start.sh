@@ -194,6 +194,8 @@ RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 CODE_SOCKET_PATH="$RUNTIME_DIR/devbox-code-$USER_UID.sock"
 CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
 CODE_BRIDGE_LOG="$RUNTIME_DIR/devbox-code-$USER_UID.log"
+CODE_BRIDGE_BINARY="$RUNTIME_DIR/devbox-host-bridge-$USER_UID"
+mkdir -p "$RUNTIME_DIR"
 
 detail "Location: ${WORKSPACE_PATH}"
 
@@ -222,17 +224,33 @@ detail ".env"
 
 section 4 "Host VS Code bridge"
 
-if ! command -v python3 >/dev/null 2>&1; then
-    error "Python 3 is required on the host for the VS Code bridge."
-    exit 1
+if [[ ! -x "$CODE_BRIDGE_BINARY" ]]; then
+    info "Building the image to prepare the host VS Code bridge..."
+    compose build devbox
+
+    IMAGE_ID="$(compose images -q devbox | head -n 1)"
+    if [[ -z "$IMAGE_ID" ]]; then
+        error "Unable to resolve the DevBox image after build."
+        exit 1
+    fi
+
+    TEMP_CONTAINER="$(docker create "$IMAGE_ID")"
+    if ! docker cp "$TEMP_CONTAINER:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY"; then
+        docker rm "$TEMP_CONTAINER" >/dev/null
+        error "Unable to extract the host VS Code bridge from the DevBox image."
+        exit 1
+    fi
+    docker rm "$TEMP_CONTAINER" >/dev/null
+    chmod 700 "$CODE_BRIDGE_BINARY"
 fi
 
 if [[ ! -S "$CODE_SOCKET_PATH" ]] || [[ ! -f "$CODE_BRIDGE_PID" ]] || ! kill -0 "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null; then
     rm -f "$CODE_SOCKET_PATH" "$CODE_BRIDGE_PID"
     info "Starting host VS Code bridge..."
-    nohup python3 "$SCRIPT_DIR/scripts/host/code_bridge.py" \
+    nohup "$CODE_BRIDGE_BINARY" \
         --socket "$CODE_SOCKET_PATH" \
         --workspace "$WORKSPACE_PATH" \
+        --terminal-script "$SCRIPT_DIR/scripts/host/vscode-terminal.sh" \
         >"$CODE_BRIDGE_LOG" 2>&1 &
     echo "$!" > "$CODE_BRIDGE_PID"
 
