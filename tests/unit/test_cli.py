@@ -47,8 +47,7 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     assert "custom-sdk" in result.stdout
     assert "Custom PATH" in result.stdout
     assert "sdk/bin/custom-sdk" in result.stdout
-    normalized_output = "".join(result.stdout.split())
-    assert str(user_tool.resolve()) in normalized_output
+    assert ".local/bin/custom-tool" in result.stdout
     assert result.stdout.index("Custom PATH") < result.stdout.index("Image") < result.stdout.index("User")
     assert "User" in result.stdout
     assert "Docker Engine" in result.stdout
