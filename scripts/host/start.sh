@@ -143,7 +143,7 @@ compose() {
 resolve_bridge_image() {
     local image_name
 
-    compose build devbox
+    compose build devbox >&2
 
     image_name="$(compose config --images | head -n 1)"
     if [[ -z "$image_name" ]]; then
