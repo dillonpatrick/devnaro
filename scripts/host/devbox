@@ -27,7 +27,7 @@ Commands:
   start             Build (if needed) and start DevBox
   stop              Stop the DevBox container without removing resources
   clean             Remove DevBox containers, networks, volumes, and local images
-  uninstall         Remove the host command shortcut and DevBox PATH entries
+  uninstall         Completely remove DevBox while preserving the workspace
   restart           Restart the existing DevBox container only
   recreate          Recreate the container and network while preserving its home volume
   recreate-all      Rebuild all DevBox resources, including network and home volume
