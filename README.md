@@ -118,14 +118,13 @@ Starting DevBox only prepares the development environment. It does **not** clone
    devbox start
    ```
 
-2. Clone your project into the workspace on the host. By default, the workspace is a `workspace` directory alongside the DevBox repository:
+2. Clone your project into the workspace from the host. **DevBox creates the workspace automatically** when you run `devbox start`. By default, it is a `workspace` directory alongside the DevBox repository:
 
    ```bash
-   mkdir -p ../workspace
    git clone <YOUR_PROJECT_GIT_URL> ../workspace/<PROJECT_NAME>
    ```
 
-   Replace `<YOUR_PROJECT_GIT_URL>` with your repository URL and `<PROJECT_NAME>` with the directory name you want to use. If you configured a custom workspace with `devbox config set workspace PATH`, clone the project into that directory instead.
+   Replace `<YOUR_PROJECT_GIT_URL>` with your repository URL and `<PROJECT_NAME>` with the directory name you want to use. If you configured a custom workspace with `devbox config set workspace PATH`, clone the project into that directory instead. There is no need to create the directory manually.
 
 3. Enter the running container:
 
