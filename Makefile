@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install build rebuild test config clean
+.PHONY: help install uninstall build rebuild test config clean
 
 # ==========================================
 # Development and maintenance commands
@@ -32,3 +32,6 @@ config: ## Validate Docker Compose configuration
 
 clean: ## Remove DevBox containers, networks, volumes, and local images
 	@bash ./scripts/host/clean.sh
+
+uninstall: ## Remove the host-side devbox command shortcut
+	@bash ./scripts/host/uninstall.sh
