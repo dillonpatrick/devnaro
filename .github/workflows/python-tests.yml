@@ -54,7 +54,11 @@ jobs:
           python3 -m py_compile scripts/host/code_bridge.py scripts/container/code
 
       - name: Validate Docker Compose configuration
-        run: docker compose --project-directory . -f docker/docker-compose.yml config --quiet
+        run: |
+          bash scripts/host/ensure-ports-config.sh
+          docker compose --project-directory . \
+            -f docker/docker-compose.yml \
+            -f docker/docker-compose.ports.yml config --quiet
 
   docker-image-build:
     runs-on: ubuntu-latest
