@@ -8,6 +8,48 @@ from devbox_manager.cli import app
 runner = CliRunner()
 
 
+
+def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    from devbox_manager import cli
+
+    user_bin = tmp_path / ".local" / "bin"
+    user_bin.mkdir(parents=True)
+    user_tool = user_bin / "custom-tool"
+    user_tool.write_text("#!/bin/sh\necho custom-tool 2.4.0\n", encoding="utf-8")
+    user_tool.chmod(0o755)
+
+    monkeypatch.setattr(cli.Path, "home", classmethod(lambda cls: tmp_path))
+    monkeypatch.setattr(
+        cli.shutil,
+        "which",
+        lambda executable: f"/usr/bin/{executable}",
+    )
+    monkeypatch.setattr(
+        cli.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            stdout="tool version 1.2.3\n",
+            stderr="",
+            returncode=0,
+        ),
+    )
+
+    result = runner.invoke(app, ["info"])
+
+    assert result.exit_code == 0
+    assert "DevBox info" in result.stdout
+    assert "Stack" in result.stdout
+    assert "Alpine Linux" in result.stdout
+    assert "Terraform" in result.stdout
+    assert "Docker Compose" in result.stdout
+    assert "Image" in result.stdout
+    assert "custom-tool" in result.stdout
+    assert "User" in result.stdout
+    assert "Docker Engine" in result.stdout
+    assert "VS Code bridge" in result.stdout
+
 def test_cli_help():
     result = runner.invoke(app, ["--help"])
 
