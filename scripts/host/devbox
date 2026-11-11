@@ -14,41 +14,54 @@ command="${1:-shell}"
 
 bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
+if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
+    RESET='\033[0m'
+    BOLD='\033[1m'
+    CYAN='\033[0;96m'
+    GREEN='\033[0;32m'
+    DIM='\033[2m'
+else
+    RESET=''
+    BOLD=''
+    CYAN=''
+    GREEN=''
+    DIM=''
+fi
+
+print_command() {
+    printf "  %b%-18s%b %b%s%b\n" "$GREEN" "$1" "$RESET" "$DIM" "$2" "$RESET"
+}
+
 usage() {
-    cat <<'EOF'
-DevBox - Docker development environment
-
-Usage:
-  devbox [command]
-  devbox config [show|get workspace|set workspace PATH]
-  devbox manager [status|logs]
-
-Host commands:
-  start             Build (if needed) and start DevBox
-  shell             Enter the running DevBox container (default)
-  stop              Stop the container without removing resources
-  clean             Remove DevBox containers, networks, volumes, and local images
-  restart           Restart the existing container
-  recreate          Recreate the container and network, preserving its home volume
-  recreate-all      Rebuild all DevBox resources, including the home volume
-  status            Show container status
-  info              Show DevBox stack, base image, and installed tools
-  logs              Show container logs
-  networks          List networks connected to DevBox
-  doctor            Run health checks inside the container
-  config            Show machine-specific configuration
-  manager status    Show Network Manager process status
-  manager logs      Show Network Manager logs
-  help              Show this help message
-
-Examples:
-  devbox start
-  devbox shell
-  devbox recreate
-  devbox status
-  devbox config set workspace /path/to/workspace
-  devbox manager logs
-EOF
+    printf "\n%bDevBox%b %b- Docker development environment%b\n\n" "$BOLD$CYAN" "$RESET" "$DIM" "$RESET"
+    printf "%bUsage:%b\n" "$BOLD$CYAN" "$RESET"
+    printf "  %bdevbox%b [command]\n" "$GREEN" "$RESET"
+    printf "  %bdevbox%b config [show|get workspace|set workspace PATH]\n" "$GREEN" "$RESET"
+    printf "  %bdevbox%b manager [status|logs]\n\n" "$GREEN" "$RESET"
+    printf "%bHost commands:%b\n" "$BOLD$CYAN" "$RESET"
+    print_command start "Build (if needed) and start DevBox"
+    print_command shell "Enter the running DevBox container (default)"
+    print_command stop "Stop the container without removing resources"
+    print_command clean "Remove DevBox containers, networks, volumes, and local images"
+    print_command restart "Restart the existing container"
+    print_command recreate "Recreate the container and network, preserving its home volume"
+    print_command recreate-all "Rebuild all DevBox resources, including the home volume"
+    print_command status "Show container status"
+    print_command info "Show DevBox stack, base image, and installed tools"
+    print_command logs "Show container logs"
+    print_command networks "List networks connected to DevBox"
+    print_command doctor "Run health checks inside the container"
+    print_command config "Show machine-specific configuration"
+    print_command "manager status" "Show Network Manager process status"
+    print_command "manager logs" "Show Network Manager logs"
+    print_command help "Show this help message"
+    printf "\n%bExamples:%b\n" "$BOLD$CYAN" "$RESET"
+    printf "  %bdevbox start%b\n" "$GREEN" "$RESET"
+    printf "  %bdevbox shell%b\n" "$GREEN" "$RESET"
+    printf "  %bdevbox recreate%b\n" "$GREEN" "$RESET"
+    printf "  %bdevbox status%b\n" "$GREEN" "$RESET"
+    printf "  %bdevbox config set workspace PATH%b\n" "$GREEN" "$RESET"
+    printf "  %bdevbox manager logs%b\n\n" "$GREEN" "$RESET"
 }
 
 compose() {
