@@ -244,8 +244,19 @@ TEMP_CONTAINER="$(docker create "$IMAGE_ID")"
 rm -f "$CODE_BRIDGE_BINARY"
 if ! docker cp "$TEMP_CONTAINER:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY"; then
     docker rm "$TEMP_CONTAINER" >/dev/null
-    error "Unable to extract the host VS Code bridge from the DevBox image."
-    exit 1
+    info "The existing image does not contain the standalone bridge. Rebuilding..."
+    compose build devbox
+    IMAGE_ID="$(compose images -q devbox | head -n 1)"
+    if [[ -z "$IMAGE_ID" ]]; then
+        error "Unable to resolve the rebuilt DevBox image."
+        exit 1
+    fi
+    TEMP_CONTAINER="$(docker create "$IMAGE_ID")"
+    if ! docker cp "$TEMP_CONTAINER:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY"; then
+        docker rm "$TEMP_CONTAINER" >/dev/null
+        error "Unable to extract the host VS Code bridge from the rebuilt image."
+        exit 1
+    fi
 fi
 docker rm "$TEMP_CONTAINER" >/dev/null
 chmod 700 "$CODE_BRIDGE_BINARY"
