@@ -573,7 +573,7 @@ def welcome() -> None:
         Text("QUICK COMMANDS · INSIDE CONTAINER", style="heading"),
         commands,
         Text(
-            "Host terminal: devbox info  ·  Run project commands from inside each project directory.",
+            "Host commands: devbox start · shell · stop · clean · restart · recreate · recreate-all · status · info · logs · networks · doctor · config · manager status/logs",
             style="muted",
         ),
     )
