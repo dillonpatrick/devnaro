@@ -2,7 +2,10 @@
 
 from datetime import datetime
 import getpass
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import typer
@@ -11,27 +14,15 @@ from rich import box
 from rich.console import Console, Group
 from rich.table import Table
 from rich.text import Text
-from rich.theme import Theme
 
 from devbox_manager import __version__
 from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
-from devbox_manager.presentation import configure_typer_help, render_panel
+from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
 
 configure_typer_help()
 
-DEVBOX_THEME = Theme(
-    {
-        "info": "cyan",
-        "success": "bold green",
-        "warning": "bold yellow",
-        "error": "bold red",
-        "muted": "dim",
-        "heading": "bold bright_cyan",
-        "accent": "bold green",
-    }
-)
 console = Console(theme=DEVBOX_THEME, highlight=False)
 
 
@@ -92,7 +83,7 @@ def _docker_connection():
             console,
             "Docker connection failed",
             f"[error]Unable to connect to Docker:[/error]\n{error}",
-            border_style="red",
+            border_style="error",
         )
         raise typer.Exit(code=1) from error
 
@@ -113,6 +104,176 @@ def main(
         raise typer.Exit()
 
 
+def _read_version(command: list[str]) -> str:
+    """Return the first useful version line for an installed executable."""
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "Version unavailable"
+
+    if result.returncode != 0:
+        return "Version unavailable"
+
+    output = (result.stdout or result.stderr).strip()
+    if not output:
+        return "Version unavailable"
+
+    return output.splitlines()[0].strip()
+
+
+def _additional_path_tools(known_names: set[str]) -> list[tuple[str, str]]:
+    """Discover extra executables in non-core PATH directories."""
+    core_directories = {"/bin", "/sbin", "/usr/bin", "/usr/sbin"}
+    discovered: dict[str, str] = {}
+
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        if not directory:
+            continue
+        resolved_directory = str(Path(directory).resolve())
+        if resolved_directory in core_directories:
+            continue
+
+        path = Path(resolved_directory)
+        if not path.is_dir():
+            continue
+
+        try:
+            entries = sorted(path.iterdir())
+        except OSError:
+            continue
+
+        for entry in entries:
+            try:
+                if entry.name in known_names or not entry.is_file():
+                    continue
+                if not os.access(entry, os.X_OK):
+                    continue
+                discovered.setdefault(entry.name, str(entry))
+            except OSError:
+                continue
+
+    return sorted(discovered.items())
+
+
+def _display_tool_path(executable: str) -> str:
+    """Prefer a home-relative path for tools installed under the user home."""
+    resolved = Path(executable).resolve()
+    try:
+        relative = resolved.relative_to(Path.home().resolve())
+        return f"~/{relative.as_posix()}"
+    except ValueError:
+        return str(resolved)
+
+
+def _tool_source(executable: str) -> str:
+    """Classify tools in the user's local bin directory separately."""
+    resolved = Path(executable).resolve()
+    user_bin = (Path.home() / ".local" / "bin").resolve()
+    try:
+        resolved.relative_to(user_bin)
+        return "User"
+    except ValueError:
+        core_directories = {Path("/bin"), Path("/sbin"), Path("/usr/bin"), Path("/usr/sbin")}
+        if resolved.parent in core_directories:
+            return "Image"
+        return "Custom PATH"
+
+
+@app.command()
+def info() -> None:
+    """Show the DevBox stack, base image, and installed development tools."""
+    try:
+        alpine_version = Path("/etc/alpine-release").read_text(encoding="utf-8").strip()
+        base_image = f"Alpine Linux {alpine_version}"
+    except OSError:
+        base_image = "Unknown"
+
+    summary = Table.grid(padding=(0, 2))
+    summary.add_column(style="muted", no_wrap=True)
+    summary.add_column()
+    summary.add_row("Stack", f"[value]DevBox[/value] v{__version__}")
+    summary.add_row("Base", base_image)
+
+    tools = Table(box=box.ROUNDED, header_style="heading")
+    tools.add_column("Tool", style="info")
+    tools.add_column("Path", overflow="fold")
+    tools.add_column("Source", style="muted")
+
+    known_tools = [
+        ("Terraform", "terraform"),
+        ("Docker CLI", "docker"),
+        ("Docker Compose", "docker"),
+        ("Python", "python3"),
+        ("uv", "uv"),
+        ("Git", "git"),
+        ("Zsh", "zsh"),
+        ("Bash", "bash"),
+    ]
+    reported: set[str] = set()
+    discovered_tools: list[tuple[str, str, str]] = []
+
+    for label, executable in known_tools:
+        path = shutil.which(executable)
+        if not path:
+            discovered_tools.append(("-", label, "[warning]Not installed[/warning]"))
+            continue
+
+        discovered_tools.append((_tool_source(path), label, _display_tool_path(path)))
+        reported.add(Path(path).name)
+
+    oh_my_zsh = Path.home() / ".oh-my-zsh"
+    if (oh_my_zsh / ".git").exists():
+        discovered_tools.append(
+            ("Image", "Oh My Zsh", str(oh_my_zsh.resolve()))
+        )
+
+    for name, executable in _additional_path_tools(reported):
+        source = _tool_source(executable)
+        discovered_tools.append((source, name, _display_tool_path(executable)))
+
+    for source, name, path in sorted(
+        discovered_tools,
+        key=lambda item: (item[0].casefold(), item[1].casefold()),
+    ):
+        tools.add_row(name, path, source)
+
+    host_tools = Table(box=box.SIMPLE, show_header=False)
+    host_tools.add_column("Integration", style="info")
+    host_tools.add_column("Status")
+    try:
+        docker_engine = _read_version(
+            ["docker", "version", "--format", "{{.Server.Version}}"]
+        )
+    except OSError:
+        docker_engine = "Not available"
+    host_tools.add_row("Docker Engine", docker_engine,)
+
+    code_socket = Path("/run/devbox-host/code.sock")
+    host_tools.add_row(
+        "VS Code bridge",
+        "[success]Available[/success]" if code_socket.exists() else "[warning]Not detected[/warning]",
+    )
+
+    render_panel(
+        console,
+        "DevBox info",
+        Group(
+            summary,
+            Text("INSTALLED TOOLS", style="heading"),
+            tools,
+            Text("HOST INTEGRATIONS", style="heading"),
+            host_tools,
+        ),
+        subtitle="Image = core system paths · User = installed in ~/.local/bin · Custom PATH = discovered in other PATH directories · Host = external integration",
+    )
+
+
 @app.command()
 def status() -> None:
     """Show the DevBox container status and runtime details."""
@@ -126,7 +287,7 @@ def status() -> None:
             console,
             "DevBox status",
             "[error]DevBox container was not found.[/error]",
-            border_style="red",
+            border_style="error",
         )
         raise typer.Exit(code=1) from error
 
@@ -136,13 +297,13 @@ def status() -> None:
     started = _format_started_at(state.get("StartedAt", ""))
 
     table = Table(box=box.ROUNDED, show_header=False)
-    table.add_column("Property", style="cyan", no_wrap=True)
+    table.add_column("Property", style="info", no_wrap=True)
     table.add_column("Value")
 
     state_label = (
-        f"[green]{container.status}[/green]"
+        f"[success]{container.status}[/success]"
         if container.status == "running"
-        else f"[yellow]{container.status}[/yellow]"
+        else f"[warning]{container.status}[/warning]"
     )
     table.add_row("Container", container.name)
     table.add_row("Status", state_label)
@@ -176,13 +337,13 @@ def networks() -> None:
             console,
             "DevBox networks",
             "[error]DevBox container was not found.[/error]",
-            border_style="red",
+            border_style="error",
         )
         raise typer.Exit(code=1) from error
 
     attached = container.attrs.get("NetworkSettings", {}).get("Networks", {})
     table = Table(box=box.ROUNDED, header_style="heading")
-    table.add_column("Network", style="cyan")
+    table.add_column("Network", style="info")
     table.add_column("Driver")
     table.add_column("Compose project")
     table.add_column("IP address")
@@ -271,31 +432,30 @@ def doctor() -> None:
     checks.append(("Network Manager", manager_running, manager_summary))
 
     table = Table(box=box.ROUNDED, header_style="heading")
-    table.add_column("Check", style="cyan")
+    table.add_column("Check", style="info")
     table.add_column("Result")
     table.add_column("Details")
 
     for name, passed, details in checks:
-        result = "[green]PASS[/green]" if passed else "[red]FAIL[/red]"
+        result = "[success]PASS[/success]" if passed else "[error]FAIL[/error]"
         table.add_row(name, result, details)
 
     passed_count = sum(1 for _, passed, _ in checks if passed)
     failed_count = len(checks) - passed_count
+    content = (
+        Group(table, Text("All checks passed.", style="success"))
+        if failed_count == 0
+        else table
+    )
     render_panel(
         console,
         "DevBox health check",
-        table,
+        content,
         subtitle=f"{passed_count} passed · {failed_count} failed",
     )
 
-    if not all(passed for _, passed, _ in checks):
+    if failed_count:
         raise typer.Exit(code=1)
-
-    render_panel(
-        console,
-        "Health check result",
-        "[success]All checks passed.[/success]",
-    )
 
 
 @network_app.command("status")
@@ -305,8 +465,8 @@ def network_manager_status() -> None:
 
     if running and isinstance(details, list):
         table = Table(box=box.ROUNDED, show_header=True, header_style="heading")
-        table.add_column("PID", style="bold cyan", justify="right")
-        table.add_column("PPID", style="cyan", justify="right")
+        table.add_column("PID", style="info", justify="right")
+        table.add_column("PPID", style="info", justify="right")
         table.add_column("User")
         table.add_column("State")
         table.add_column("Uptime")
@@ -321,8 +481,8 @@ def network_manager_status() -> None:
                 process.command,
             )
         summary = Text.assemble(
-            ("● ", "bold green"),
-            ("Running", "bold green"),
+            ("● ", "success"),
+            ("Running", "success"),
             ("  Process ID (PID) uniquely identifies this running process.", "muted"),
         )
         legend = Text(
@@ -359,7 +519,7 @@ def network_manager_logs(
             console,
             "Network Manager logs",
             f"[error]{error}[/error]",
-            border_style="red",
+            border_style="error",
         )
         raise typer.Exit(code=1) from error
 
@@ -384,7 +544,7 @@ def welcome() -> None:
     details = Table.grid(padding=(0, 2))
     details.add_column(style="muted", width=18, no_wrap=True)
     details.add_column()
-    details.add_row("DevBox version", f"[bold white]{__version__}[/bold white]")
+    details.add_row("DevBox version", f"[value]{__version__}[/value]")
     details.add_row("Base image", f"Alpine Linux {alpine_version}")
     details.add_row("User", getpass.getuser())
     details.add_row("Workspace", str(Path.cwd()))
@@ -396,6 +556,7 @@ def welcome() -> None:
     commands.add_column(style="accent", no_wrap=True)
     commands.add_column(style="muted")
     commands.add_row("code .", "Open current project in VS Code")
+    commands.add_row("dm info", "DevBox stack and installed tools")
     commands.add_row("dm status", "Container status")
     commands.add_row("dm doctor", "Environment health checks")
     commands.add_row("dm networks", "Docker networks")
@@ -406,17 +567,15 @@ def welcome() -> None:
 
     content = Group(
         details,
-        Text("QUICK COMMANDS", style="heading"),
+        Text("QUICK COMMANDS · INSIDE CONTAINER", style="heading"),
         commands,
-        Text("Tip: run commands from inside each project directory.", style="muted"),
     )
     render_panel(
         console,
-        "[bold green]DEVBOX[/bold green] [bold white]DEVELOPMENT ENVIRONMENT[/bold white]",
+        "DevBox Development Environment",
         content,
-        border_style="bright_cyan",
+        border_style="info",
         padding=(1, 2),
-        expand=True,
     )
 
 

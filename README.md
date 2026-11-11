@@ -160,6 +160,7 @@ Run these commands in a host terminal:
 | `devbox recreate` | Recreate the container and network while preserving its home volume |
 | `devbox recreate-all` | Rebuild all DevBox resources, including the home volume |
 | `devbox status` | Show container status |
+| `devbox info` | Show DevBox stack, base image, installed tools, and host integrations |
 | `devbox logs` | Show container logs |
 | `devbox networks` | Show networks connected to DevBox |
 | `devbox doctor` | Run container-side health checks |
@@ -209,6 +210,7 @@ The host-side bridge is started by `devbox start` and removed by `devbox clean`.
 
 | Command | Description |
 |---|---|
+| `dm info` | Show the DevBox stack, base image, installed tools, and host integrations |
 | `dm status` | Show DevBox container status |
 | `dm doctor` | Run environment health checks |
 | `dm networks` | List networks connected to DevBox |
@@ -243,7 +245,7 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 
 The project requires Python 3.12 or newer. The `devbox-manager` Python CLI is installed inside the container in an isolated virtual environment at `/opt/devbox-venv`. The `dm` shortcut invokes the same CLI.
 
-Available command groups include status, health checks, network listing, and Network Manager status/logs. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
+Available commands include `info` (stack, base image, installed tools, and host integrations), status, health checks, network listing, and Network Manager status/logs. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
 
 ## Network Manager
 
@@ -305,3 +307,6 @@ The mounted Docker socket grants extensive control over the host Docker Engine. 
 ## Development
 
 The Python CLI source is in `src/devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`. Unit tests are in `tests/unit/`.
+
+
+The `dm info` installed-tools table shows each executable's resolved path instead of attempting to standardize version output across different tools. Additional executables are detected without running them, avoiding unintended side effects. Rows are sorted by source first, then tool name.

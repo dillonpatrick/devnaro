@@ -15,14 +15,14 @@ if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
     BOLD='\033[1m'
     GREEN='\033[0;32m'
     YELLOW='\033[0;33m'
-    CYAN='\033[0;36m'
+    CYAN='\033[0;96m'
     RED='\033[0;31m'
 else
     RESET=''
     BOLD=''
     GREEN=''
     YELLOW=''
-    CYAN=''
+    CYAN='\033[0;96m'
     RED=''
 fi
 
@@ -102,7 +102,7 @@ else
     warning "Add $BIN_DIR to PATH in your shell configuration."
 fi
 
-printf '\n%bHost commands%b\n' "$BOLD" "$RESET"
+printf '\n%bHost commands%b\n' "${CYAN}${BOLD}" "$RESET"
 printf '  %-24s %s\n' 'devbox start' 'Build (if needed) and start the environment'
 printf '  %-24s %s\n' 'devbox shell' 'Open an interactive shell in the container'
 printf '  %-24s %s\n' 'devbox stop' 'Stop the container, keeping its resources'
@@ -111,15 +111,16 @@ printf '  %-24s %s\n' 'devbox restart' 'Restart the existing container'
 printf '  %-24s %s\n' 'devbox recreate' 'Recreate the container, preserving its home volume'
 printf '  %-24s %s\n' 'devbox recreate-all' 'Rebuild all resources, including the home volume'
 printf '  %-24s %s\n' 'devbox status' 'Show container status'
+printf '  %-24s %s\n' 'devbox info' 'Show stack, base image, installed tools, and host integrations'
 printf '  %-24s %s\n' 'devbox config' 'Show or change machine-specific settings'
 printf '  %-24s %s\n' 'devbox help' 'Show command help'
-printf '\n%bInside the container%b\n' "$BOLD" "$RESET"
+printf '\n%bInside the container%b\n' "${CYAN}${BOLD}" "$RESET"
 printf '  %-32s %s\n' 'dm status' 'Show DevBox container status'
 printf '  %-32s %s\n' 'dm doctor' 'Run environment health checks'
 printf '  %-32s %s\n' 'dm networks' 'List networks connected to DevBox'
 printf '  %-32s %s\n' 'dm network-manager status' 'Show Network Manager status'
 printf '  %-32s %s\n' 'dm network-manager logs' 'Show Network Manager logs'
-printf '\n%bRepository tasks%b (run from the DevBox repository)\n' "$BOLD" "$RESET"
+printf '\n%bRepository tasks%b (run from the DevBox repository)\n' "${CYAN}${BOLD}" "$RESET"
 printf '  %-24s %s\n' 'make install' 'Install the host-side devbox command'
 printf '  %-24s %s\n' 'make uninstall' 'Remove DevBox from the host, preserving repository and workspace'
 printf '\n'

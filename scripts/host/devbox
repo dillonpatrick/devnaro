@@ -14,40 +14,81 @@ command="${1:-shell}"
 
 bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
+if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
+    RESET='\033[0m'
+    BOLD='\033[1m'
+    CYAN='\033[0;96m'
+    GREEN='\033[0;32m'
+    DIM='\033[2m'
+else
+    RESET=''
+    BOLD=''
+    CYAN=''
+    GREEN=''
+    DIM=''
+fi
+
+HELP_WIDTH=86
+HELP_BORDER="$(printf '%*s' "$HELP_WIDTH" '' | tr ' ' '─')"
+
+print_box_line() {
+    local plain="$1"
+    local rendered="$2"
+    local padding=$((HELP_WIDTH - ${#plain}))
+    (( padding < 0 )) && padding=0
+    printf "│ %b%*s │\n" "$rendered" "$padding" ""
+}
+
+print_command() {
+    local command_name="$1"
+    local description="$2"
+    local command_padding=$((18 - ${#command_name}))
+    (( command_padding < 0 )) && command_padding=0
+    local plain
+    printf -v plain "  %-18s %s" "$command_name" "$description"
+    print_box_line "$plain" \
+        "  ${GREEN}${command_name}$(printf '%*s' "$command_padding" '')${RESET} ${DIM}${description}${RESET}"
+}
+
 usage() {
-    cat <<'EOF'
-DevBox - Docker development environment
-
-Usage:
-  devbox [command]
-  devbox config [show|get workspace|set workspace PATH]
-  devbox manager [status|logs]
-
-Host commands:
-  start             Build (if needed) and start DevBox
-  shell             Enter the running DevBox container (default)
-  stop              Stop the container without removing resources
-  clean             Remove DevBox containers, networks, volumes, and local images
-  restart           Restart the existing container
-  recreate          Recreate the container and network, preserving its home volume
-  recreate-all      Rebuild all DevBox resources, including the home volume
-  status            Show container status
-  logs              Show container logs
-  networks          List networks connected to DevBox
-  doctor            Run health checks inside the container
-  config            Show machine-specific configuration
-  manager status    Show Network Manager process status
-  manager logs      Show Network Manager logs
-  help              Show this help message
-
-Examples:
-  devbox start
-  devbox shell
-  devbox recreate
-  devbox status
-  devbox config set workspace /path/to/workspace
-  devbox manager logs
-EOF
+    printf "\n╭%s╮\n" "$HELP_BORDER"
+    print_box_line "DevBox - Docker development environment" \
+        "${BOLD}${CYAN}DevBox${RESET} ${DIM}- Docker development environment${RESET}"
+    printf "├%s┤\n" "$HELP_BORDER"
+    print_box_line "Usage:" "${BOLD}${CYAN}Usage:${RESET}"
+    print_box_line "  devbox [command]" "  ${GREEN}devbox${RESET} [command]"
+    print_box_line "  devbox config [show|get workspace|set workspace PATH]" \
+        "  ${GREEN}devbox${RESET} config [show|get workspace|set workspace PATH]"
+    print_box_line "  devbox manager [status|logs]" \
+        "  ${GREEN}devbox${RESET} manager [status|logs]"
+    print_box_line "" ""
+    print_box_line "Host commands:" "${BOLD}${CYAN}Host commands:${RESET}"
+    print_command start "Build (if needed) and start DevBox"
+    print_command shell "Enter the running DevBox container (default)"
+    print_command stop "Stop the container without removing resources"
+    print_command clean "Remove DevBox containers, networks, volumes, and local images"
+    print_command restart "Restart the existing container"
+    print_command recreate "Recreate the container and network, preserving its home volume"
+    print_command recreate-all "Rebuild all DevBox resources, including the home volume"
+    print_command status "Show container status"
+    print_command info "Show DevBox stack, base image, and installed tools"
+    print_command logs "Show container logs"
+    print_command networks "List networks connected to DevBox"
+    print_command doctor "Run health checks inside the container"
+    print_command config "Show machine-specific configuration"
+    print_command "manager status" "Show Network Manager process status"
+    print_command "manager logs" "Show Network Manager logs"
+    print_command help "Show this help message"
+    print_box_line "" ""
+    print_box_line "Examples:" "${BOLD}${CYAN}Examples:${RESET}"
+    print_box_line "  devbox start" "  ${GREEN}devbox start${RESET}"
+    print_box_line "  devbox shell" "  ${GREEN}devbox shell${RESET}"
+    print_box_line "  devbox recreate" "  ${GREEN}devbox recreate${RESET}"
+    print_box_line "  devbox status" "  ${GREEN}devbox status${RESET}"
+    print_box_line "  devbox config set workspace PATH" \
+        "  ${GREEN}devbox config set workspace PATH${RESET}"
+    print_box_line "  devbox manager logs" "  ${GREEN}devbox manager logs${RESET}"
+    printf "╰%s╯\n\n" "$HELP_BORDER"
 }
 
 compose() {
@@ -155,7 +196,13 @@ case "$command" in
             -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox zsh
         ;;
     status)
-        compose ps devbox
+        compose ps --format json devbox | python3 "$DEVBOX_DIR/scripts/host/status.py"
+        ;;
+    info)
+        require_running
+        exec docker compose --project-directory "$DEVBOX_DIR" \
+            -f "$DEVBOX_DIR/docker/docker-compose.yml" \
+            -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager info
         ;;
     logs)
         compose logs devbox
