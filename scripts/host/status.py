@@ -150,9 +150,10 @@ def render(containers: list[dict[str, Any]], color: bool | None = None, width: i
     inner_width = width - 4
     title = "DevBox status"
     title_text = f" {title} "
-    side = max(0, (inner_width - len(title_text)) // 2)
-    top = "╭" + "─" * side + paint(title_text, BOLD + CYAN, color) + "─" * max(0, inner_width - side - len(title_text)) + "╮"
-    bottom = "╰" + "─" * inner_width + "╯"
+    border_width = inner_width + 2
+    side = max(0, (border_width - len(title_text)) // 2)
+    top = "╭" + "─" * side + paint(title_text, BOLD + CYAN, color) + "─" * max(0, border_width - side - len(title_text)) + "╮"
+    bottom = "╰" + "─" * border_width + "╯"
     lines = [top]
 
     if not containers:
