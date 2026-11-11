@@ -21,6 +21,7 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     user_tool.chmod(0o755)
 
     monkeypatch.setattr(cli.Path, "home", classmethod(lambda cls: tmp_path))
+    monkeypatch.setattr(cli.Path, "read_text", lambda self, **kwargs: "3.22.0")
     monkeypatch.setattr(
         cli.shutil,
         "which",
