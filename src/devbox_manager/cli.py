@@ -17,7 +17,17 @@ from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 
-DEVBOX_THEME = Theme({"info": "cyan", "success": "bold green", "warning": "bold yellow", "error": "bold red", "muted": "dim", "heading": "bold bright_cyan", "accent": "bold green"})
+DEVBOX_THEME = Theme(
+    {
+        "info": "cyan",
+        "success": "bold green",
+        "warning": "bold yellow",
+        "error": "bold red",
+        "muted": "dim",
+        "heading": "bold bright_cyan",
+        "accent": "bold green",
+    }
+)
 console = Console(theme=DEVBOX_THEME, highlight=False)
 
 
