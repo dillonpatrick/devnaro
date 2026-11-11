@@ -37,3 +37,15 @@ def test_typer_help_uses_devbox_theme():
     assert rich_utils.STYLE_OPTIONS_PANEL_BORDER == "bright_cyan"
     assert rich_utils.STYLE_COMMANDS_PANEL_BORDER == "bright_cyan"
     assert rich_utils.STYLE_COMMANDS_TABLE_FIRST_COLUMN == "bold bright_cyan"
+
+
+
+def test_devbox_theme_uses_named_semantic_palette():
+    from devbox_manager.presentation import DEVBOX_THEME
+
+    assert DEVBOX_THEME.styles["info"].color.name == "bright_cyan"
+    assert DEVBOX_THEME.styles["heading"].color.name == "bright_cyan"
+    assert DEVBOX_THEME.styles["success"].color.name == "green"
+    assert DEVBOX_THEME.styles["warning"].color.name == "yellow"
+    assert DEVBOX_THEME.styles["error"].color.name == "red"
+    assert DEVBOX_THEME.styles["value"].color.name == "white"
