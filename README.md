@@ -307,3 +307,6 @@ The mounted Docker socket grants extensive control over the host Docker Engine. 
 ## Development
 
 The Python CLI source is in `src/devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`. Unit tests are in `tests/unit/`.
+
+
+The `dm info` installed-tools table shows each executable's resolved path instead of attempting to standardize version output across different tools. Additional executables are detected without running them, avoiding unintended side effects. Rows are sorted by source first, then tool name.
