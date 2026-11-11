@@ -102,7 +102,7 @@ else
     warning "Add $BIN_DIR to PATH in your shell configuration."
 fi
 
-printf '\n%bAvailable commands%b\n' "$BOLD" "$RESET"
+printf '\n%bHost commands%b\n' "$BOLD" "$RESET"
 printf '  devbox start\n'
 printf '  devbox shell\n'
 printf '  devbox stop\n'
@@ -111,13 +111,14 @@ printf '  devbox restart\n'
 printf '  devbox recreate\n'
 printf '  devbox recreate-all\n'
 printf '  devbox status\n'
-printf '  devbox logs\n'
-printf '  devbox networks\n'
-printf '  devbox doctor\n'
 printf '  devbox config\n'
-printf '  devbox manager status\n'
-printf '  devbox manager logs\n'
 printf '  devbox help\n'
+printf '\n%bInside the container%b\n' "$BOLD" "$RESET"
+printf '  dm status\n'
+printf '  dm doctor\n'
+printf '  dm networks\n'
+printf '  dm network-manager status\n'
+printf '  dm network-manager logs\n'
 printf '\n%bRepository tasks%b (run from the DevBox repository)\n' "$BOLD" "$RESET"
 printf '  make install\n'
 printf '  make uninstall\n'
