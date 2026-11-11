@@ -20,6 +20,13 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     user_tool.write_text("#!/bin/sh\necho custom-tool 2.4.0\n", encoding="utf-8")
     user_tool.chmod(0o755)
 
+    sdk_bin = tmp_path / "sdk" / "bin"
+    sdk_bin.mkdir(parents=True)
+    sdk_tool = sdk_bin / "custom-sdk"
+    sdk_tool.write_text("#!/bin/sh\necho custom-sdk 5.1.0\n", encoding="utf-8")
+    sdk_tool.chmod(0o755)
+
+    monkeypatch.setenv("PATH", f"{user_bin}:{sdk_bin}:/usr/bin")
     monkeypatch.setattr(cli.Path, "home", classmethod(lambda cls: tmp_path))
     monkeypatch.setattr(cli.Path, "read_text", lambda self, **kwargs: "3.22.0")
     monkeypatch.setattr(
@@ -47,6 +54,7 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     assert "Docker Compose" in result.stdout
     assert "Image" in result.stdout
     assert "custom-tool" in result.stdout
+    assert "custom-sdk" in result.stdout
     assert "User" in result.stdout
     assert "Docker Engine" in result.stdout
     assert "VS Code bridge" in result.stdout
