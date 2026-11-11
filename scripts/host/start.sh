@@ -230,8 +230,10 @@ if [[ -n "$BRIDGE_CONTAINER_ID" ]]; then
     IMAGE_ID="$(docker inspect --format '{{.Image}}' "$BRIDGE_CONTAINER_ID")"
 else
     info "Building the image to prepare the host VS Code bridge..."
-    compose build devbox
-    IMAGE_ID="$(compose images -q devbox | head -n 1)"
+    IMAGE_ID_FILE="$(mktemp "$RUNTIME_DIR/devbox-image.XXXXXX")"
+    compose build --iidfile "$IMAGE_ID_FILE" devbox
+    IMAGE_ID="$(cat "$IMAGE_ID_FILE")"
+    rm -f "$IMAGE_ID_FILE"
     IMAGE_PREBUILT=true
 fi
 
@@ -245,8 +247,10 @@ rm -f "$CODE_BRIDGE_BINARY"
 if ! docker cp "$TEMP_CONTAINER:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY"; then
     docker rm "$TEMP_CONTAINER" >/dev/null
     info "The existing image does not contain the standalone bridge. Rebuilding..."
-    compose build devbox
-    IMAGE_ID="$(compose images -q devbox | head -n 1)"
+    IMAGE_ID_FILE="$(mktemp "$RUNTIME_DIR/devbox-image.XXXXXX")"
+    compose build --iidfile "$IMAGE_ID_FILE" devbox
+    IMAGE_ID="$(cat "$IMAGE_ID_FILE")"
+    rm -f "$IMAGE_ID_FILE"
     if [[ -z "$IMAGE_ID" ]]; then
         error "Unable to resolve the rebuilt DevBox image."
         exit 1
