@@ -31,19 +31,11 @@ fi
 WORKSPACE_PATH="$(realpath -m "$WORKSPACE_PATH")"
 SCRIPT_DIR="$(realpath "$SCRIPT_DIR")"
 
-case "$WORKSPACE_PATH/" in
-    "$SCRIPT_DIR/"*)
-        printf 'Cannot uninstall safely: the workspace is inside the DevBox repository.\n' >&2
-        printf 'Move the workspace outside the repository, then run devbox uninstall again.\n' >&2
-        exit 1
-        ;;
-esac
-
 printf '\nThis will completely remove DevBox from this host.\n'
 printf '  DevBox repository: %s\n' "$SCRIPT_DIR"
 printf '  Workspace to preserve: %s\n' "$WORKSPACE_PATH"
 printf '\nThe DevBox container, network, home volume, local image, host integration,\n'
-printf 'machine configuration, and repository will be removed.\n'
+printf 'machine configuration, and generated local files will be removed.\n'
 printf 'Files in the workspace will be kept.\n\n'
 read -r -p 'Continue? [y/N] ' confirmation
 case "$confirmation" in
@@ -87,8 +79,8 @@ done
 
 rm -rf -- "$CONFIG_DIR"
 rm -f -- "$SCRIPT_DIR/.env" "$SCRIPT_DIR/docker/docker-compose.ports.yml"
-rm -rf -- "$SCRIPT_DIR"
 
 printf '\nDevBox was completely uninstalled.\n'
+printf 'DevBox repository preserved at: %s\n' "$SCRIPT_DIR"
 printf 'Workspace preserved at: %s\n' "$WORKSPACE_PATH"
 printf 'Open a new terminal to refresh PATH.\n'
