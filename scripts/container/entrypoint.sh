@@ -12,12 +12,13 @@ if [ -f "$ZSHRC" ]; then
 
 # DevBox prompt identity
 # BEGIN DEVBOX PROMPT THEME
-autoload -Uz vcs_info
-zstyle ':vcs_info:git:*' formats '(%b)'
-precmd_functions+=(devbox_vcs_info)
-devbox_vcs_info() { vcs_info }
 setopt PROMPT_SUBST
-PROMPT='%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f ${vcs_info_msg_0_}
+devbox_git_branch() {
+    local branch
+    branch=$(command git symbolic-ref --quiet --short HEAD 2>/dev/null) || branch=$(command git rev-parse --short HEAD 2>/dev/null) || return
+    [[ -n "$branch" ]] && print -r -- "($branch)"
+}
+PROMPT='%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f $(devbox_git_branch)
 %F{green}╰─❯%f '
 # END DEVBOX PROMPT THEME
 
