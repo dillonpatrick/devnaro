@@ -51,6 +51,10 @@ jobs:
           bash -n scripts/host/stop.sh
           bash -n scripts/host/clean.sh
           bash -n scripts/host/ensure-ports-config.sh
+          LC_ALL=C bash scripts/host/devbox help > /tmp/devbox-help.txt
+          grep -Fq '╭' /tmp/devbox-help.txt
+          grep -Fq '╰' /tmp/devbox-help.txt
+          ! grep -Fq '�' /tmp/devbox-help.txt
           sh -n scripts/container/entrypoint.sh
           python3 -m py_compile scripts/container/code
 
