@@ -323,6 +323,7 @@ def welcome() -> None:
     commands.add_row("dm status", "Container status")
     commands.add_row("dm doctor", "Environment health checks")
     commands.add_row("dm networks", "Docker networks")
+    commands.add_row("dm network-manager status", "Network Manager status")
     commands.add_row("dm network-manager logs", "Network Manager logs")
     commands.add_row("docker ps", "Running containers")
     commands.add_row("docker compose up -d", "Start project services")
