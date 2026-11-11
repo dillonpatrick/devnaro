@@ -182,7 +182,7 @@ Machine-specific settings are stored outside the repository in `~/.config/devbox
 
 Use `devbox clean` only when you intentionally want to remove DevBox's persisted home configuration and local image. A subsequent `devbox start` rebuilds what is needed.
 
-- **Uninstall:** run `make uninstall` from the DevBox repository. It asks for confirmation before completely removing DevBox from the host. It removes the DevBox container, Compose network, `devbox_home` volume, locally built image, host VS Code bridge, command symlink, installer-managed PATH entries, machine-specific configuration, generated local files, and the DevBox repository itself. The configured workspace is preserved. If the workspace is inside the DevBox repository, uninstall stops without deleting anything; move it outside the repository first. If DevBox was installed to a custom directory with `DEVBOX_BIN_DIR`, pass the same variable to `make uninstall`.
+- **Uninstall:** run `make uninstall` from the DevBox repository. It asks for confirmation before completely removing DevBox from the host. It removes the DevBox container, Compose network, `devbox_home` volume, locally built image, host VS Code bridge, command symlink, installer-managed PATH entries, machine-specific configuration, and generated local files. The DevBox repository and configured workspace are both preserved. If DevBox was installed to a custom directory with `DEVBOX_BIN_DIR`, pass the same variable to `make uninstall`.
 
 ## Inside the container
 
