@@ -103,7 +103,12 @@ def main(
 ) -> None:
     """DevBox command line tools."""
     if version:
-        render_panel(console, "DevBox Manager", f"[accent]v{__version__}[/accent]", border_style="cyan")
+        render_panel(
+            console,
+            "DevBox Manager",
+            f"[accent]v{__version__}[/accent]",
+            border_style="cyan",
+        )
         raise typer.Exit()
 
 
@@ -116,7 +121,12 @@ def status() -> None:
         container = get_devbox_container(client)
         container.reload()
     except NotFound as error:
-        render_panel(console, "DevBox status", "[error]DevBox container was not found.[/error]", border_style="red")
+        render_panel(
+            console,
+            "DevBox status",
+            "[error]DevBox container was not found.[/error]",
+            border_style="red",
+        )
         raise typer.Exit(code=1) from error
 
     attrs = container.attrs
@@ -124,7 +134,7 @@ def status() -> None:
     networks = attrs.get("NetworkSettings", {}).get("Networks", {})
     started = _format_started_at(state.get("StartedAt", ""))
 
-    table = Table(title="[heading]DevBox status[/heading]", box=box.ROUNDED, show_header=False)
+    table = Table(box=box.ROUNDED, show_header=False)
     table.add_column("Property", style="cyan", no_wrap=True)
     table.add_column("Value")
 
@@ -161,11 +171,16 @@ def networks() -> None:
         container = get_devbox_container(client)
         container.reload()
     except NotFound as error:
-        render_panel(console, "DevBox networks", "[error]DevBox container was not found.[/error]", border_style="red")
+        render_panel(
+            console,
+            "DevBox networks",
+            "[error]DevBox container was not found.[/error]",
+            border_style="red",
+        )
         raise typer.Exit(code=1) from error
 
     attached = container.attrs.get("NetworkSettings", {}).get("Networks", {})
-    table = Table(title="[heading]DevBox networks[/heading]", box=box.ROUNDED)
+    table = Table(box=box.ROUNDED)
     table.add_column("Network", style="cyan")
     table.add_column("Driver")
     table.add_column("Compose project")
@@ -256,7 +271,7 @@ def doctor() -> None:
     )
     checks.append(("Network Manager", manager_running, manager_summary))
 
-    table = Table(title="[heading]DevBox health check[/heading]", box=box.ROUNDED)
+    table = Table(box=box.ROUNDED)
     table.add_column("Check", style="cyan")
     table.add_column("Result")
     table.add_column("Details")
@@ -278,7 +293,12 @@ def doctor() -> None:
     if not all(passed for _, passed, _ in checks):
         raise typer.Exit(code=1)
 
-    render_panel(console, "Health check result", "[success]All checks passed.[/success]", border_style="green")
+    render_panel(
+        console,
+        "Health check result",
+        "[success]All checks passed.[/success]",
+        border_style="green",
+    )
 
 
 @network_app.command("status")
@@ -340,7 +360,12 @@ def network_manager_logs(
     try:
         content = read_logs(lines=lines)
     except (FileNotFoundError, OSError) as error:
-        render_panel(console, "Network Manager logs", f"[error]{error}[/error]", border_style="red")
+        render_panel(
+            console,
+            "Network Manager logs",
+            f"[error]{error}[/error]",
+            border_style="red",
+        )
         raise typer.Exit(code=1) from error
 
     render_panel(
