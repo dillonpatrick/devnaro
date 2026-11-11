@@ -25,6 +25,11 @@ def configure_typer_help() -> None:
     """Align Typer's built-in help renderer with the DevBox color palette."""
     from typer import rich_utils
 
+    # Typer renders help panels with an expanding table. Cap its Rich console width
+    # so the panels do not stretch across unusually wide terminals.
+    if hasattr(rich_utils, "MAX_WIDTH"):
+        rich_utils.MAX_WIDTH = min(rich_utils.MAX_WIDTH or 88, 88)
+
     styles = {
         "STYLE_USAGE": DEVBOX_STYLE_STRINGS["heading"],
         "STYLE_USAGE_COMMAND": "bold",
