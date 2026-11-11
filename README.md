@@ -210,6 +210,7 @@ The host-side bridge is started by `devbox start` and removed by `devbox clean`.
 
 | Command | Description |
 |---|---|
+| `dm info` | Show the DevBox stack, base image, installed tools, and host integrations |
 | `dm status` | Show DevBox container status |
 | `dm doctor` | Run environment health checks |
 | `dm networks` | List networks connected to DevBox |
