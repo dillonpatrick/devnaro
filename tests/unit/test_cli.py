@@ -76,13 +76,18 @@ def test_network_manager_short_help():
     assert "Inspect the automatic Docker network manager" in result.stdout
 
 
-def test_welcome_lists_all_container_quick_commands(monkeypatch):
+def test_welcome_separates_host_and_container_quick_commands(monkeypatch):
     from devbox_manager import cli
 
     monkeypatch.setattr(cli, "process_status", lambda: (True, "Network Manager running"))
     result = runner.invoke(app, ["welcome"])
 
     assert result.exit_code == 0
+    assert "QUICK COMMANDS" in result.stdout
+    assert "INSIDE CONTAINER" in result.stdout
+    assert "HOST COMMANDS" in result.stdout
+    assert "OUTSIDE CONTAINER" in result.stdout
+    assert "devbox info" in result.stdout
     assert "dm info" in result.stdout
     assert "dm status" in result.stdout
     assert "dm doctor" in result.stdout
