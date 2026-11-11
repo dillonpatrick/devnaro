@@ -51,16 +51,31 @@ if (( ! $+functions[compdef] )); then
     compinit
 fi
 
+# Use compact, variable-width columns for completion suggestions.
+setopt LIST_PACKED
+
 _devbox_manager_completion() {
-    local -a commands
+    local -a commands help_options
     commands=(status networks doctor network-manager welcome)
+    help_options=(--help -h)
 
     if (( CURRENT == 2 )); then
-        compadd -- $commands
-    elif [[ "${words[2]}" == "network-manager" ]] && (( CURRENT == 3 )); then
-        compadd -- status logs
-    elif [[ "${words[2]}" == "network-manager" && "${words[3]}" == "logs" ]] && (( CURRENT == 4 )); then
-        compadd -- --lines -n
+        compadd -- $help_options --version -v $commands
+    elif (( CURRENT == 3 )); then
+        case "${words[2]}" in
+            network-manager)
+                compadd -- $help_options status logs
+                ;;
+            status|networks|doctor|welcome)
+                compadd -- $help_options
+                ;;
+        esac
+    elif (( CURRENT == 4 )) && [[ "${words[2]}" == "network-manager" ]]; then
+        if [[ "${words[3]}" == "logs" ]]; then
+            compadd -- $help_options --lines -n
+        else
+            compadd -- $help_options
+        fi
     fi
 }
 
