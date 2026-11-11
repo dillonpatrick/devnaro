@@ -161,6 +161,16 @@ def _additional_path_tools(known_names: set[str]) -> list[tuple[str, str]]:
     return sorted(discovered.items())
 
 
+def _display_tool_path(executable: str) -> str:
+    """Prefer a home-relative path for tools installed under the user home."""
+    resolved = Path(executable).resolve()
+    try:
+        relative = resolved.relative_to(Path.home().resolve())
+        return f"~/{relative.as_posix()}"
+    except ValueError:
+        return str(resolved)
+
+
 def _tool_source(executable: str) -> str:
     """Classify tools in the user's local bin directory separately."""
     resolved = Path(executable).resolve()
@@ -214,7 +224,7 @@ def info() -> None:
             discovered_tools.append(("-", label, "[warning]Not installed[/warning]"))
             continue
 
-        discovered_tools.append((_tool_source(path), label, str(Path(path).resolve())))
+        discovered_tools.append((_tool_source(path), label, _display_tool_path(path)))
         reported.add(Path(path).name)
 
     oh_my_zsh = Path.home() / ".oh-my-zsh"
@@ -225,7 +235,7 @@ def info() -> None:
 
     for name, executable in _additional_path_tools(reported):
         source = _tool_source(executable)
-        discovered_tools.append((source, name, str(Path(executable).resolve())))
+        discovered_tools.append((source, name, _display_tool_path(executable)))
 
     for source, name, path in sorted(
         discovered_tools,
