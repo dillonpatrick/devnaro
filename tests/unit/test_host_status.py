@@ -45,7 +45,9 @@ def test_render_shows_container_details_and_published_ports():
 
     output = status.render(containers, color=False)
 
-    assert "DEVBOX  devbox" in output
+    assert "DEVBOX" in output
+    assert "Service" in output
+    assert "devbox" in output
     assert "Image" in output
     assert "Up 45 seconds" in output
     assert "127.0.0.1:3000->3000/tcp" in output
