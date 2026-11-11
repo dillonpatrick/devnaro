@@ -234,7 +234,7 @@ def info() -> None:
         tools.add_row(name, path, source)
 
     host_tools = Table(box=box.SIMPLE, show_header=False)
-    host_tools.add_column("Integration", style="cyan")
+    host_tools.add_column("Integration", style="info")
     host_tools.add_column("Status")
     try:
         docker_engine = _read_version(
@@ -277,7 +277,7 @@ def status() -> None:
             console,
             "DevBox status",
             "[error]DevBox container was not found.[/error]",
-            border_style="red",
+            border_style="error",
         )
         raise typer.Exit(code=1) from error
 
@@ -287,7 +287,7 @@ def status() -> None:
     started = _format_started_at(state.get("StartedAt", ""))
 
     table = Table(box=box.ROUNDED, show_header=False)
-    table.add_column("Property", style="cyan", no_wrap=True)
+    table.add_column("Property", style="info", no_wrap=True)
     table.add_column("Value")
 
     state_label = (
@@ -327,13 +327,13 @@ def networks() -> None:
             console,
             "DevBox networks",
             "[error]DevBox container was not found.[/error]",
-            border_style="red",
+            border_style="error",
         )
         raise typer.Exit(code=1) from error
 
     attached = container.attrs.get("NetworkSettings", {}).get("Networks", {})
     table = Table(box=box.ROUNDED, header_style="heading")
-    table.add_column("Network", style="cyan")
+    table.add_column("Network", style="info")
     table.add_column("Driver")
     table.add_column("Compose project")
     table.add_column("IP address")
@@ -422,7 +422,7 @@ def doctor() -> None:
     checks.append(("Network Manager", manager_running, manager_summary))
 
     table = Table(box=box.ROUNDED, header_style="heading")
-    table.add_column("Check", style="cyan")
+    table.add_column("Check", style="info")
     table.add_column("Result")
     table.add_column("Details")
 
@@ -457,7 +457,7 @@ def network_manager_status() -> None:
     if running and isinstance(details, list):
         table = Table(box=box.ROUNDED, show_header=True, header_style="heading")
         table.add_column("PID", style="info", justify="right")
-        table.add_column("PPID", style="cyan", justify="right")
+        table.add_column("PPID", style="info", justify="right")
         table.add_column("User")
         table.add_column("State")
         table.add_column("Uptime")
@@ -510,7 +510,7 @@ def network_manager_logs(
             console,
             "Network Manager logs",
             f"[error]{error}[/error]",
-            border_style="red",
+            border_style="error",
         )
         raise typer.Exit(code=1) from error
 
@@ -563,7 +563,7 @@ def welcome() -> None:
     )
     render_panel(
         console,
-        "[bold green]DEVBOX[/bold green] [bold white]DEVELOPMENT ENVIRONMENT[/bold white]",
+        "DevBox Development Environment",
         content,
         border_style="info",
         padding=(1, 2),
