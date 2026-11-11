@@ -114,7 +114,8 @@ case "$command" in
         ;;
     clean)
         exec bash "$DEVBOX_DIR/scripts/host/clean.sh"
-        ;;\n    uninstall)
+        ;;
+    uninstall)
         exec bash "$DEVBOX_DIR/scripts/host/uninstall.sh"
         ;;
     recreate-all)
