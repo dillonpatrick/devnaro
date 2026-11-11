@@ -15,7 +15,7 @@ from typing import Any
 
 RESET = "\033[0m"
 BOLD = "\033[1m"
-CYAN = "\033[36m"
+CYAN = "\033[96m"
 GREEN = "\033[32m"
 YELLOW = "\033[33m"
 RED = "\033[31m"
@@ -152,8 +152,12 @@ def render(containers: list[dict[str, Any]], color: bool | None = None, width: i
     title_text = f" {title} "
     border_width = inner_width + 2
     side = max(0, (border_width - len(title_text)) // 2)
-    top = "╭" + "─" * side + paint(title_text, BOLD + CYAN, color) + "─" * max(0, border_width - side - len(title_text)) + "╮"
-    bottom = "╰" + "─" * border_width + "╯"
+    top = (
+        paint("╭" + "─" * side, CYAN, color)
+        + paint(title_text, BOLD + CYAN, color)
+        + paint("─" * max(0, border_width - side - len(title_text)) + "╮", CYAN, color)
+    )
+    bottom = paint("╰" + "─" * border_width + "╯", CYAN, color)
     lines = [top]
 
     if not containers:
@@ -168,15 +172,15 @@ def render(containers: list[dict[str, Any]], color: bool | None = None, width: i
             created = format_created(container)
             body.extend([
                 paint(name.upper(), BOLD + CYAN, color),
-                f"  {'Service':<10} {service}",
-                f"  {'Image':<10} {image}",
-                f"  {'Status':<10} {paint(state, status_style(state), color)}",
-                f"  {'Created':<10} {created}",
+                f"  {paint('Service', CYAN, color):<10} {service}",
+                f"  {paint('Image', CYAN, color):<10} {image}",
+                f"  {paint('Status', CYAN, color):<10} {paint(state, status_style(state), color)}",
+                f"  {paint('Created', CYAN, color):<10} {created}",
             ])
             ports = format_ports(container.get("Publishers"))
             port_text = ",  ".join(ports) if ports else "None"
             wrapped_ports = textwrap.wrap(port_text, width=max(20, inner_width - 13), break_long_words=False, break_on_hyphens=False)
-            body.append(f"  {'Ports':<10} {wrapped_ports[0] if wrapped_ports else 'None'}")
+            body.append(f"  {paint('Ports', CYAN, color):<10} {wrapped_ports[0] if wrapped_ports else 'None'}")
             for line in wrapped_ports[1:]:
                 body.append(f"  {'':<10} {line}")
             if index < len(containers) - 1:
@@ -184,7 +188,7 @@ def render(containers: list[dict[str, Any]], color: bool | None = None, width: i
 
     for line in body:
         plain_length = len(re.sub(r'\x1b\[[0-9;]*m', '', line))
-        lines.append("│ " + line + " " * max(0, inner_width - plain_length) + " │")
+        lines.append(paint("│", CYAN, color) + " " + line + " " * max(0, inner_width - plain_length) + " " + paint("│", CYAN, color))
     lines.append(bottom)
     return "\n".join(lines)
 
