@@ -154,7 +154,7 @@ def status() -> None:
         console,
         "DevBox status",
         table,
-        border_style="green" if container.status == "running" else "yellow",
+        
         subtitle=f"Container {container.status}",
     )
 
@@ -180,7 +180,7 @@ def networks() -> None:
         raise typer.Exit(code=1) from error
 
     attached = container.attrs.get("NetworkSettings", {}).get("Networks", {})
-    table = Table(box=box.ROUNDED)
+    table = Table(box=box.ROUNDED, header_style="heading")
     table.add_column("Network", style="cyan")
     table.add_column("Driver")
     table.add_column("Compose project")
@@ -208,7 +208,6 @@ def networks() -> None:
             console,
             "DevBox networks",
             "[warning]DevBox is not connected to any networks.[/warning]",
-            border_style="yellow",
             subtitle="0 networks connected",
         )
     else:
@@ -216,7 +215,6 @@ def networks() -> None:
             console,
             "DevBox networks",
             table,
-            border_style="green",
             subtitle=f"{len(attached)} network(s) connected",
         )
 
@@ -271,7 +269,7 @@ def doctor() -> None:
     )
     checks.append(("Network Manager", manager_running, manager_summary))
 
-    table = Table(box=box.ROUNDED)
+    table = Table(box=box.ROUNDED, header_style="heading")
     table.add_column("Check", style="cyan")
     table.add_column("Result")
     table.add_column("Details")
@@ -286,7 +284,7 @@ def doctor() -> None:
         console,
         "DevBox health check",
         table,
-        border_style="green" if failed_count == 0 else "red",
+        
         subtitle=f"{passed_count} passed · {failed_count} failed",
     )
 
@@ -297,7 +295,7 @@ def doctor() -> None:
         console,
         "Health check result",
         "[success]All checks passed.[/success]",
-        border_style="green",
+        
     )
 
 
@@ -307,7 +305,7 @@ def network_manager_status() -> None:
     running, details = process_status()
 
     if running and isinstance(details, list):
-        table = Table(box=box.ROUNDED, show_header=True, header_style="bold")
+        table = Table(box=box.ROUNDED, show_header=True, header_style="heading")
         table.add_column("PID", style="bold cyan", justify="right")
         table.add_column("PPID", style="cyan", justify="right")
         table.add_column("User")
@@ -372,7 +370,6 @@ def network_manager_logs(
         console,
         "Network Manager logs",
         content or "[muted]Log file is empty.[/muted]",
-        border_style="cyan",
         subtitle=f"Last {lines} lines",
     )
 
