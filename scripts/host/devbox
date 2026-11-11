@@ -10,6 +10,8 @@ DEVBOX_DIR="$(cd -- "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/devbox"
 CONFIG_FILE="$CONFIG_DIR/config"
 
+bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
+
 usage() {
     cat <<'EOF'
 DevBox - Docker development environment
@@ -49,7 +51,9 @@ EOF
 }
 
 compose() {
-    docker compose --project-directory "$DEVBOX_DIR" -f "$DEVBOX_DIR/docker/docker-compose.yml" "$@"
+    docker compose --project-directory "$DEVBOX_DIR" \
+        -f "$DEVBOX_DIR/docker/docker-compose.yml" \
+        -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" "$@"
 }
 
 require_running() {
@@ -148,7 +152,9 @@ case "$command" in
         ;;
     shell|enter)
         require_running
-        exec docker compose --project-directory "$DEVBOX_DIR" -f "$DEVBOX_DIR/docker/docker-compose.yml" exec devbox zsh
+        exec docker compose --project-directory "$DEVBOX_DIR" \
+            -f "$DEVBOX_DIR/docker/docker-compose.yml" \
+            -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox zsh
         ;;
     status)
         compose ps devbox
