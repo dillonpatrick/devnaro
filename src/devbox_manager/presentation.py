@@ -8,18 +8,17 @@ from rich.panel import Panel
 from rich.theme import Theme
 
 
-DEVBOX_THEME = Theme(
-    {
-        "info": "bright_cyan",
-        "success": "bold green",
-        "warning": "bold yellow",
-        "error": "bold red",
-        "muted": "dim",
-        "heading": "bold bright_cyan",
-        "accent": "bold green",
-        "value": "white",
-    }
-)
+DEVBOX_STYLE_STRINGS = {
+    "info": "bright_cyan",
+    "success": "bold green",
+    "warning": "bold yellow",
+    "error": "bold red",
+    "muted": "dim",
+    "heading": "bold bright_cyan",
+    "accent": "bold green",
+    "value": "white",
+}
+DEVBOX_THEME = Theme(DEVBOX_STYLE_STRINGS)
 
 
 def configure_typer_help() -> None:
@@ -27,18 +26,18 @@ def configure_typer_help() -> None:
     from typer import rich_utils
 
     styles = {
-        "STYLE_USAGE": "bold bright_cyan",
+        "STYLE_USAGE": DEVBOX_STYLE_STRINGS["heading"],
         "STYLE_USAGE_COMMAND": "bold",
-        "STYLE_OPTION": "bold bright_cyan",
-        "STYLE_SWITCH": "bold bright_cyan",
-        "STYLE_NEGATIVE_OPTION": "bold bright_cyan",
-        "STYLE_NEGATIVE_SWITCH": "bold bright_cyan",
-        "STYLE_OPTIONS_PANEL_BORDER": "bright_cyan",
-        "STYLE_COMMANDS_PANEL_BORDER": "bright_cyan",
-        "STYLE_ERRORS_PANEL_BORDER": "red",
-        "STYLE_COMMANDS_TABLE_FIRST_COLUMN": "bold bright_cyan",
-        "STYLE_HELPTEXT": "white",
-        "STYLE_OPTION_HELP": "white",
+        "STYLE_OPTION": DEVBOX_STYLE_STRINGS["heading"],
+        "STYLE_SWITCH": DEVBOX_STYLE_STRINGS["heading"],
+        "STYLE_NEGATIVE_OPTION": DEVBOX_STYLE_STRINGS["heading"],
+        "STYLE_NEGATIVE_SWITCH": DEVBOX_STYLE_STRINGS["heading"],
+        "STYLE_OPTIONS_PANEL_BORDER": DEVBOX_STYLE_STRINGS["info"],
+        "STYLE_COMMANDS_PANEL_BORDER": DEVBOX_STYLE_STRINGS["info"],
+        "STYLE_ERRORS_PANEL_BORDER": DEVBOX_STYLE_STRINGS["error"],
+        "STYLE_COMMANDS_TABLE_FIRST_COLUMN": DEVBOX_STYLE_STRINGS["heading"],
+        "STYLE_HELPTEXT": DEVBOX_STYLE_STRINGS["value"],
+        "STYLE_OPTION_HELP": DEVBOX_STYLE_STRINGS["value"],
     }
 
     for name, style in styles.items():
