@@ -132,3 +132,22 @@ def test_render_uses_standard_panel_and_compact_ports():
     assert "127.0.0.1:4173->4173/tcp" in output
     assert output.endswith("╯")
     assert "\\\\n" not in output
+
+
+
+def test_render_uses_bright_cyan_devbox_palette():
+    container = {
+        "Name": "devbox",
+        "Service": "devbox",
+        "Image": "devbox-devbox",
+        "Status": "Up 10 seconds",
+        "RunningFor": "10 seconds",
+        "Publishers": [],
+    }
+
+    output = status.render([container], color=True, width=80)
+
+    assert status.CYAN in output
+    assert "\\033[96m" in output
+    assert "Service" in output
+    assert output.count(status.CYAN) >= 4
