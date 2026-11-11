@@ -195,8 +195,8 @@ def info() -> None:
 
     oh_my_zsh = Path.home() / ".oh-my-zsh"
     if (oh_my_zsh / ".git").exists():
-        commit = _read_version(["git", "-C", str(oh_my_zsh), "rev-parse", "--short", "HEAD"])
-        tools.add_row("Oh My Zsh", commit, "Image")
+        revision = _read_version(["git", "-C", str(oh_my_zsh), "rev-parse", "--short", "HEAD"])
+        tools.add_row("Oh My Zsh (Git revision)", revision, "Image")
 
     user_bin = Path.home() / ".local" / "bin"
     if user_bin.is_dir():
