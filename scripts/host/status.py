@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -53,21 +54,87 @@ def status_style(status: str) -> str:
 
 
 def format_ports(publishers: Any) -> list[str]:
+    """Compact consecutive published/target ports into ranges."""
     if not isinstance(publishers, list):
         return []
-    formatted = []
+
+    entries: list[tuple[str, int | None, int, str]] = []
     for publisher in publishers:
         if not isinstance(publisher, dict):
             continue
-        published = publisher.get("PublishedPort")
         target = publisher.get("TargetPort")
-        protocol = publisher.get("Protocol", "tcp")
-        host = publisher.get("URL") or "0.0.0.0"
-        if published:
-            formatted.append(f"{host}:{published}->{target}/{protocol}")
-        elif target:
-            formatted.append(f"{target}/{protocol}")
+        if not isinstance(target, int):
+            continue
+        published = publisher.get("PublishedPort")
+        if not isinstance(published, int):
+            published = None
+        host = str(publisher.get("URL") or "0.0.0.0")
+        protocol = str(publisher.get("Protocol") or "tcp")
+        entries.append((host, published, target, protocol))
+
+    entries.sort(key=lambda item: (item[0], item[3], item[1] or -1, item[2]))
+    groups: list[list[tuple[str, int | None, int, str]]] = []
+    for entry in entries:
+        if groups:
+            previous = groups[-1][-1]
+            same_mapping = entry[0] == previous[0] and entry[3] == previous[3]
+            consecutive = (
+                entry[1] is not None
+                and previous[1] is not None
+                and entry[1] == previous[1] + 1
+                and entry[2] == previous[2] + 1
+            )
+            if same_mapping and consecutive:
+                groups[-1].append(entry)
+                continue
+        groups.append([entry])
+
+    formatted: list[str] = []
+    for group in groups:
+        host, published, target, protocol = group[0]
+        last_published = group[-1][1]
+        last_target = group[-1][2]
+        if published is None:
+            port_text = f"{target}/{protocol}"
+        elif len(group) == 1:
+            port_text = f"{host}:{published}->{target}/{protocol}"
+        else:
+            port_text = (
+                f"{host}:{published}-{last_published}"
+                f"->{target}-{last_target}/{protocol}"
+            )
+        formatted.append(port_text)
     return formatted
+
+
+def format_created(container: dict[str, Any]) -> str:
+    """Prefer Docker's relative age, falling back to a parsed creation time."""
+    running_for = container.get("RunningFor")
+    if running_for:
+        return str(running_for)
+
+    created_at = container.get("CreatedAt")
+    if not created_at:
+        return "Unknown"
+
+    try:
+        created = datetime.strptime(
+            str(created_at), "%Y-%m-%d %H:%M:%S %z %Z"
+        )
+        elapsed = max(0, int((datetime.now(timezone.utc) - created.astimezone(timezone.utc)).total_seconds()))
+    except (ValueError, TypeError):
+        return str(created_at)
+
+    if elapsed < 60:
+        return f"{elapsed} seconds ago"
+    if elapsed < 3600:
+        minutes = elapsed // 60
+        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+    if elapsed < 86400:
+        hours = elapsed // 3600
+        return f"{hours} hour{'s' if hours != 1 else ''} ago"
+    days = elapsed // 86400
+    return f"{days} day{'s' if days != 1 else ''} ago"
 
 
 def render(containers: list[dict[str, Any]], color: bool | None = None) -> str:
@@ -86,7 +153,7 @@ def render(containers: list[dict[str, Any]], color: bool | None = None) -> str:
         name = str(container.get("Name") or container.get("Service") or "devbox")
         image = str(container.get("Image") or "Unknown")
         state = str(container.get("Status") or container.get("State") or "Unknown")
-        created = str(container.get("CreatedAt") or container.get("RunningFor") or "Unknown")
+        created = format_created(container)
         service = str(container.get("Service") or "devbox")
 
         lines.append(paint(f"DEVBOX  {name}", BOLD + CYAN, color))
