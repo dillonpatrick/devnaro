@@ -14,27 +14,15 @@ from rich import box
 from rich.console import Console, Group
 from rich.table import Table
 from rich.text import Text
-from rich.theme import Theme
 
 from devbox_manager import __version__
 from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
-from devbox_manager.presentation import configure_typer_help, render_panel
+from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
 
 configure_typer_help()
 
-DEVBOX_THEME = Theme(
-    {
-        "info": "cyan",
-        "success": "bold green",
-        "warning": "bold yellow",
-        "error": "bold red",
-        "muted": "dim",
-        "heading": "bold bright_cyan",
-        "accent": "bold green",
-    }
-)
 console = Console(theme=DEVBOX_THEME, highlight=False)
 
 
@@ -95,7 +83,7 @@ def _docker_connection():
             console,
             "Docker connection failed",
             f"[error]Unable to connect to Docker:[/error]\n{error}",
-            border_style="red",
+            border_style="error",
         )
         raise typer.Exit(code=1) from error
 
@@ -199,11 +187,11 @@ def info() -> None:
     summary = Table.grid(padding=(0, 2))
     summary.add_column(style="muted", no_wrap=True)
     summary.add_column()
-    summary.add_row("Stack", f"[bold white]DevBox[/bold white] v{__version__}")
+    summary.add_row("Stack", f"[value]DevBox[/value] v{__version__}")
     summary.add_row("Base", base_image)
 
     tools = Table(box=box.ROUNDED, header_style="heading")
-    tools.add_column("Tool", style="cyan")
+    tools.add_column("Tool", style="info")
     tools.add_column("Path")
     tools.add_column("Source", style="muted")
 
@@ -303,9 +291,9 @@ def status() -> None:
     table.add_column("Value")
 
     state_label = (
-        f"[green]{container.status}[/green]"
+        f"[success]{container.status}[/success]"
         if container.status == "running"
-        else f"[yellow]{container.status}[/yellow]"
+        else f"[warning]{container.status}[/warning]"
     )
     table.add_row("Container", container.name)
     table.add_row("Status", state_label)
@@ -439,7 +427,7 @@ def doctor() -> None:
     table.add_column("Details")
 
     for name, passed, details in checks:
-        result = "[green]PASS[/green]" if passed else "[red]FAIL[/red]"
+        result = "[success]PASS[/success]" if passed else "[error]FAIL[/error]"
         table.add_row(name, result, details)
 
     passed_count = sum(1 for _, passed, _ in checks if passed)
@@ -468,7 +456,7 @@ def network_manager_status() -> None:
 
     if running and isinstance(details, list):
         table = Table(box=box.ROUNDED, show_header=True, header_style="heading")
-        table.add_column("PID", style="bold cyan", justify="right")
+        table.add_column("PID", style="info", justify="right")
         table.add_column("PPID", style="cyan", justify="right")
         table.add_column("User")
         table.add_column("State")
@@ -484,8 +472,8 @@ def network_manager_status() -> None:
                 process.command,
             )
         summary = Text.assemble(
-            ("● ", "bold green"),
-            ("Running", "bold green"),
+            ("● ", "success"),
+            ("Running", "success"),
             ("  Process ID (PID) uniquely identifies this running process.", "muted"),
         )
         legend = Text(
@@ -547,7 +535,7 @@ def welcome() -> None:
     details = Table.grid(padding=(0, 2))
     details.add_column(style="muted", width=18, no_wrap=True)
     details.add_column()
-    details.add_row("DevBox version", f"[bold white]{__version__}[/bold white]")
+    details.add_row("DevBox version", f"[value]{__version__}[/value]")
     details.add_row("Base image", f"Alpine Linux {alpine_version}")
     details.add_row("User", getpass.getuser())
     details.add_row("Workspace", str(Path.cwd()))
@@ -577,7 +565,7 @@ def welcome() -> None:
         console,
         "[bold green]DEVBOX[/bold green] [bold white]DEVELOPMENT ENVIRONMENT[/bold white]",
         content,
-        border_style="bright_cyan",
+        border_style="info",
         padding=(1, 2),
         expand=True,
     )
