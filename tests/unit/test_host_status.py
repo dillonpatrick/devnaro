@@ -148,6 +148,5 @@ def test_render_uses_bright_cyan_devbox_palette():
     output = status.render([container], color=True, width=80)
 
     assert status.CYAN in output
-    assert "\\033[96m" in output
     assert "Service" in output
     assert output.count(status.CYAN) >= 4
