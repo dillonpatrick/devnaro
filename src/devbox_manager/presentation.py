@@ -5,6 +5,21 @@ from typing import Any
 from rich import box
 from rich.console import Console
 from rich.panel import Panel
+from rich.theme import Theme
+
+
+DEVBOX_THEME = Theme(
+    {
+        "info": "bright_cyan",
+        "success": "bold green",
+        "warning": "bold yellow",
+        "error": "bold red",
+        "muted": "dim",
+        "heading": "bold bright_cyan",
+        "accent": "bold green",
+        "value": "white",
+    }
+)
 
 
 def configure_typer_help() -> None:
@@ -36,7 +51,7 @@ def render_panel(
     title: str,
     content: Any,
     *,
-    border_style: str = "bright_cyan",
+    border_style: str = "info",
     subtitle: str | None = None,
     padding: tuple[int, int] = (1, 1),
     expand: bool = False,
