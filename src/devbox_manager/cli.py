@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import getpass
+import os
 import re
 import shutil
 import subprocess
@@ -138,6 +139,40 @@ def _read_version(command: list[str]) -> str:
     return output.splitlines()[0].strip()
 
 
+def _additional_path_tools(known_names: set[str]) -> list[tuple[str, str]]:
+    """Discover extra executables in non-core PATH directories."""
+    core_directories = {"/bin", "/sbin", "/usr/bin", "/usr/sbin"}
+    discovered: dict[str, str] = {}
+
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        if not directory:
+            continue
+        resolved_directory = str(Path(directory).resolve())
+        if resolved_directory in core_directories:
+            continue
+
+        path = Path(resolved_directory)
+        if not path.is_dir():
+            continue
+
+        try:
+            entries = sorted(path.iterdir())
+        except OSError:
+            continue
+
+        for entry in entries:
+            try:
+                if entry.name in known_names or not entry.is_file():
+                    continue
+                if not os.access(entry, os.X_OK):
+                    continue
+                discovered.setdefault(entry.name, str(entry))
+            except OSError:
+                continue
+
+    return sorted(discovered.items())
+
+
 def _tool_source(executable: str) -> str:
     """Classify tools in the user's local bin directory separately."""
     resolved = Path(executable).resolve()
@@ -198,18 +233,12 @@ def info() -> None:
         revision = _read_version(["git", "-C", str(oh_my_zsh), "rev-parse", "--short", "HEAD"])
         tools.add_row("Oh My Zsh (Git revision)", revision, "Image")
 
-    user_bin = Path.home() / ".local" / "bin"
-    if user_bin.is_dir():
-        for executable in sorted(user_bin.iterdir()):
-            if not executable.is_file() or not executable.stat().st_mode & 0o111:
-                continue
-            if executable.name in reported:
-                continue
-            tools.add_row(
-                executable.name,
-                _read_version([str(executable), "--version"]),
-                "User",
-            )
+    for name, executable in _additional_path_tools(reported):
+        tools.add_row(
+            name,
+            _read_version([executable, "--version"]),
+            _tool_source(executable),
+        )
 
     host_tools = Table(box=box.SIMPLE, show_header=False)
     host_tools.add_column("Integration", style="cyan")
