@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install build rebuild test config clean
+.PHONY: help install uninstall build rebuild test config clean
 
 # ==========================================
 # Development and maintenance commands
@@ -11,6 +11,7 @@ help: ## Show available commands
 	awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $1, $$2}'
 
 install: ## Install the host-side devbox command
+	@sudo -k && sudo -v
 	@bash ./scripts/host/install.sh
 
 build: ## Build DevBox image
@@ -32,3 +33,7 @@ config: ## Validate Docker Compose configuration
 
 clean: ## Remove DevBox containers, networks, volumes, and local images
 	@bash ./scripts/host/clean.sh
+
+uninstall: ## Completely remove DevBox while preserving the workspace
+	@sudo -k && sudo -v
+	@bash ./scripts/host/uninstall.sh
