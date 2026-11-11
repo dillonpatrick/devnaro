@@ -33,5 +33,5 @@ config: ## Validate Docker Compose configuration
 clean: ## Remove DevBox containers, networks, volumes, and local images
 	@bash ./scripts/host/clean.sh
 
-uninstall: ## Remove the host-side devbox command shortcut
+uninstall: ## Completely remove DevBox while preserving the workspace
 	@bash ./scripts/host/uninstall.sh
