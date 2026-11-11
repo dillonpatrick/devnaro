@@ -17,6 +17,20 @@ def test_cli_help():
     assert "--show-completion" not in result.stdout
 
 
+def test_cli_short_help():
+    result = runner.invoke(app, ["-h"])
+
+    assert result.exit_code == 0
+    assert "Inspect and troubleshoot your DevBox environment" in result.stdout
+
+
+def test_network_manager_short_help():
+    result = runner.invoke(app, ["network-manager", "-h"])
+
+    assert result.exit_code == 0
+    assert "Inspect the automatic Docker network manager" in result.stdout
+
+
 def test_cli_version():
     result = runner.invoke(app, ["--version"])
 
