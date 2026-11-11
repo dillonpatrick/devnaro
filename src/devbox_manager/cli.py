@@ -293,7 +293,6 @@ def doctor() -> None:
         console,
         "Health check result",
         "[success]All checks passed.[/success]",
-        
     )
 
 
