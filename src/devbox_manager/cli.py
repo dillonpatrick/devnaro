@@ -9,7 +9,6 @@ import typer
 from docker.errors import DockerException, NotFound
 from rich import box
 from rich.console import Console, Group
-from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 from rich.theme import Theme
@@ -18,6 +17,7 @@ from devbox_manager import __version__
 from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
+from devbox_manager.presentation import render_panel
 
 DEVBOX_THEME = Theme(
     {
@@ -86,12 +86,11 @@ def _docker_connection():
         client.ping()
         return client
     except DockerException as error:
-        console.print(
-            Panel(
-                f"[red]Unable to connect to Docker:[/red]\n{error}",
-                title="[heading]Docker connection failed[/heading]",
-                border_style="red",
-            )
+        render_panel(
+            console,
+            "Docker connection failed",
+            f"[error]Unable to connect to Docker:[/error]\n{error}",
+            border_style="red",
         )
         raise typer.Exit(code=1) from error
 
@@ -104,7 +103,7 @@ def main(
 ) -> None:
     """DevBox command line tools."""
     if version:
-        console.print(f"DevBox Manager [cyan]v{__version__}[/cyan]")
+        render_panel(console, "DevBox Manager", f"[accent]v{__version__}[/accent]", border_style="cyan")
         raise typer.Exit()
 
 
@@ -117,7 +116,7 @@ def status() -> None:
         container = get_devbox_container(client)
         container.reload()
     except NotFound as error:
-        console.print("[red]DevBox container was not found.[/red]")
+        render_panel(console, "DevBox status", "[error]DevBox container was not found.[/error]", border_style="red")
         raise typer.Exit(code=1) from error
 
     attrs = container.attrs
@@ -141,7 +140,13 @@ def status() -> None:
     table.add_row("Connected networks", str(len(networks)))
     table.add_row("Workspace", str(WORKSPACE_PATH))
 
-    console.print(table)
+    render_panel(
+        console,
+        "DevBox status",
+        table,
+        border_style="green" if container.status == "running" else "yellow",
+        subtitle=f"Container {container.status}",
+    )
 
     if container.status != "running":
         raise typer.Exit(code=1)
@@ -156,7 +161,7 @@ def networks() -> None:
         container = get_devbox_container(client)
         container.reload()
     except NotFound as error:
-        console.print("[red]DevBox container was not found.[/red]")
+        render_panel(console, "DevBox networks", "[error]DevBox container was not found.[/error]", border_style="red")
         raise typer.Exit(code=1) from error
 
     attached = container.attrs.get("NetworkSettings", {}).get("Networks", {})
@@ -184,9 +189,21 @@ def networks() -> None:
             table.add_row(name, "unknown", "-", details.get("IPAddress") or "-", "-")
 
     if not attached:
-        console.print("[yellow]DevBox is not connected to any networks.[/yellow]")
+        render_panel(
+            console,
+            "DevBox networks",
+            "[warning]DevBox is not connected to any networks.[/warning]",
+            border_style="yellow",
+            subtitle="0 networks connected",
+        )
     else:
-        console.print(table)
+        render_panel(
+            console,
+            "DevBox networks",
+            table,
+            border_style="green",
+            subtitle=f"{len(attached)} network(s) connected",
+        )
 
 
 @app.command()
@@ -248,12 +265,20 @@ def doctor() -> None:
         result = "[green]PASS[/green]" if passed else "[red]FAIL[/red]"
         table.add_row(name, result, details)
 
-    console.print(table)
+    passed_count = sum(1 for _, passed, _ in checks if passed)
+    failed_count = len(checks) - passed_count
+    render_panel(
+        console,
+        "DevBox health check",
+        table,
+        border_style="green" if failed_count == 0 else "red",
+        subtitle=f"{passed_count} passed · {failed_count} failed",
+    )
 
     if not all(passed for _, passed, _ in checks):
         raise typer.Exit(code=1)
 
-    console.print(Panel("[bold green]All checks passed.[/bold green]", border_style="green"))
+    render_panel(console, "Health check result", "[success]All checks passed.[/success]", border_style="green")
 
 
 @network_app.command("status")
@@ -290,23 +315,19 @@ def network_manager_status() -> None:
             "D = uninterruptible wait; Z = zombie.",
             style="muted",
         )
-        console.print(
-            Panel(
-                Group(summary, table, legend),
-                title="[heading]Network Manager[/heading]",
-                subtitle=f"{len(details)} process(es) found",
-                border_style="green",
-                box=box.ROUNDED,
-                padding=(1, 1),
-            )
+        render_panel(
+            console,
+            "Network Manager",
+            Group(summary, table, legend),
+            border_style="green",
+            subtitle=f"{len(details)} process(es) found",
         )
     else:
-        console.print(
-            Panel(
-                f"[yellow]Network Manager is not running.[/yellow]\n\n[dim]{details}[/dim]",
-                title="Network Manager",
-                border_style="yellow",
-            )
+        render_panel(
+            console,
+            "Network Manager",
+            f"[warning]Network Manager is not running.[/warning]\n\n[muted]{details}[/muted]",
+            border_style="yellow",
         )
         raise typer.Exit(code=1)
 
@@ -319,15 +340,15 @@ def network_manager_logs(
     try:
         content = read_logs(lines=lines)
     except (FileNotFoundError, OSError) as error:
-        console.print(f"[red]{error}[/red]")
+        render_panel(console, "Network Manager logs", f"[error]{error}[/error]", border_style="red")
         raise typer.Exit(code=1) from error
 
-    console.print(
-        Panel(
-            content or "[dim]Log file is empty.[/dim]",
-            title=f"Network Manager logs (last {lines} lines)",
-            border_style="cyan",
-        )
+    render_panel(
+        console,
+        "Network Manager logs",
+        content or "[muted]Log file is empty.[/muted]",
+        border_style="cyan",
+        subtitle=f"Last {lines} lines",
     )
 
 
@@ -370,15 +391,13 @@ def welcome() -> None:
         commands,
         Text("Tip: run commands from inside each project directory.", style="muted"),
     )
-    console.print(
-        Panel(
-            content,
-            title="[bold green]DEVBOX[/bold green] [bold white]DEVELOPMENT ENVIRONMENT[/bold white]",
-            border_style="bright_cyan",
-            box=box.ROUNDED,
-            padding=(1, 2),
-            expand=True,
-        )
+    render_panel(
+        console,
+        "[bold green]DEVBOX[/bold green] [bold white]DEVELOPMENT ENVIRONMENT[/bold white]",
+        content,
+        border_style="bright_cyan",
+        padding=(1, 2),
+        expand=True,
     )
 
 
