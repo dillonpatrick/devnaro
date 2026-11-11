@@ -8,10 +8,10 @@ LOCAL_FILE="$SCRIPT_DIR/docker/docker-compose.ports.yml"
 
 if [[ ! -f "$LOCAL_FILE" ]]; then
     if [[ ! -f "$EXAMPLE_FILE" ]]; then
-        printf 'DevBox port configuration template not found: %s\\n' "$EXAMPLE_FILE" >&2
+        printf 'DevBox port configuration template not found: %s\n' "$EXAMPLE_FILE" >&2
         exit 1
     fi
 
     cp "$EXAMPLE_FILE" "$LOCAL_FILE"
-    printf 'Created local port configuration: %s\\n' "$LOCAL_FILE"
+    printf 'Created local port configuration: %s\n' "$LOCAL_FILE"
 fi
