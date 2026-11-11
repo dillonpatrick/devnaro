@@ -55,6 +55,7 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     assert "Image" in result.stdout
     assert "custom-tool" in result.stdout
     assert "custom-sdk" in result.stdout
+    assert "Custom PATH" in result.stdout
     assert "User" in result.stdout
     assert "Docker Engine" in result.stdout
     assert "VS Code bridge" in result.stdout
