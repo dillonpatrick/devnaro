@@ -31,9 +31,13 @@ Commands:
   doctor            Run health checks
   config            Show machine-specific configuration
   config set workspace PATH  Set workspace directory
-  manager status    Show Network Manager process status (or: dm status)
-  manager logs      Show Network Manager logs (or: dm logs)
+  manager status    Show Network Manager process status
+  manager logs      Show Network Manager logs
   help              Show this help message
+
+Inside the container:
+  dm network-manager status
+  dm network-manager logs
 
 Examples:
   devbox start
