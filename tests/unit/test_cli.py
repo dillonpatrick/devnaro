@@ -80,6 +80,7 @@ def test_welcome_lists_all_container_quick_commands(monkeypatch):
     result = runner.invoke(app, ["welcome"])
 
     assert result.exit_code == 0
+    assert "dm info" in result.stdout
     assert "dm status" in result.stdout
     assert "dm doctor" in result.stdout
     assert "dm networks" in result.stdout
