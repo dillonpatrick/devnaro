@@ -49,6 +49,7 @@ jobs:
           bash -n scripts/host/start.sh
           bash -n scripts/host/stop.sh
           bash -n scripts/host/clean.sh
+          bash -n scripts/host/ensure-ports-config.sh
           sh -n scripts/container/entrypoint.sh
           python3 -m py_compile scripts/host/code_bridge.py scripts/container/code
 
