@@ -17,7 +17,9 @@ from devbox_manager import __version__
 from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
-from devbox_manager.presentation import render_panel
+from devbox_manager.presentation import configure_typer_help, render_panel
+
+configure_typer_help()
 
 DEVBOX_THEME = Theme(
     {
