@@ -1,22 +1,38 @@
 """Rich-powered command line interface for DevBox."""
 
 from datetime import datetime
+import getpass
 import re
 from pathlib import Path
 
 import typer
 from docker.errors import DockerException, NotFound
 from rich import box
-from rich.console import Console
-from rich.panel import Panel
+from rich.console import Console, Group
 from rich.table import Table
+from rich.text import Text
+from rich.theme import Theme
 
 from devbox_manager import __version__
 from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
+from devbox_manager.presentation import configure_typer_help, render_panel
 
-console = Console()
+configure_typer_help()
+
+DEVBOX_THEME = Theme(
+    {
+        "info": "cyan",
+        "success": "bold green",
+        "warning": "bold yellow",
+        "error": "bold red",
+        "muted": "dim",
+        "heading": "bold bright_cyan",
+        "accent": "bold green",
+    }
+)
+console = Console(theme=DEVBOX_THEME, highlight=False)
 
 
 class DevBoxTyperGroup(typer.core.TyperGroup):
@@ -37,12 +53,14 @@ app = typer.Typer(
     cls=DevBoxTyperGroup,
     invoke_without_command=True,
     rich_markup_mode="rich",
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 network_app = typer.Typer(
     name="network-manager",
     help="Inspect the automatic Docker network manager.",
     no_args_is_help=True,
     cls=DevBoxTyperGroup,
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 app.add_typer(network_app, name="network-manager")
 
@@ -70,12 +88,11 @@ def _docker_connection():
         client.ping()
         return client
     except DockerException as error:
-        console.print(
-            Panel(
-                f"[red]Unable to connect to Docker:[/red]\n{error}",
-                title="Docker connection failed",
-                border_style="red",
-            )
+        render_panel(
+            console,
+            "Docker connection failed",
+            f"[error]Unable to connect to Docker:[/error]\n{error}",
+            border_style="red",
         )
         raise typer.Exit(code=1) from error
 
@@ -88,7 +105,11 @@ def main(
 ) -> None:
     """DevBox command line tools."""
     if version:
-        console.print(f"DevBox Manager [cyan]v{__version__}[/cyan]")
+        render_panel(
+            console,
+            "DevBox Manager",
+            f"[accent]v{__version__}[/accent]",
+        )
         raise typer.Exit()
 
 
@@ -101,7 +122,12 @@ def status() -> None:
         container = get_devbox_container(client)
         container.reload()
     except NotFound as error:
-        console.print("[red]DevBox container was not found.[/red]")
+        render_panel(
+            console,
+            "DevBox status",
+            "[error]DevBox container was not found.[/error]",
+            border_style="red",
+        )
         raise typer.Exit(code=1) from error
 
     attrs = container.attrs
@@ -109,7 +135,7 @@ def status() -> None:
     networks = attrs.get("NetworkSettings", {}).get("Networks", {})
     started = _format_started_at(state.get("StartedAt", ""))
 
-    table = Table(title="DevBox status", box=box.ROUNDED, show_header=False)
+    table = Table(box=box.ROUNDED, show_header=False)
     table.add_column("Property", style="cyan", no_wrap=True)
     table.add_column("Value")
 
@@ -125,7 +151,13 @@ def status() -> None:
     table.add_row("Connected networks", str(len(networks)))
     table.add_row("Workspace", str(WORKSPACE_PATH))
 
-    console.print(table)
+    render_panel(
+        console,
+        "DevBox status",
+        table,
+        
+        subtitle=f"Container {container.status}",
+    )
 
     if container.status != "running":
         raise typer.Exit(code=1)
@@ -140,11 +172,16 @@ def networks() -> None:
         container = get_devbox_container(client)
         container.reload()
     except NotFound as error:
-        console.print("[red]DevBox container was not found.[/red]")
+        render_panel(
+            console,
+            "DevBox networks",
+            "[error]DevBox container was not found.[/error]",
+            border_style="red",
+        )
         raise typer.Exit(code=1) from error
 
     attached = container.attrs.get("NetworkSettings", {}).get("Networks", {})
-    table = Table(title="DevBox networks", box=box.ROUNDED)
+    table = Table(box=box.ROUNDED, header_style="heading")
     table.add_column("Network", style="cyan")
     table.add_column("Driver")
     table.add_column("Compose project")
@@ -168,9 +205,19 @@ def networks() -> None:
             table.add_row(name, "unknown", "-", details.get("IPAddress") or "-", "-")
 
     if not attached:
-        console.print("[yellow]DevBox is not connected to any networks.[/yellow]")
+        render_panel(
+            console,
+            "DevBox networks",
+            "[warning]DevBox is not connected to any networks.[/warning]",
+            subtitle="0 networks connected",
+        )
     else:
-        console.print(table)
+        render_panel(
+            console,
+            "DevBox networks",
+            table,
+            subtitle=f"{len(attached)} network(s) connected",
+        )
 
 
 @app.command()
@@ -216,15 +263,14 @@ def doctor() -> None:
     )
 
     manager_running, manager_details = process_status()
-    checks.append(
-        (
-            "Network Manager",
-            manager_running,
-            manager_details.splitlines()[0] if manager_details else "Process not running",
-        )
+    manager_summary = (
+        f"Running (PID {manager_details[0].pid})"
+        if manager_running and isinstance(manager_details, list)
+        else str(manager_details)
     )
+    checks.append(("Network Manager", manager_running, manager_summary))
 
-    table = Table(title="DevBox health check", box=box.ROUNDED)
+    table = Table(box=box.ROUNDED, header_style="heading")
     table.add_column("Check", style="cyan")
     table.add_column("Result")
     table.add_column("Details")
@@ -233,12 +279,23 @@ def doctor() -> None:
         result = "[green]PASS[/green]" if passed else "[red]FAIL[/red]"
         table.add_row(name, result, details)
 
-    console.print(table)
+    passed_count = sum(1 for _, passed, _ in checks if passed)
+    failed_count = len(checks) - passed_count
+    render_panel(
+        console,
+        "DevBox health check",
+        table,
+        subtitle=f"{passed_count} passed · {failed_count} failed",
+    )
 
     if not all(passed for _, passed, _ in checks):
         raise typer.Exit(code=1)
 
-    console.print(Panel("[bold green]All checks passed.[/bold green]", border_style="green"))
+    render_panel(
+        console,
+        "Health check result",
+        "[success]All checks passed.[/success]",
+    )
 
 
 @network_app.command("status")
@@ -246,15 +303,46 @@ def network_manager_status() -> None:
     """Show whether the Network Manager process is running."""
     running, details = process_status()
 
-    if running:
-        console.print(Panel(details, title="Network Manager", border_style="green"))
-    else:
-        console.print(
-            Panel(
-                "[yellow]Network Manager is not running.[/yellow]",
-                title="Network Manager",
-                border_style="yellow",
+    if running and isinstance(details, list):
+        table = Table(box=box.ROUNDED, show_header=True, header_style="heading")
+        table.add_column("PID", style="bold cyan", justify="right")
+        table.add_column("PPID", style="cyan", justify="right")
+        table.add_column("User")
+        table.add_column("State")
+        table.add_column("Uptime")
+        table.add_column("Command", overflow="fold")
+        for process in details:
+            table.add_row(
+                str(process.pid),
+                str(process.ppid),
+                process.user,
+                process.state,
+                process.elapsed,
+                process.command,
             )
+        summary = Text.assemble(
+            ("● ", "bold green"),
+            ("Running", "bold green"),
+            ("  Process ID (PID) uniquely identifies this running process.", "muted"),
+        )
+        legend = Text(
+            "PID = process ID  •  PPID = parent process ID  •  "
+            "User = account running it  •  Uptime = time since it started\n"
+            "State: S = sleeping/waiting (normal while idle); R = running; "
+            "D = uninterruptible wait; Z = zombie.",
+            style="muted",
+        )
+        render_panel(
+            console,
+            "Network Manager",
+            Group(summary, table, legend),
+            subtitle=f"{len(details)} process(es) found",
+        )
+    else:
+        render_panel(
+            console,
+            "Network Manager",
+            f"[warning]Network Manager is not running.[/warning]\n\n[muted]{details}[/muted]",
         )
         raise typer.Exit(code=1)
 
@@ -267,15 +355,68 @@ def network_manager_logs(
     try:
         content = read_logs(lines=lines)
     except (FileNotFoundError, OSError) as error:
-        console.print(f"[red]{error}[/red]")
+        render_panel(
+            console,
+            "Network Manager logs",
+            f"[error]{error}[/error]",
+            border_style="red",
+        )
         raise typer.Exit(code=1) from error
 
-    console.print(
-        Panel(
-            content or "[dim]Log file is empty.[/dim]",
-            title=f"Network Manager logs (last {lines} lines)",
-            border_style="cyan",
-        )
+    render_panel(
+        console,
+        "Network Manager logs",
+        content or "[muted]Log file is empty.[/muted]",
+        subtitle=f"Last {lines} lines",
+    )
+
+
+@app.command()
+def welcome() -> None:
+    """Display the DevBox welcome screen."""
+    manager_running, _ = process_status()
+    try:
+        alpine_version = Path("/etc/alpine-release").read_text(encoding="utf-8").strip()
+        alpine_version = ".".join(alpine_version.split(".")[:2])
+    except OSError:
+        alpine_version = "unknown"
+
+    details = Table.grid(padding=(0, 2))
+    details.add_column(style="muted", width=18, no_wrap=True)
+    details.add_column()
+    details.add_row("DevBox version", f"[bold white]{__version__}[/bold white]")
+    details.add_row("Base image", f"Alpine Linux {alpine_version}")
+    details.add_row("User", getpass.getuser())
+    details.add_row("Workspace", str(Path.cwd()))
+    details.add_row("Home", str(Path.home()))
+    manager_status = "[success]Running[/success]" if manager_running else "[warning]Not detected[/warning]"
+    details.add_row("Network Manager", manager_status)
+
+    commands = Table.grid(padding=(0, 2))
+    commands.add_column(style="accent", no_wrap=True)
+    commands.add_column(style="muted")
+    commands.add_row("code .", "Open current project in VS Code")
+    commands.add_row("dm status", "Container status")
+    commands.add_row("dm doctor", "Environment health checks")
+    commands.add_row("dm networks", "Docker networks")
+    commands.add_row("dm network-manager status", "Network Manager status")
+    commands.add_row("dm network-manager logs", "Network Manager logs")
+    commands.add_row("docker ps", "Running containers")
+    commands.add_row("docker compose up -d", "Start project services")
+
+    content = Group(
+        details,
+        Text("QUICK COMMANDS", style="heading"),
+        commands,
+        Text("Tip: run commands from inside each project directory.", style="muted"),
+    )
+    render_panel(
+        console,
+        "[bold green]DEVBOX[/bold green] [bold white]DEVELOPMENT ENVIRONMENT[/bold white]",
+        content,
+        border_style="bright_cyan",
+        padding=(1, 2),
+        expand=True,
     )
 
 

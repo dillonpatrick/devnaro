@@ -1,16 +1,35 @@
 #!/usr/bin/env sh
 set -eu
 
-# Keep a single-line prompt and preserve the active Oh My Zsh theme/Git info.
-# Normalize any previous DevBox prompt snippets in the persistent home volume.
+# Normalize DevBox-managed Zsh configuration in the persistent home volume.
 ZSHRC="${HOME}/.zshrc"
 
 if [ -f "$ZSHRC" ]; then
+    # Remove the legacy prompt block, if present.
     sed -i '/^# DevBox prompt identity$/,/^PROMPT=/d' "$ZSHRC"
+
+    # Older broken prompt writes could leave shell-script fragments after the
+    # managed marker. Rebuild the managed tail instead of trying to patch it.
+    sed -i '/^# BEGIN DEVBOX PROMPT THEME$/,$d' "$ZSHRC"
+    sed -i '/^# BEGIN DEVBOX CLI COMPLETION$/,$d' "$ZSHRC"
+    sed -i '/^# DevBox CLI completion$/d; /_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager/d' "$ZSHRC"
+
     cat >> "$ZSHRC" <<'EOF'
 
-# DevBox prompt identity
-PROMPT="%F{green}[DEVBOX]%f ${PROMPT}"
+# BEGIN DEVBOX PROMPT THEME
+unsetopt PROMPT_SUBST
+devbox_update_prompt() {
+    local branch=""
+    if command git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        branch=$(command git symbolic-ref --quiet --short HEAD 2>/dev/null || command git rev-parse --short HEAD 2>/dev/null || true)
+        [[ -n "$branch" ]] && branch="($branch)"
+    fi
+
+    PROMPT="%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f ${branch}%f"$'\n'"%F{green}╰─❯%f "
+}
+precmd_functions+=(devbox_update_prompt)
+devbox_update_prompt
+# END DEVBOX PROMPT THEME
 
 # Ensure DevBox-managed tools remain available after user Zsh configuration.
 export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
@@ -22,12 +41,9 @@ if [ -d "/workspace" ] && [ ! -e "${HOME}/workspace" ] && [ ! -L "${HOME}/worksp
     ln -s /workspace "${HOME}/workspace"
 fi
 
-# Replace the previous unsupported Click shell-source hook with native Zsh completion.
+# Install native Zsh completion for the DevBox CLI.
 if [ -f "$ZSHRC" ]; then
-    sed -i '/^# DevBox CLI completion$/d; /_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager/d' "$ZSHRC"
-    sed -i '/^# BEGIN DEVBOX CLI COMPLETION$/,/^# END DEVBOX CLI COMPLETION$/d' "$ZSHRC"
-    if ! grep -q '^# BEGIN DEVBOX CLI COMPLETION$' "$ZSHRC"; then
-        cat >> "$ZSHRC" <<'EOF'
+    cat >> "$ZSHRC" <<'EOF'
 
 # BEGIN DEVBOX CLI COMPLETION
 autoload -Uz compinit
@@ -35,16 +51,31 @@ if (( ! $+functions[compdef] )); then
     compinit
 fi
 
+# Use compact, variable-width columns for completion suggestions.
+setopt LIST_PACKED
+
 _devbox_manager_completion() {
-    local -a commands
-    commands=(status networks doctor network-manager)
+    local -a commands help_options
+    commands=(status networks doctor network-manager welcome)
+    help_options=(--help -h)
 
     if (( CURRENT == 2 )); then
-        compadd -- $commands
-    elif [[ "${words[2]}" == "network-manager" ]] && (( CURRENT == 3 )); then
-        compadd -- status logs
-    elif [[ "${words[2]}" == "network-manager" && "${words[3]}" == "logs" ]] && (( CURRENT == 4 )); then
-        compadd -- --lines -n
+        compadd -- $help_options --version -v $commands
+    elif (( CURRENT == 3 )); then
+        case "${words[2]}" in
+            network-manager)
+                compadd -- $help_options status logs
+                ;;
+            status|networks|doctor|welcome)
+                compadd -- $help_options
+                ;;
+        esac
+    elif (( CURRENT == 4 )) && [[ "${words[2]}" == "network-manager" ]]; then
+        if [[ "${words[3]}" == "logs" ]]; then
+            compadd -- $help_options --lines -n
+        else
+            compadd -- $help_options
+        fi
     fi
 }
 
@@ -52,7 +83,6 @@ compdef _devbox_manager_completion devbox-manager
 compdef _devbox_manager_completion dm
 # END DEVBOX CLI COMPLETION
 EOF
-    fi
 fi
 
 # A fresh marker is created whenever the container starts or restarts.

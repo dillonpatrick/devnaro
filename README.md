@@ -134,7 +134,7 @@ Use `devbox clean` only when you intentionally want to remove DevBox's persisted
 
 After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 
-Every interactive Zsh prompt inside the container stays on one line, with a green `[DEVBOX]` marker before the existing theme, current directory, and Git branch/status decorations. The host terminal prompt is not changed.
+Every interactive Zsh prompt inside the container uses a compact two-line DevBox theme: a green `DEVBOX` identity, the current directory in cyan, the active Git branch, and a green prompt symbol. The host terminal prompt is not changed. The welcome panel and Python CLI use the same cyan/green visual language.
 
 The `dm` command is a Zsh function available **inside the container only**. It is a shortcut for `devbox-manager`. Zsh tab completion for `devbox-manager` is enabled automatically; no manual installation command is needed.
 

@@ -17,6 +17,36 @@ def test_cli_help():
     assert "--show-completion" not in result.stdout
 
 
+def test_cli_short_help():
+    result = runner.invoke(app, ["-h"])
+
+    assert result.exit_code == 0
+    assert "Inspect and troubleshoot your DevBox environment" in result.stdout
+
+
+def test_network_manager_short_help():
+    result = runner.invoke(app, ["network-manager", "-h"])
+
+    assert result.exit_code == 0
+    assert "Inspect the automatic Docker network manager" in result.stdout
+
+
+def test_welcome_lists_all_container_quick_commands(monkeypatch):
+    from devbox_manager import cli
+
+    monkeypatch.setattr(cli, "process_status", lambda: (True, "Network Manager running"))
+    result = runner.invoke(app, ["welcome"])
+
+    assert result.exit_code == 0
+    assert "dm status" in result.stdout
+    assert "dm doctor" in result.stdout
+    assert "dm networks" in result.stdout
+    assert "dm network-manager status" in result.stdout
+    assert "dm network-manager logs" in result.stdout
+    assert "docker ps" in result.stdout
+    assert "docker compose up -d" in result.stdout
+
+
 def test_cli_version():
     result = runner.invoke(app, ["--version"])
 
@@ -51,3 +81,28 @@ def test_format_started_at_handles_zero_timestamp():
 
     assert _format_started_at("0001-01-01T00:00:00Z") == "Not running"
 
+
+
+def test_network_manager_status_shows_explained_process_details(monkeypatch):
+    from devbox_manager import cli
+    from devbox_manager.network_manager import NetworkManagerProcess
+
+    process = NetworkManagerProcess(
+        pid=27,
+        ppid=1,
+        user="root",
+        state="S",
+        elapsed="00:12",
+        command="python3 -u /opt/network-manager/manager.py",
+    )
+    monkeypatch.setattr(cli, "process_status", lambda: (True, [process]))
+
+    result = runner.invoke(app, ["network-manager", "status"])
+
+    assert result.exit_code == 0
+    assert "PID" in result.stdout
+    assert "PPID" in result.stdout
+    assert "Uptime" in result.stdout
+    assert "27" in result.stdout
+    assert "00:12" in result.stdout
+    assert "Process ID (PID)" in result.stdout

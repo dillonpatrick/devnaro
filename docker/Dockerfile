@@ -107,33 +107,7 @@ function dm() { devbox-manager "$@"; }
 
 if [[ -f /tmp/devbox-welcome-pending ]]; then
     rm -f /tmp/devbox-welcome-pending
-    printf '\n'
-    printf '\033[1;36m==============================================\033[0m\n'
-    printf '\033[1;36m                 DEVBOX READY                 \033[0m\n'
-    printf '\033[1;36m==============================================\033[0m\n'
-    printf '\n'
-    printf '  DevBox version:   %s\n' "$(cat /etc/devbox-version)"
-    printf '  Base image:       Alpine Linux %s\n' "$(cut -d. -f1,2 /etc/alpine-release)"
-    printf '  User:             %s\n' "$(id -un 2>/dev/null || printf '%s' "${USERNAME:-devuser}")"
-    printf '  Workspace:        %s\n' "$PWD"
-    printf '  Home:             %s\n' "$HOME"
-    if pgrep -f '[/]opt/network-manager/manager.py' >/dev/null 2>&1; then
-        printf '  Network Manager:  \033[1;32mRunning\033[0m\n'
-    else
-        printf '  Network Manager:  \033[1;33mNot detected\033[0m\n'
-    fi
-    printf '\n'
-    printf '\033[1;37m  Useful commands\033[0m\n'
-    printf '  code .                                Open current project in VS Code\n'
-    printf '  dm status                             Container status\n'
-    printf '  dm doctor                             Environment health checks\n'
-    printf '  dm networks                           Docker networks\n'
-    printf '  dm network-manager logs               Network Manager logs\n'
-    printf '  docker ps                             Running containers\n'
-    printf '  docker compose up -d                  Start project services\n'
-    printf '\n'
-    printf '\033[2m  Tip: run commands from inside each project directory.\033[0m\n'
-    printf '\n'
+    devbox-manager welcome
 fi
 EOF
 
