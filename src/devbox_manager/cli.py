@@ -232,13 +232,12 @@ def doctor() -> None:
     )
 
     manager_running, manager_details = process_status()
-    checks.append(
-        (
-            "Network Manager",
-            manager_running,
-            manager_details.splitlines()[0] if manager_details else "Process not running",
-        )
+    manager_summary = (
+        f"Running (PID {manager_details[0].pid})"
+        if manager_running and isinstance(manager_details, list)
+        else str(manager_details)
     )
+    checks.append(("Network Manager", manager_running, manager_summary))
 
     table = Table(title="[heading]DevBox health check[/heading]", box=box.ROUNDED)
     table.add_column("Check", style="cyan")
@@ -262,12 +261,42 @@ def network_manager_status() -> None:
     """Show whether the Network Manager process is running."""
     running, details = process_status()
 
-    if running:
-        console.print(Panel(details, title="Network Manager", border_style="green"))
+    if running and isinstance(details, list):
+        table = Table(box=box.ROUNDED, show_header=True, header_style="bold")
+        table.add_column("PID", style="bold cyan", justify="right")
+        table.add_column("PPID", style="cyan", justify="right")
+        table.add_column("User")
+        table.add_column("State")
+        table.add_column("Uptime")
+        table.add_column("Command", overflow="fold")
+        for process in details:
+            table.add_row(
+                str(process.pid),
+                str(process.ppid),
+                process.user,
+                process.state,
+                process.elapsed,
+                process.command,
+            )
+        summary = Text.assemble(
+            ("● ", "bold green"),
+            ("Running", "bold green"),
+            ("  Process ID (PID) uniquely identifies this running process.", "muted"),
+        )
+        console.print(
+            Panel(
+                Group(summary, table),
+                title="[heading]Network Manager[/heading]",
+                subtitle=f"{len(details)} process(es) found",
+                border_style="green",
+                box=box.ROUNDED,
+                padding=(1, 1),
+            )
+        )
     else:
         console.print(
             Panel(
-                "[yellow]Network Manager is not running.[/yellow]",
+                f"[yellow]Network Manager is not running.[/yellow]\n\n[dim]{details}[/dim]",
                 title="Network Manager",
                 border_style="yellow",
             )
