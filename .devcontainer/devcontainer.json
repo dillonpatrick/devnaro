@@ -1,7 +1,11 @@
 
 {
   "name": "DevBox Alpine Linux 3.22",
-  "dockerComposeFile": "../docker/docker-compose.yml",
+  "dockerComposeFile": [
+    "../docker/docker-compose.yml",
+    "../docker/docker-compose.ports.yml"
+  ],
+  "initializeCommand": "bash ${localWorkspaceFolder}/scripts/host/ensure-ports-config.sh",
   "service": "devbox",
   "workspaceFolder": "/workspace",
 

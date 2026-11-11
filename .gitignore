@@ -41,3 +41,6 @@ dist/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Local DevBox port overrides (generated from the example and user-editable)
+docker/docker-compose.ports.yml
