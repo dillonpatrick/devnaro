@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-# Keep a single-line prompt and preserve the active Oh My Zsh theme/Git info.
+# Install a compact DevBox prompt while preserving Git branch information.
 # Normalize any previous DevBox prompt snippets in the persistent home volume.
 ZSHRC="${HOME}/.zshrc"
 
@@ -17,7 +17,8 @@ zstyle ':vcs_info:git:*' formats '(%b)'
 precmd_functions+=(devbox_vcs_info)
 devbox_vcs_info() { vcs_info }
 setopt PROMPT_SUBST
-PROMPT='%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f ${vcs_info_msg_0_}\n%F{green}╰─❯%f '
+PROMPT='%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f ${vcs_info_msg_0_}
+%F{green}╰─❯%f '
 # END DEVBOX PROMPT THEME
 
 # Ensure DevBox-managed tools remain available after user Zsh configuration.
