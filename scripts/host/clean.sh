@@ -24,6 +24,7 @@ USER_UID="$(id -u)"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 CODE_SOCKET_PATH="$RUNTIME_DIR/devbox-code-$USER_UID.sock"
 CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
+CODE_BRIDGE_BINARY="$RUNTIME_DIR/devbox-host-bridge-$USER_UID"
 bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
 # Remove only resources belonging to the DevBox Compose project.
@@ -34,7 +35,7 @@ docker compose --project-directory "$DEVBOX_DIR" \
 if [[ -f "$CODE_BRIDGE_PID" ]]; then
     kill "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null || true
 fi
-rm -f "$CODE_BRIDGE_PID" "$CODE_SOCKET_PATH"
+rm -f "$CODE_BRIDGE_PID" "$CODE_SOCKET_PATH" "$CODE_BRIDGE_BINARY"
 
 echo
 success "DevBox resources cleaned."
