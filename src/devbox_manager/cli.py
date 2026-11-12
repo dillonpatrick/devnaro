@@ -8,7 +8,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-import click
 import typer
 from docker.errors import DockerException, NotFound
 from rich import box
@@ -591,7 +590,7 @@ def _registered_cli_commands(command=None, prefix: tuple[str, ...] = ()):
         arguments = [
             parameter.name.upper()
             for parameter in child.params
-            if isinstance(parameter, click.Argument)
+            if parameter.__class__.__name__.endswith("Argument")
         ]
         usage = " ".join(("dm", *path, *arguments))
         description = child.help or child.short_help or ""
