@@ -20,23 +20,34 @@ Initial curated stacks:
 | --- | --- | --- |
 | `python` | Alpine | Python, uv, pytest, Ruff, mypy |
 | `nodejs` | Alpine | Node.js LTS, npm, Yarn, TypeScript, ESLint, Prettier |
-| `devops` | Debian | AWS CLI, Azure CLI, Google Cloud CLI, Terraform, Ansible, kubectl, Helm |
+| `devops` | Debian slim | AWS CLI, Azure CLI, Google Cloud CLI, Terraform, Ansible, kubectl, Helm |
 | `go` | Alpine | Go, golangci-lint, Delve, Air |
 
 The exact package and tool declarations are maintained in each stack's
 `stack.yaml`. This table is the curated baseline, not a substitute for those
 definitions.
 
-## Base image selection
+## Minimal base image policy
 
-Each stack may select a supported base distribution (initially Alpine or
-Debian) while reusing the same DevBox Core capabilities and behavior.
+The image must start from the smallest supported official base variant that
+can run the selected stack:
 
-The DevOps stack uses Debian because some cloud vendor CLIs and their
+- Alpine uses the official versioned Alpine image (for example,
+  `alpine:3.22`).
+- Debian uses the official `slim` variant (for example,
+  `debian:trixie-slim`), never the full Debian image unless a documented
+  compatibility requirement makes it unavoidable.
+
+Do not add compilers, headers, package managers beyond the distribution's
+native manager, or convenience tools to the base by default. Install only
+what DevBox Core and the selected stack actually require. Build-only
+dependencies must not remain in the final runtime image; prefer multi-stage
+builds or remove temporary dependencies in the same image layer.
+
+The DevOps stack uses Debian slim because some cloud vendor CLIs and their
 dependencies do not provide equivalent official support on Alpine/musl.
-Using Debian there improves compatibility with vendor-supported installation
-methods and avoids fragile workarounds. Alpine remains the lighter choice for
-the Python, Node.js and Go stacks.
+Alpine remains the lighter choice for Python, Node.js and Go where their
+supported installation methods permit it.
 
 Core installation must be distribution-aware: the same Core capabilities are
 provided on both distributions, using the appropriate package manager and
@@ -60,12 +71,13 @@ Examples:
 - Terraform and cloud CLIs: latest stable supported release according to each
   vendor's release/support policy.
 
-Stack definitions declare a channel or version policy, not a permanently
-floating executable. During image build, the resolver/build tooling resolves
-the channel to an exact version, records that version in generated build
-metadata, and installs that exact version. The resulting image is immutable:
-new upstream releases are picked up on the next image rebuild, not silently
-inside an already-created container.
+Stack definitions may declare either an exact version or a supported channel.
+The schema accepts `lts` and `stable`; whether a particular tool supports a
+channel is validated by its tool-specific resolver. During image build, the
+resolver/build tooling resolves a channel to an exact version, records that
+version in generated build metadata, and installs that exact version. The
+resulting image is immutable: new upstream releases are picked up on the next
+image rebuild, not silently inside an already-created container.
 
 Build logs and `dm info` should expose both the requested channel and the
 resolved version. Resolution must fail clearly if an upstream version cannot
@@ -83,20 +95,53 @@ The directory name and the `name` field must match.
 
 ## Definition schema
 
-The current implementation supports schema version 1, which has pinned tool
-versions and Alpine-only packages. The curated multi-base and release-channel
-decisions above require a schema revision before implementation. The next
-schema revision is expected to add:
+Schema version 2 supports the following fields:
 
 | Field | Meaning |
 | --- | --- |
-| `base` | Supported distribution and version, initially Alpine or Debian. |
-| `packages` | Distribution-specific additional packages. |
-| `tools` | Supported tool identifiers and release channel policy (for example `lts` or `stable`). |
+| `schema_version` | Must be `2`. |
+| `name` | Stack identifier; must match its directory. |
+| `description` | Short human-readable description. |
+| `base.distribution` | Supported distribution: `alpine` or `debian`. |
+| `base.version` | Explicit upstream distribution version. |
+| `packages.alpine` | Optional list of additional Alpine packages. |
+| `packages.debian` | Optional list of additional Debian packages. |
+| `tools.<name>.version` | Exact tool version; mutually exclusive with `channel`. |
+| `tools.<name>.channel` | Release channel: `lts` or `stable`; mutually exclusive with `version`. |
 | `environment` | Environment variables available in the container. |
+
+The selected base is normalized to the smallest supported official image
+variant: `alpine:<version>` or `debian:<version>-slim`. Package lists are
+distribution-specific. Empty or omitted package lists add no packages.
 
 The schema remains strict: unknown fields are rejected, tool installers are
 owned by DevBox, and stack files cannot execute arbitrary shell commands.
+A tool-specific resolver must reject channels that the upstream tool does not
+actually provide.
+
+## Example
+
+```yaml
+schema_version: 2
+
+name: python
+description: Python development environment.
+
+base:
+  distribution: alpine
+  version: "3.22"
+
+packages:
+  alpine:
+    - git
+    - jq
+
+tools:
+  uv:
+    channel: stable
+
+environment: {}
+```
 
 ## Core and stack separation
 
@@ -104,10 +149,9 @@ The existing Core dependencies and integrations remain available in every
 stack. This includes the DevBox CLI runtime, shell, Docker CLI integration,
 Network Manager and host bridge behavior.
 
-Terraform is removed from the current default image/Core installation and
-belongs only to the DevOps stack. The DevBox bootstrap uv remains an internal
-Core dependency; a user-facing uv installation belongs only to the Python
-stack.
+Terraform is not a Core dependency; it belongs only to the DevOps stack. The
+DevBox bootstrap uv remains an internal Core dependency; a user-facing uv
+installation belongs only to the Python stack.
 
 ## Reproducibility
 
