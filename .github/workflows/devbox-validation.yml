@@ -76,7 +76,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Exercise additional package manifest
-        run: printf 'jq\\n' >> docker/packages.txt
+        run: printf 'jq\n' >> docker/packages.txt
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -121,7 +121,7 @@ jobs:
           docker exec devbox-ci devbox-manager __complete -- tools '' | grep -Fx 'search'
           docker exec devbox-ci zsh -fc 'source ~/.zshrc; (( $+functions[_devbox_completion] )) && [[ ${_comps[dm]} == _devbox_completion ]]'
           docker exec devbox-ci sh -ec 'test -x /usr/local/bin/devbox-host-bridge && test -x /usr/local/bin/devbox-status && test -d /workspace'
-          docker exec devbox-ci python3 --version | grep -E '^Python 3\\.12\\.'
+          docker exec devbox-ci python3 --version | grep -E '^Python 3\.12\.'
 
       - name: Remove smoke-test container
         if: always()
