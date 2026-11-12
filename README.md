@@ -149,27 +149,9 @@ The project files are stored on the host and shared with the container. You can 
 
 ## Host commands
 
-Run these commands in a host terminal:
+Run `devbox` commands in a host terminal. The canonical command list and descriptions are maintained in `scripts/host/command_registry.sh`; the CLI help, installer summary, and shell completion all read from that registry.
 
-| Command | Description |
-|---|---|
-| `devbox` or `devbox shell` | Enter the running DevBox container |
-| `devbox start` | Start an existing container or build and create one if absent |
-| `devbox stop` | Stop the container without removing resources |
-| `devbox clean` | Remove DevBox containers, networks, volumes, and local images |
-| `devbox restart` | Restart the existing container only |
-| `devbox recreate` | Recreate the container and network while preserving its home volume |
-| `devbox recreate-all` | Rebuild all DevBox resources, including the home volume |
-| `devbox status` | Show container status |
-| `devbox info` | Show DevBox stack, base image, installed tools, and host integrations |
-| `devbox logs` | Show container logs |
-| `devbox networks` | Show networks connected to DevBox |
-| `devbox doctor` | Run container-side health checks |
-| `devbox manager status` | Show Network Manager process status |
-| `devbox manager logs` | Show Network Manager logs |
-| `devbox config` | Show machine-specific configuration |
-| `devbox config set workspace PATH` | Set the workspace directory |
-| `devbox help` | Show this help message |
+Use `devbox help` for the current command reference. Bash and Zsh completion are configured by `make install` and use the same registry, including nested `config` and `manager` commands.
 
 Machine-specific settings are stored outside the repository in `~/.config/devbox/config` (or `$XDG_CONFIG_HOME/devbox/config`). An explicitly exported `WORKSPACE_PATH` takes precedence over the saved workspace setting.
 
