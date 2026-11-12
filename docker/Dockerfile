@@ -72,7 +72,21 @@ RUN set -eu; \
       > /tmp/devbox-extra-packages; \
     if [ -s /tmp/devbox-extra-packages ]; then \
       apt-get update; \
-      xargs -r apt-get install -y --no-install-recommends < /tmp/devbox-extra-packages; \
+      : > /tmp/devbox-install-packages; \
+      while IFS= read -r package; do \
+        [ -z "$package" ] && continue; \
+        if apt-cache show "$package" >/dev/null 2>&1; then \
+          printf '%s\n' "$package" >> /tmp/devbox-install-packages; \
+        else \
+          warning="WARNING: Debian package '$package' was not found; skipping."; \
+          printf '%s\n' "$warning" >&2; \
+          printf '%s\n' "$warning" >> /opt/devbox-config/package-warnings.txt; \
+        fi; \
+      done < /tmp/devbox-extra-packages; \
+      if [ -s /tmp/devbox-install-packages ]; then \
+        xargs -r apt-get install -y --no-install-recommends < /tmp/devbox-install-packages; \
+      fi; \
+      rm -f /tmp/devbox-install-packages; \
     fi; \
     rm -f /tmp/devbox-user-packages.txt /tmp/devbox-extra-packages
 
