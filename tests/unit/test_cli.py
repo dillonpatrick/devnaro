@@ -260,7 +260,7 @@ def test_tools_list_shows_declared_packages(monkeypatch, tmp_path):
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
-    manifest.write_text("# additional tools\\njq\\nripgrep\\n", encoding="utf-8")
+    manifest.write_text("# additional tools\njq\nripgrep\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
 
     result = runner.invoke(app, ["tools", "list"])
@@ -276,7 +276,7 @@ def test_tools_add_updates_manifest_and_explains_recreate(monkeypatch, tmp_path)
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
-    manifest.write_text("# additional tools\\n", encoding="utf-8")
+    manifest.write_text("# additional tools\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
 
     result = runner.invoke(app, ["tools", "add", "jq"])
@@ -285,7 +285,7 @@ def test_tools_add_updates_manifest_and_explains_recreate(monkeypatch, tmp_path)
     assert "Package manifest updated" in result.stdout
     assert "devbox recreate" in result.stdout
     assert "only after" in result.stdout
-    assert manifest.read_text(encoding="utf-8") == "# additional tools\\njq\\n"
+    assert manifest.read_text(encoding="utf-8") == "# additional tools\njq\n"
 
 
 def test_tools_add_rejects_invalid_package(monkeypatch, tmp_path):
@@ -306,7 +306,7 @@ def test_tools_remove_updates_manifest(monkeypatch, tmp_path):
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
-    manifest.write_text("# additional tools\\njq\\nripgrep\\n", encoding="utf-8")
+    manifest.write_text("# additional tools\njq\nripgrep\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
 
     result = runner.invoke(app, ["tools", "remove", "jq"])
@@ -314,18 +314,18 @@ def test_tools_remove_updates_manifest(monkeypatch, tmp_path):
     assert result.exit_code == 0
     assert "Package manifest updated" in result.stdout
     assert "devbox recreate" in result.stdout
-    assert manifest.read_text(encoding="utf-8") == "# additional tools\\nripgrep\\n"
+    assert manifest.read_text(encoding="utf-8") == "# additional tools\nripgrep\n"
 
 
 def test_tools_remove_reports_missing_package(monkeypatch, tmp_path):
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
-    manifest.write_text("jq\\n", encoding="utf-8")
+    manifest.write_text("jq\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
 
     result = runner.invoke(app, ["tools", "remove", "ripgrep"])
 
     assert result.exit_code == 1
     assert "not present in the manifest" in result.stdout
-    assert manifest.read_text(encoding="utf-8") == "jq\\n"
+    assert manifest.read_text(encoding="utf-8") == "jq\n"
