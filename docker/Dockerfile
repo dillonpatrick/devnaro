@@ -56,7 +56,7 @@ RUN set -eux; \
         bash ca-certificates curl docker-cli docker-cli-compose git gnupg \
         nano procps python3 py3-pip py3-setuptools zsh \
         zsh-autosuggestions zsh-syntax-highlighting; \
-      python3 --version | grep -E '^Python 3\\.12\\.'; \
+      python3 --version | grep -E '^Python 3\.12\.'; \
     elif [ -f /etc/debian_version ]; then \
       . /etc/os-release; \
       test "$ID" = debian; \
@@ -67,7 +67,7 @@ RUN set -eux; \
       install -m 0755 -d /etc/apt/keyrings; \
       curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
       chmod a+r /etc/apt/keyrings/docker.asc; \
-      printf 'Types: deb\\nURIs: https://download.docker.com/linux/debian\\nSuites: %s\\nComponents: stable\\nArchitectures: %s\\nSigned-By: /etc/apt/keyrings/docker.asc\\n' "$VERSION_CODENAME" "$(dpkg --print-architecture)" \
+      printf 'Types: deb\nURIs: https://download.docker.com/linux/debian\nSuites: %s\nComponents: stable\nArchitectures: %s\nSigned-By: /etc/apt/keyrings/docker.asc\n' "$VERSION_CODENAME" "$(dpkg --print-architecture)" \
         > /etc/apt/sources.list.d/docker.sources; \
       apt-get update; \
       apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin; \
