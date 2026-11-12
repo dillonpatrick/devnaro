@@ -20,7 +20,8 @@ from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
-from devbox_manager.tool_catalog import list_tools, search_tools
+from devbox_manager.alpine_packages import AlpinePackageSearchError, search_alpine_packages
+from devbox_manager.tool_catalog import list_tools
 
 configure_typer_help()
 
@@ -56,7 +57,7 @@ network_app = typer.Typer(
 )
 app.add_typer(network_app, name="network-manager")
 tools_app = typer.Typer(
-    help="Browse the curated development tools supported by DevBox.",
+    help="Browse bundled tools and search official Alpine Linux packages.",
     no_args_is_help=True,
     cls=DevBoxTyperGroup,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -100,9 +101,39 @@ def tools_list() -> None:
 
 
 @tools_app.command("search")
-def tools_search(query: str = typer.Argument(..., help="Text to search in tool names, IDs, descriptions, and categories.")) -> None:
-    """Search the supported development tool catalog."""
-    _render_tool_catalog(search_tools(query))
+def tools_search(query: str = typer.Argument(..., help="Text to search Alpine package names and descriptions.")) -> None:
+    """Search official Alpine Linux repositories for available packages."""
+    try:
+        packages = search_alpine_packages(query)
+    except AlpinePackageSearchError as error:
+        render_panel(
+            console,
+            "Alpine package search failed",
+            f"[error]{error}[/error]",
+            border_style="error",
+        )
+        raise typer.Exit(code=1) from error
+
+    table = Table(box=box.ROUNDED, header_style="heading")
+    table.add_column("Package", style="info")
+    table.add_column("Version")
+    table.add_column("Repository")
+    table.add_column("Description", overflow="fold")
+
+    for package in packages:
+        table.add_row(
+            package.name,
+            package.version,
+            package.repository,
+            package.description,
+        )
+
+    render_panel(
+        console,
+        "Alpine package search",
+        table if packages else "[muted]No matching Alpine packages found.[/muted]",
+        subtitle=f"{len(packages)} package(s) · Alpine Linux {packages[0].alpine_version if packages else '3.22'}",
+    )
 
 
 def _format_started_at(value: str) -> str:
