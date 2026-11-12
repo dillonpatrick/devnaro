@@ -54,8 +54,8 @@ fi
 
 setopt LIST_PACKED
 
-eval "$(_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager)"
-compdef _devbox_manager_completion dm
+eval "$(_DM_COMPLETE=zsh_source dm)"
+compdef _dm_completion dm
 # END DEVBOX CLI COMPLETION
 EOF
 fi
