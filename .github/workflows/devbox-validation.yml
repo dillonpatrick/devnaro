@@ -6,7 +6,6 @@ on:
       - main
       - feat/python-cli-foundation
       - feat/stop-clean-lifecycle
-      - feat/alpine-linux-experiment
       - feat/stack-definition-foundation
       - feat/curated-development-stacks
   pull_request:
@@ -76,10 +75,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - base-image: alpine:3.22
-            stack-name: default
           - base-image: debian:trixie-slim
-            stack-name: ci-debian
+            stack-name: default
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
