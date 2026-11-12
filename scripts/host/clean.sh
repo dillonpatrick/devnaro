@@ -6,7 +6,6 @@ source "$DEVBOX_DIR/scripts/host/ui.sh"
 
 devbox_info "Cleaning DevBox resources..."
 
-DEVBOX_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 USER_UID="$(id -u)"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 CODE_SOCKET_PATH="$RUNTIME_DIR/devbox-code-$USER_UID.sock"
