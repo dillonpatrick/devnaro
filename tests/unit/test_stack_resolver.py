@@ -17,8 +17,8 @@ def valid_definition(**overrides):
         "schema_version": 2,
         "name": "python-api",
         "description": "Python API development environment.",
-        "base": {"distribution": "alpine", "version": "3.22"},
-        "packages": {"alpine": ["git", "jq"], "debian": ["git", "jq"]},
+        "base": {"distribution": "debian", "version": "trixie"},
+        "packages": {"debian": ["git", "jq"]},
         "tools": {
             "terraform": {"channel": "stable"},
             "uv": {"version": "0.13.7"},
@@ -32,10 +32,10 @@ def valid_definition(**overrides):
 def test_validate_stack_definition_returns_normalized_values():
     stack = validate_stack_definition(valid_definition())
     assert stack.name == "python-api"
-    assert stack.distribution == "alpine"
-    assert stack.base_version == "3.22"
-    assert stack.base_image == "alpine:3.22"
-    assert stack.packages == {"alpine": ("git", "jq"), "debian": ("git", "jq")}
+    assert stack.distribution == "debian"
+    assert stack.base_version == "trixie"
+    assert stack.base_image == "debian:trixie-slim"
+    assert stack.packages == {"debian": ("git", "jq")}
     assert stack.tools == {
         "terraform": {"channel": "stable"},
         "uv": {"version": "0.13.7"},
@@ -58,12 +58,11 @@ def test_build_inputs_are_deterministic_and_plain_data():
     assert list(result["tools"]) == ["terraform", "uv"]
     assert list(result["environment"]) == ["A_FIRST", "Z_LAST"]
     assert result["base"] == {
-        "distribution": "alpine",
-        "version": "3.22",
-        "image": "alpine:3.22",
+        "distribution": "debian",
+        "version": "trixie",
+        "image": "debian:trixie-slim",
     }
     assert result["packages"] == {
-        "alpine": ["git", "jq"],
         "debian": ["git", "jq"],
     }
 
@@ -75,12 +74,12 @@ def test_build_inputs_are_deterministic_and_plain_data():
         ({"schema_version": 1}, "Unsupported schema_version"),
         ({"name": "Bad_Name"}, "name must contain"),
         ({"description": " "}, "description"),
-        ({"base": {"distribution": "ubuntu", "version": "24.04"}}, "Unsupported base distribution"),
-        ({"base": {"distribution": "alpine"}}, "base.distribution and base.version are required"),
-        ({"base": {"distribution": "alpine", "version": "../latest"}}, "Invalid base version"),
-        ({"packages": {"alpine": "git"}}, "packages.alpine must be a list"),
-        ({"packages": {"alpine": ["git", "../etc"]}}, "Invalid package name"),
-        ({"packages": {"alpine": ["git", "git"]}}, "Duplicate alpine package"),
+        ({"base": {"distribution": "alpine", "version": "3.22"}}, "Unsupported base distribution"),
+        ({"base": {"distribution": "debian"}}, "base.distribution and base.version are required"),
+        ({"base": {"distribution": "debian", "version": "../latest"}}, "Invalid base version"),
+        ({"packages": {"debian": "git"}}, "packages.debian must be a list"),
+        ({"packages": {"debian": ["git", "../etc"]}}, "Invalid package name"),
+        ({"packages": {"debian": ["git", "git"]}}, "Duplicate debian package"),
         ({"packages": {"apt": ["git"]}}, "Unknown field"),
         ({"tools": {"node": {"channel": "lts"}}}, "Unsupported tool"),
         ({"tools": {"uv": {}}}, "exactly one of version or channel"),
@@ -106,7 +105,7 @@ def test_rejects_missing_required_fields():
 
 
 def test_rejects_unknown_nested_fields():
-    definition = valid_definition(packages={"alpine": [], "apt": ["curl"]})
+    definition = valid_definition(packages={"debian": [], "apt": ["curl"]})
     with pytest.raises(StackDefinitionError, match="Unknown field"):
         validate_stack_definition(definition)
 
@@ -120,10 +119,10 @@ def test_resolve_stack_loads_yaml_and_checks_directory_name(tmp_path):
 name: python-api
 description: Python API development environment.
 base:
-  distribution: alpine
-  version: "3.22"
+  distribution: debian
+  version: "trixie"
 packages:
-  alpine: [git, jq]
+  debian: [git, jq]
 tools:
   uv:
     channel: stable
@@ -134,8 +133,8 @@ environment:
     )
     stack = resolve_stack(stack_file)
     assert stack.name == "python-api"
-    assert stack.base_image == "alpine:3.22"
-    assert stack.packages["alpine"] == ("git", "jq")
+    assert stack.base_image == "debian:trixie-slim"
+    assert stack.packages["debian"] == ("git", "jq")
 
 
 def test_resolve_stack_rejects_directory_name_mismatch(tmp_path):
@@ -147,10 +146,10 @@ def test_resolve_stack_rejects_directory_name_mismatch(tmp_path):
 name: another-name
 description: Example.
 base:
-  distribution: alpine
-  version: "3.22"
+  distribution: debian
+  version: "trixie"
 packages:
-  alpine: []
+  debian: []
 tools: {}
 environment: {}
 """,
@@ -170,10 +169,10 @@ name: duplicate
 name: overwritten
 description: Example.
 base:
-  distribution: alpine
-  version: "3.22"
+  distribution: debian
+  version: "trixie"
 packages:
-  alpine: []
+  debian: []
 tools: {}
 environment: {}
 """,
@@ -198,8 +197,8 @@ def test_write_build_inputs_creates_shell_safe_artifacts(tmp_path):
     )
     write_build_inputs(stack, tmp_path)
 
-    assert (tmp_path / "base-image").read_text() == "alpine:3.22\n"
-    assert (tmp_path / "alpine-packages.txt").read_text() == "git\njq\n"
+    assert (tmp_path / "base-image").read_text() == "debian:trixie-slim\n"
+    assert not (tmp_path / "alpine-packages.txt").exists()
     assert (tmp_path / "debian-packages.txt").read_text() == "git\njq\n"
     assert (tmp_path / "terraform-version").read_text() == "\n"
     assert (tmp_path / "terraform-channel").read_text() == "stable\n"
