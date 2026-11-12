@@ -115,6 +115,21 @@ def test_welcome_commands_come_from_registered_typer_tree():
     ]
 
 
+def test_completion_candidates_follow_registered_command_tree():
+    from devbox_manager.cli import _completion_candidates
+
+    assert "tools" in _completion_candidates([""])
+    assert _completion_candidates(["tools", ""]) == ["search"]
+    assert _completion_candidates(["network-manager", ""]) == ["logs", "status"]
+
+
+def test_hidden_completion_command_returns_candidates():
+    result = runner.invoke(app, ["__complete", "--", "tools", ""])
+
+    assert result.exit_code == 0
+    assert result.stdout.splitlines() == ["search"]
+
+
 def test_cli_version():
     result = runner.invoke(app, ["--version"])
 
