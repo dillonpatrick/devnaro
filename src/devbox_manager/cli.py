@@ -114,8 +114,8 @@ def _render_manifest_updated(action: str, package: str) -> None:
     render_panel(
         console,
         "Package manifest updated",
-        f"[success]{action} {package}.[/success]\\n\\n"
-        "[warning]Changes take effect only after running this command on the host:[/warning]\\n"
+        f"[success]{action} {package}.[/success]\n\n"
+        "[warning]Changes take effect only after running this command on the host:[/warning]\n"
         "[accent]devbox recreate[/accent]",
     )
 
@@ -165,7 +165,7 @@ def tools_list() -> None:
         raise typer.Exit(code=1) from error
 
     if packages:
-        content = "\\n".join(f"[info]•[/info] {package}" for package in packages)
+        content = "\n".join(f"[info]•[/info] {package}" for package in packages)
     else:
         content = "[muted]No additional packages declared.[/muted]"
     render_panel(
