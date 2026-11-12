@@ -63,7 +63,7 @@ RUN set -eux; \
       apt-get update; \
       apt-get install -y --no-install-recommends \
         bash ca-certificates curl git gnupg nano procps python3 python3-pip \
-        python3-venv zsh zsh-autosuggestions zsh-syntax-highlighting; \
+        python3-venv passwd zsh zsh-autosuggestions zsh-syntax-highlighting; \
       install -m 0755 -d /etc/apt/keyrings; \
       curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
       chmod a+r /etc/apt/keyrings/docker.asc; \
