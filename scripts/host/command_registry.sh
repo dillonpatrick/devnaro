@@ -30,14 +30,10 @@ DEVBOX_HOST_SUBCOMMANDS_config=(show get set)
 DEVBOX_HOST_SUBCOMMANDS_manager=(status logs)
 DEVBOX_HOST_CONFIG_KEYS=(workspace)
 
-devbox_host_print_command_list() {
-    local command_name
-    for command_name in "${DEVBOX_HOST_COMMANDS[@]}"; do
-        printf '  %-18s %s\n' "$command_name" "${DEVBOX_HOST_COMMAND_DESCRIPTIONS[$command_name]}"
-    done
-    printf '  %-18s %s\n' "manager status" "Show Network Manager process status"
-    printf '  %-18s %s\n' "manager logs" "Show Network Manager logs"
-}
+declare -A DEVBOX_HOST_SUBCOMMAND_DESCRIPTIONS=(
+    ["manager status"]="Show Network Manager process status"
+    ["manager logs"]="Show Network Manager logs"
+)
 
 devbox_host_completion() {
     local -a words candidates
