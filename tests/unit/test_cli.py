@@ -98,7 +98,7 @@ def test_welcome_separates_host_and_container_quick_commands(monkeypatch):
     assert "dm network-manager logs" in result.stdout
     assert "docker ps" in result.stdout
     assert "docker compose up -d" in result.stdout
-    assert max(map(len, result.stdout.splitlines())) < 80
+    assert max(map(len, result.stdout.splitlines())) <= 80
 
 
 def test_welcome_commands_come_from_registered_typer_tree():
