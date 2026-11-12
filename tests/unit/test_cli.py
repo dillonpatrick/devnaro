@@ -120,6 +120,8 @@ def test_completion_candidates_follow_registered_command_tree():
     from devbox_manager.cli import _completion_candidates
 
     assert "tools" in _completion_candidates([""])
+    assert "__complete" not in _completion_candidates([""])
+    assert _completion_candidates(["__"]) == []
     assert _completion_candidates(["tools", ""]) == ["search"]
     assert _completion_candidates(["network-manager", ""]) == ["logs", "status"]
 
