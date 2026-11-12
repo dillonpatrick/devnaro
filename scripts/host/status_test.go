@@ -29,6 +29,26 @@ func TestFormatPorts(t *testing.T) {
     if got != "127.0.0.1:8080->80/tcp" { t.Fatalf("unexpected ports: %s", got) }
 }
 
+func TestFormatPortsGroupsConsecutiveMappings(t *testing.T) {
+    got := ports([]publisher{
+        {URL: "127.0.0.1", PublishedPort: 3002, TargetPort: 3002, Protocol: "tcp"},
+        {URL: "127.0.0.1", PublishedPort: 3000, TargetPort: 3000, Protocol: "tcp"},
+        {URL: "127.0.0.1", PublishedPort: 3001, TargetPort: 3001, Protocol: "tcp"},
+        {URL: "127.0.0.1", PublishedPort: 4173, TargetPort: 4173, Protocol: "tcp"},
+    })
+    expected := "127.0.0.1:3000-3002->3000-3002/tcp,  127.0.0.1:4173->4173/tcp"
+    if got != expected { t.Fatalf("unexpected grouped ports: %s", got) }
+}
+
+func TestFormatPortsDoesNotGroupNonConsecutiveMappings(t *testing.T) {
+    got := ports([]publisher{
+        {URL: "127.0.0.1", PublishedPort: 3000, TargetPort: 3000, Protocol: "tcp"},
+        {URL: "127.0.0.1", PublishedPort: 3002, TargetPort: 3002, Protocol: "tcp"},
+    })
+    expected := "127.0.0.1:3000->3000/tcp,  127.0.0.1:3002->3002/tcp"
+    if got != expected { t.Fatalf("unexpected port mappings: %s", got) }
+}
+
 func TestRenderEmptyState(t *testing.T) {
     got := render(nil)
     for _, expected := range []string{"DevBox status", "No container found", "devbox start"} {
