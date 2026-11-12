@@ -3,51 +3,48 @@
 ## Purpose
 
 A stack describes the development tools and environment-specific configuration
-that DevBox should include in an image. It does not define Docker build steps,
+that DevBox includes in an image. It does not define Docker build steps,
 container orchestration, arbitrary shell commands or host integration.
 
-The contract is versioned. DevBox resolves and validates the YAML before the
-runtime image is built.
+DevBox validates each YAML definition before building the runtime image.
 
 ## Available stacks
 
-There is no default development stack. Users must choose one of the available
-stacks when creating an environment.
+There is no default development stack in the curated-stack design. Users will
+select one of the available stacks when creating an environment.
 
 Initial curated stacks:
 
 | Stack | Base image | Main tools |
 | --- | --- | --- |
-| `python` | Debian Slim | Python, uv, pytest, Ruff, mypy |
-| `nodejs` | Debian Slim | Node.js LTS, npm, Yarn, TypeScript, ESLint, Prettier |
-| `devops` | Debian slim | AWS CLI, Azure CLI, Google Cloud CLI, Terraform, Ansible, kubectl, Helm |
-| `go` | Debian Slim | Go, golangci-lint, Delve, Air |
+| `python` | Debian Trixie Slim | Python, uv, pytest, Ruff, mypy |
+| `nodejs` | Debian Trixie Slim | Node.js LTS, npm, Yarn, TypeScript, ESLint, Prettier |
+| `devops` | Debian Trixie Slim | AWS CLI, Azure CLI, Google Cloud CLI, Terraform, Ansible, kubectl, Helm |
+| `go` | Debian Trixie Slim | Go, golangci-lint, Delve, Air |
 
 The exact package and tool declarations are maintained in each stack's
 `stack.yaml`. This table is the curated baseline, not a substitute for those
 definitions.
 
-## Minimal base image policy
+## Base image policy
 
-The image must start from the smallest supported official base variant that
-can run the selected stack:
+**Debian Slim is the only supported distribution throughout the project.**
+All Docker build stages and all runtime stacks use Debian-based images. Runtime
+stacks use the official Debian Slim variant (for example,
+`debian:trixie-slim`).
 
-- Debian uses the official versioned Debian image (for example,
-  `debian:trixie-slim`).
-- Debian uses the official `slim` variant (for example,
-  `debian:trixie-slim`), never the full Debian image unless a documented
-  compatibility requirement makes it unavoidable.
+Use APT for system packages. Do not add compilers, headers or convenience tools
+to DevBox Core unless they are required by its runtime functionality. Build-only
+dependencies must be removed in the same image layer or kept in a separate
+build stage.
 
-Do not add compilers, headers, package managers beyond the distribution's
-native manager, or convenience tools to the base by default. Install only
-what DevBox Core and the selected stack actually require. Build-only
-dependencies must not remain in the final runtime image; prefer multi-stage
-builds or remove temporary dependencies in the same image layer.
+The Dockerfile installs Docker CLI and Compose from Docker's official APT
+repository. The non-root developer account, Docker socket group, Zsh and its
+plugins are configured using Debian tooling and package paths.
 
-Debian Slim is the only supported base for Python, Node.js, DevOps and Go stacks. This keeps package management and runtime compatibility consistent across all environments.
-
-The Dockerfile uses APT for Core and stack packages, including Docker CLI/Compose from Docker's official APT repository. Runtime dependencies are installed without compiler toolchains or development headers; utilities needed only by the optional Terraform installer are installed and removed in that build step. `dm tools search/add/remove/list` uses Debian APT package indexes. Stack-specific
-tools and packages must not leak into Core.
+The `dm tools search/add/remove/list` commands use the Debian APT package
+indexes included in the image. The package manifest remains host-backed:
+changes take effect after `devbox recreate`, not in the running container.
 
 ## Version policy
 
@@ -99,19 +96,17 @@ Schema version 2 supports the following fields:
 | `name` | Stack identifier; must match its directory. |
 | `description` | Short human-readable description. |
 | `base.distribution` | Must be `debian`. |
-| `base.version` | Explicit upstream distribution version. |
-| `packages.debian` | Optional list of additional Debian packages. |
-| `packages.debian` | Optional list of additional Debian packages. |
+| `base.version` | Explicit Debian release codename/version. |
+| `packages.debian` | Optional list of additional Debian APT packages. |
 | `tools.<name>.version` | Exact tool version; mutually exclusive with `channel`. |
 | `tools.<name>.channel` | Release channel: `lts` or `stable`; mutually exclusive with `version`. |
 | `environment` | Environment variables available in the container. |
 
-The selected base is normalized to the official Debian Slim image: `debian:<version>-slim`. The current Docker build
-accepts this exact reference through the `BASE_IMAGE` build argument and checks
-it against the stack resolver output. Until host-side stack selection propagates
-this automatically, callers must set `BASE_IMAGE` to match the stack definition.
-Package lists are distribution-specific. Empty or omitted package lists add no
-packages.
+The selected base is normalized to the official Debian Slim image:
+`debian:<version>-slim`. The Docker build accepts this exact reference through
+the `BASE_IMAGE` build argument and checks it against the stack resolver output.
+The host Compose configuration currently supplies the same Debian Trixie Slim
+default. Package lists are Debian-only; empty or omitted lists add no packages.
 
 The schema remains strict: unknown fields are rejected, tool installers are
 owned by DevBox, and stack files cannot execute arbitrary shell commands.
