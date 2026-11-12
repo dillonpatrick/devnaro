@@ -29,14 +29,15 @@ else
 fi
 
 HELP_WIDTH=86
-HELP_BORDER="$(printf '%*s' "$HELP_WIDTH" '' | tr ' ' '─')"
+HELP_BORDER="$(printf '%*s' "$HELP_WIDTH" '')"
+HELP_BORDER="${HELP_BORDER// /─}"
 
 print_box_line() {
     local plain="$1"
     local rendered="$2"
-    local padding=$((HELP_WIDTH - ${#plain}))
+    local padding=$((HELP_WIDTH - ${#plain} - 1))
     (( padding < 0 )) && padding=0
-    printf "│ %b%*s │\n" "$rendered" "$padding" ""
+    printf "%b│%b %b%*s%b│%b\n" "$CYAN" "$RESET" "$rendered" "$padding" "" "$CYAN" "$RESET"
 }
 
 print_command() {
@@ -51,10 +52,10 @@ print_command() {
 }
 
 usage() {
-    printf "\n╭%s╮\n" "$HELP_BORDER"
+    printf "\n%b╭%s╮%b\n" "$CYAN" "$HELP_BORDER" "$RESET"
     print_box_line "DevBox - Docker development environment" \
         "${BOLD}${CYAN}DevBox${RESET} ${DIM}- Docker development environment${RESET}"
-    printf "├%s┤\n" "$HELP_BORDER"
+    printf "%b├%s┤%b\n" "$CYAN" "$HELP_BORDER" "$RESET"
     print_box_line "Usage:" "${BOLD}${CYAN}Usage:${RESET}"
     print_box_line "  devbox [command]" "  ${GREEN}devbox${RESET} [command]"
     print_box_line "  devbox config [show|get workspace|set workspace PATH]" \
@@ -88,7 +89,7 @@ usage() {
     print_box_line "  devbox config set workspace PATH" \
         "  ${GREEN}devbox config set workspace PATH${RESET}"
     print_box_line "  devbox manager logs" "  ${GREEN}devbox manager logs${RESET}"
-    printf "╰%s╯\n\n" "$HELP_BORDER"
+    printf "%b╰%s╯%b\n\n" "$CYAN" "$HELP_BORDER" "$RESET"
 }
 
 compose() {
@@ -196,7 +197,13 @@ case "$command" in
             -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox zsh
         ;;
     status)
-        compose ps --format json devbox | python3 "$DEVBOX_DIR/scripts/host/status.py"
+        RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+        STATUS_BINARY="$RUNTIME_DIR/devbox-status-$(id -u)"
+        if [[ -x "$STATUS_BINARY" ]]; then
+            compose ps --all --format json | "$STATUS_BINARY"
+        else
+            compose ps --all --format table devbox
+        fi
         ;;
     info)
         require_running

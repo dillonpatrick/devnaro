@@ -85,8 +85,9 @@ The default host-side bindings are loopback-only and are not exposed to other ma
 - Docker Engine and Docker Compose plugin.
 - Bash, Git, and GNU Make.
 - Access to `/var/run/docker.sock`.
+- VS Code CLI (`code`) on the host if you want to use `code .` from inside DevBox.
 
-The container image is based on Alpine Linux 3.22. The host may use another Linux distribution if the requirements above are available. Python 3 is also required on the host for the VS Code path bridge.
+The container image is based on Alpine Linux 3.22. The host may use another Linux distribution if the requirements above are available. Python and Go are not required on the host: Python runs inside DevBox, and the small Go VS Code bridge is compiled during the Docker image build and extracted for host-side execution.
 
 ## Installation
 
@@ -206,7 +207,7 @@ cd /workspace/project-1
 code .
 ```
 
-The host-side bridge is started by `devbox start` and removed by `devbox clean`. The host must have the VS Code `code` command available on its `PATH`. The bridge only opens paths inside the configured workspace.
+The host-side bridge is compiled as a static Go binary during the DevBox image build, then extracted to the host runtime directory by `devbox start`; no host Python or Go installation is needed. The bridge is removed by `devbox clean`. The host must have the VS Code `code` command available on its `PATH`. The bridge only opens paths inside the configured workspace.
 
 | Command | Description |
 |---|---|

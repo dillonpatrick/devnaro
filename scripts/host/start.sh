@@ -140,6 +140,20 @@ compose() {
         -f "$SCRIPT_DIR/docker/docker-compose.ports.yml" "$@"
 }
 
+resolve_bridge_image() {
+    local image_name
+
+    compose build devbox >&2
+
+    image_name="$(compose config --images | head -n 1)"
+    if [[ -z "$image_name" ]]; then
+        error "Unable to resolve the DevBox image name from Docker Compose."
+        return 1
+    fi
+
+    docker image inspect --format '{{.Id}}' "$image_name"
+}
+
 USERNAME="devuser"
 
 # Workspace precedence: explicit environment variable, machine config, default.
@@ -194,6 +208,9 @@ RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 CODE_SOCKET_PATH="$RUNTIME_DIR/devbox-code-$USER_UID.sock"
 CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
 CODE_BRIDGE_LOG="$RUNTIME_DIR/devbox-code-$USER_UID.log"
+CODE_BRIDGE_BINARY="$RUNTIME_DIR/devbox-host-bridge-$USER_UID"
+STATUS_BINARY="$RUNTIME_DIR/devbox-status-$USER_UID"
+mkdir -p "$RUNTIME_DIR"
 
 detail "Location: ${WORKSPACE_PATH}"
 
@@ -222,17 +239,54 @@ detail ".env"
 
 section 4 "Host VS Code bridge"
 
-if ! command -v python3 >/dev/null 2>&1; then
-    error "Python 3 is required on the host for the VS Code bridge."
+BRIDGE_CONTAINER_ID="$(compose ps --all --quiet devbox)"
+IMAGE_PREBUILT=false
+if [[ -n "$BRIDGE_CONTAINER_ID" ]]; then
+    IMAGE_ID="$(docker inspect --format '{{.Image}}' "$BRIDGE_CONTAINER_ID")"
+else
+    info "Building the image to prepare the host VS Code bridge..."
+    IMAGE_ID="$(resolve_bridge_image)"
+    IMAGE_PREBUILT=true
+fi
+
+if [[ -z "$IMAGE_ID" ]]; then
+    error "Unable to resolve the DevBox image for the host VS Code bridge."
     exit 1
+fi
+
+extract_host_binaries() {
+    local image_id="$1"
+    local container_id
+    container_id="$(docker create "$image_id")"
+    rm -f "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
+
+    if ! docker cp "$container_id:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY" ||
+       ! docker cp "$container_id:/usr/local/bin/devbox-status" "$STATUS_BINARY"; then
+        docker rm "$container_id" >/dev/null
+        rm -f "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
+        return 1
+    fi
+
+    docker rm "$container_id" >/dev/null
+    chmod 700 "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
+}
+
+if ! extract_host_binaries "$IMAGE_ID"; then
+    info "The existing image is missing a DevBox host binary. Rebuilding..."
+    IMAGE_ID="$(resolve_bridge_image)"
+    if [[ -z "$IMAGE_ID" ]] || ! extract_host_binaries "$IMAGE_ID"; then
+        error "Unable to extract DevBox host binaries from the image."
+        exit 1
+    fi
 fi
 
 if [[ ! -S "$CODE_SOCKET_PATH" ]] || [[ ! -f "$CODE_BRIDGE_PID" ]] || ! kill -0 "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null; then
     rm -f "$CODE_SOCKET_PATH" "$CODE_BRIDGE_PID"
     info "Starting host VS Code bridge..."
-    nohup python3 "$SCRIPT_DIR/scripts/host/code_bridge.py" \
+    nohup "$CODE_BRIDGE_BINARY" \
         --socket "$CODE_SOCKET_PATH" \
         --workspace "$WORKSPACE_PATH" \
+        --terminal-script "$SCRIPT_DIR/scripts/host/vscode-terminal.sh" \
         >"$CODE_BRIDGE_LOG" 2>&1 &
     echo "$!" > "$CODE_BRIDGE_PID"
 
@@ -283,7 +337,9 @@ section 6 "Preparing DevBox"
 
 if [[ -z "$CONTAINER_ID" ]]; then
     info "No existing container found. Building the DevBox image..."
-    compose build
+    if [[ "$IMAGE_PREBUILT" != true ]]; then
+        compose build
+    fi
     success "DevBox image built successfully."
 else
     info "Existing DevBox container found. Skipping image build."
