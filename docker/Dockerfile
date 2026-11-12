@@ -1,3 +1,5 @@
+ARG BASE_IMAGE=alpine:3.22
+
 FROM --platform=$BUILDPLATFORM golang:1.24.3-alpine3.22 AS bridge-builder
 
 ARG TARGETOS
@@ -27,7 +29,6 @@ RUN mkdir -p /out \
 
 # The host-side stack selection supplies this value from the validated stack.
 # Alpine and Debian use the same Core setup contract, with distro-specific packages.
-ARG BASE_IMAGE=alpine:3.22
 FROM ${BASE_IMAGE} AS runtime
 
 ARG USERNAME=devuser
@@ -144,7 +145,8 @@ RUN set -eux; \
       USER_GROUP="$(getent group "$USER_GID" | cut -d: -f1)"; \
       useradd --uid "$USER_UID" --gid "$USER_GROUP" --create-home --home-dir "/home/$USERNAME" --shell /bin/zsh "$USERNAME"; \
     fi; \
-    usermod -aG "$DOCKER_GROUP" "$USERNAME" 2>/dev/null || addgroup "$USERNAME" "$DOCKER_GROUP"; \
+    if [ -f /etc/alpine-release ]; then addgroup "$USERNAME" "$DOCKER_GROUP"; \
+    else usermod -aG "$DOCKER_GROUP" "$USERNAME"; fi; \
     mkdir -p "/home/$USERNAME"; \
     chown -R "$USER_UID":"$USER_GID" "/home/$USERNAME"
 
