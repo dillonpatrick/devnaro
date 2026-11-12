@@ -196,11 +196,11 @@ To make an additional Alpine package available in DevBox, edit the package list 
 
 ```dockerfile
 RUN apk add --no-cache \\
-    bash \\
     ca-certificates \\
     curl \\
+    docker-cli \\
     jq \\
-    # ...the remaining packages
+    git
 ```
 
 Then recreate DevBox:
