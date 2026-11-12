@@ -431,6 +431,7 @@ def test_tools_add_updates_manifest_and_explains_recreate(monkeypatch, tmp_path)
     manifest = tmp_path / "packages.txt"
     manifest.write_text("# additional tools\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+    monkeypatch.setattr(cli, "_is_image_provided_tool", lambda package: False)
     monkeypatch.setattr(cli, "available_debian_packages", lambda packages: frozenset({"jq"}))
 
     result = runner.invoke(app, ["tools", "add", "jq"])
