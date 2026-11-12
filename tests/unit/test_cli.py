@@ -101,6 +101,20 @@ def test_welcome_separates_host_and_container_quick_commands(monkeypatch):
     assert max(map(len, result.stdout.splitlines())) < 80
 
 
+def test_welcome_commands_come_from_registered_typer_tree():
+    from devbox_manager.cli import _registered_cli_commands
+
+    commands = dict(_registered_cli_commands())
+
+    assert "dm info" in commands
+    assert "dm network-manager status" in commands
+    assert "dm network-manager logs" in commands
+    assert "dm tools search QUERY" in commands
+    assert "Search official Alpine Linux repositories for available packages." in commands[
+        "dm tools search QUERY"
+    ]
+
+
 def test_cli_version():
     result = runner.invoke(app, ["--version"])
 
