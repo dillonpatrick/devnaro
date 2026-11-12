@@ -3,8 +3,10 @@ FROM --platform=$BUILDPLATFORM golang:1.24.3-alpine3.22 AS bridge-builder
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
-COPY scripts/host/code_bridge.go ./code_bridge.go\nCOPY scripts/host/status.go ./status.go
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-host-bridge ./code_bridge.go \\\n    && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-status ./status.go
+COPY scripts/host/code_bridge.go ./code_bridge.go
+COPY scripts/host/status.go ./status.go
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-host-bridge ./code_bridge.go \
+    && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-status ./status.go
 
 FROM alpine:3.22
 
