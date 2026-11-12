@@ -172,6 +172,41 @@ func ports(items []publisher) string {
 	return strings.Join(formatted, ",  ")
 }
 
+func wrapPortLine(label, value string, maxWidth int) []string {
+	prefix := "  " + label
+	continuation := strings.Repeat(" ", visibleLen(prefix))
+	available := maxWidth - visibleLen(prefix)
+	if available < 1 {
+		return []string{prefix + value}
+	}
+
+	entries := strings.Split(value, ",  ")
+	lines := make([]string, 0, 2)
+	current := prefix
+	currentWidth := visibleLen(prefix)
+
+	for _, entry := range entries {
+		separator := ""
+		if currentWidth > visibleLen(prefix) {
+			separator = ",  "
+		}
+		entryWidth := visibleLen(entry)
+		if currentWidth-visibleLen(prefix)+visibleLen(separator)+entryWidth > maxWidth-visibleLen(prefix) &&
+			currentWidth > visibleLen(prefix) {
+			lines = append(lines, current)
+			current = continuation + entry
+			currentWidth = visibleLen(continuation) + entryWidth
+			continue
+		}
+		current += separator + entry
+		currentWidth += visibleLen(separator) + entryWidth
+	}
+	if current != "" {
+		lines = append(lines, current)
+	}
+	return lines
+}
+
 func render(items []container) string {
 	color := colorEnabled()
 	width := 86
@@ -208,8 +243,9 @@ func render(items []container) string {
 			fmt.Sprintf("  %s %s", paint(fmt.Sprintf("%-10s", "Image"), cyan, color), item.Image),
 			fmt.Sprintf("  %s %s", paint(fmt.Sprintf("%-10s", "Status"), cyan, color), paint(state, statusColor(state), color)),
 			fmt.Sprintf("  %s %s", paint(fmt.Sprintf("%-10s", "Created"), cyan, color), created),
-			fmt.Sprintf("  %s %s", paint(fmt.Sprintf("%-10s", "Ports"), cyan, color), ports(item.Publishers)),
 		)
+		portLabel := paint(fmt.Sprintf("%-10s", "Ports"), cyan, color)
+		body = append(body, wrapPortLine(portLabel, ports(item.Publishers), inner-2)... )
 		if i < len(items)-1 { body = append(body, "") }
 	}
 
