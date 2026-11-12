@@ -25,11 +25,11 @@ Host
 |   +-- .devcontainer/
 |   +-- .github/
 |   +-- docker/
+|   |   +-- packages.txt (additional Alpine packages)
 |   |   +-- Dockerfile
 |   |   +-- docker-compose.yml
 |   |   +-- docker-compose.ports.example.yml
 |   |   +-- docker-compose.ports.yml (generated locally, ignored by Git)
-|   +-- packages.txt (additional Alpine packages)
 |   +-- network_manager/
 |   |   +-- manager.py
 |   +-- scripts/
@@ -39,6 +39,8 @@ Host
 |   |   |   +-- start.sh
 |   |   |   +-- stop.sh
 |   |   |   +-- clean.sh
+|   |   +-- compose.sh (shared Docker Compose entry point)
+|   |   +-- ui.sh (shared lifecycle terminal helpers)
 |   |   +-- container/
 |   |       +-- entrypoint.sh
 |   +-- src/devbox_manager/

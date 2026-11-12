@@ -16,19 +16,19 @@ install: ## Install the host-side devbox command
 
 build: ## Build DevBox image
 	@bash ./scripts/host/ensure-ports-config.sh
-	@docker compose --project-directory . -f docker/docker-compose.yml -f docker/docker-compose.ports.yml build
+	@bash ./scripts/host/compose.sh build
 
 rebuild: ## Rebuild DevBox image without cache
 	@bash ./scripts/host/ensure-ports-config.sh
-	@docker compose --project-directory . -f docker/docker-compose.yml -f docker/docker-compose.ports.yml build --no-cache
+	@bash ./scripts/host/compose.sh build --no-cache
 
 test: ## Run Python unit tests (DevBox must be running)
 	@bash ./scripts/host/ensure-ports-config.sh
-	@docker compose --project-directory . -f docker/docker-compose.yml -f docker/docker-compose.ports.yml exec devbox pytest /opt/devbox-cli/tests/unit
+	@bash ./scripts/host/compose.sh exec devbox pytest /opt/devbox-cli/tests/unit
 
 config: ## Validate Docker Compose configuration
 	@bash ./scripts/host/ensure-ports-config.sh
-	@docker compose --project-directory . -f docker/docker-compose.yml -f docker/docker-compose.ports.yml config --quiet
+	@bash ./scripts/host/compose.sh config --quiet
 	@echo "Docker Compose configuration is valid."
 
 clean: ## Remove DevBox containers, networks, volumes, and local images

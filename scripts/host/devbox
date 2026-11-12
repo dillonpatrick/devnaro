@@ -93,9 +93,7 @@ usage() {
 }
 
 compose() {
-    docker compose --project-directory "$DEVBOX_DIR" \
-        -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-        -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" "$@"
+    bash "$DEVBOX_DIR/scripts/host/compose.sh" "$@"
 }
 
 require_running() {
@@ -192,9 +190,7 @@ case "$command" in
         ;;
     shell|enter)
         require_running
-        exec docker compose --project-directory "$DEVBOX_DIR" \
-            -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-            -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox zsh
+        exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox zsh
         ;;
     status)
         RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
@@ -207,9 +203,7 @@ case "$command" in
         ;;
     info)
         require_running
-        exec docker compose --project-directory "$DEVBOX_DIR" \
-            -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-            -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager info
+        exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager info
         ;;
     tools)
         printf '%s\n' "The tools command is available only inside the container. Run 'devbox shell', then 'dm tools search QUERY'." >&2
@@ -220,9 +214,7 @@ case "$command" in
         ;;
     networks)
         require_running
-        exec docker compose --project-directory "$DEVBOX_DIR" \
-                    -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-                    -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager networks
+        exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager networks
         ;;
     config)
         case "${2:-show}" in
@@ -266,9 +258,7 @@ case "$command" in
         ;;
     doctor)
         require_running
-        exec docker compose --project-directory "$DEVBOX_DIR" \
-                    -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-                    -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager doctor
+        exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager doctor
         ;;
     manager)
         subcommand="${2:-status}"
@@ -276,14 +266,10 @@ case "$command" in
 
         case "$subcommand" in
             status)
-                exec docker compose --project-directory "$DEVBOX_DIR" \
-                    -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-                    -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager network-manager status
+                exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager network-manager status
                 ;;
             logs)
-                exec docker compose --project-directory "$DEVBOX_DIR" \
-                    -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-                    -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager network-manager logs
+                exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager network-manager logs
                 ;;
             *)
                 printf 'Unknown manager command: %s\n' "$subcommand" >&2

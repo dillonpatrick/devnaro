@@ -133,23 +133,30 @@ def _fetch_repository_index(
     return _parse_index(content, repository, architecture, alpine_version)
 
 
+def _all_repository_packages() -> tuple[AlpinePackage, ...]:
+    """Load package metadata from each configured repository exactly once."""
+    alpine_version = _current_alpine_version()
+    architecture = _current_architecture()
+    return tuple(
+        package
+        for repository in REPOSITORIES
+        for package in _fetch_repository_index(
+            alpine_version, architecture, repository
+        )
+    )
+
+
 def search_alpine_packages(query: str) -> tuple[AlpinePackage, ...]:
     """Search official Alpine main and community repositories by name or description."""
     normalized_query = query.strip().casefold()
     if not normalized_query:
         return ()
 
-    alpine_version = _current_alpine_version()
-    architecture = _current_architecture()
     matches: dict[str, AlpinePackage] = {}
-
-    for repository in REPOSITORIES:
-        for package in _fetch_repository_index(
-            alpine_version, architecture, repository
-        ):
-            searchable = f"{package.name} {package.description}".casefold()
-            if normalized_query in searchable:
-                matches.setdefault(package.name, package)
+    for package in _all_repository_packages():
+        searchable = f"{package.name} {package.description}".casefold()
+        if normalized_query in searchable:
+            matches.setdefault(package.name, package)
 
     ordered = sorted(
         matches.values(),
@@ -168,15 +175,8 @@ def available_alpine_packages(package_names: set[str] | tuple[str, ...]) -> froz
     if not requested:
         return frozenset()
 
-    alpine_version = _current_alpine_version()
-    architecture = _current_architecture()
-    available: set[str] = set()
-
-    for repository in REPOSITORIES:
-        for package in _fetch_repository_index(
-            alpine_version, architecture, repository
-        ):
-            if package.name in requested:
-                available.add(package.name)
-
-    return frozenset(available)
+    return frozenset(
+        package.name
+        for package in _all_repository_packages()
+        if package.name in requested
+    )
