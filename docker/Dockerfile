@@ -132,7 +132,7 @@ USER root
 RUN mkdir -p /run/devbox-host \
     && cp /opt/devbox-config/stack/environment.sh /etc/profile.d/devbox-stack.sh \
     && chmod 644 /etc/profile.d/devbox-stack.sh \
-    && grep -m1 '^version = ' /opt/devbox-cli/pyproject.toml | cut -d '"' -f2 > /etc/devbox-version \\
+    && grep -m1 '^version = ' /opt/devbox-cli/pyproject.toml | cut -d '"' -f2 > /etc/devbox-version \
     && test -s /etc/devbox-version \
     && chmod +x /usr/local/bin/devbox-entrypoint /usr/local/bin/code \
     && cat >> /etc/zsh/zshrc <<'EOF'
