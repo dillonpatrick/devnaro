@@ -197,7 +197,13 @@ case "$command" in
             -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox zsh
         ;;
     status)
-        compose ps --all --format table devbox
+        RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+        STATUS_BINARY="$RUNTIME_DIR/devbox-status-$(id -u)"
+        if [[ -x "$STATUS_BINARY" ]]; then
+            compose ps --all --format json | "$STATUS_BINARY"
+        else
+            compose ps --all --format table devbox
+        fi
         ;;
     info)
         require_running
