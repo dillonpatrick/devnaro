@@ -47,15 +47,24 @@ RUN apk add --no-cache \
     zsh \
     zsh-autosuggestions \
     zsh-syntax-highlighting \
-    && python3 --version | grep -E '^Python 3\.12\.'
+    && python3 --version | grep -E '^Python 3\\.12\\.'
 
 COPY docker/packages.txt /tmp/devbox-packages.txt
 
-# Install user-selected additional Alpine packages from the tracked manifest.
+# Install valid user-selected packages; warn and skip names absent from Alpine repositories.
+# Keep apk add itself strict so repository/network failures still fail the image build.
 RUN set -eu; \
     awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { print "Invalid package entry at line " NR ": " $0 > "/dev/stderr"; exit 1 } { print $1 }' /tmp/devbox-packages.txt > /tmp/devbox-extra-packages; \
-    if [ -s /tmp/devbox-extra-packages ]; then \
-        xargs apk add --no-cache < /tmp/devbox-extra-packages; \
+    set --; \
+    while IFS= read -r package; do \
+        if apk search -e "$package" >/dev/null 2>&1; then \
+            set -- "$@" "$package"; \
+        else \
+            printf "WARNING: Alpine package '%s' was not found; skipping.\\n" "$package" >&2; \
+        fi; \
+    done < /tmp/devbox-extra-packages; \
+    if [ "$#" -gt 0 ]; then \
+        apk add --no-cache "$@"; \
     fi; \
     rm -f /tmp/devbox-packages.txt /tmp/devbox-extra-packages
 # Install the pinned Terraform release for the target architecture.
@@ -107,8 +116,8 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \
     && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc \
     && sed -i 's/^plugins=(git)$/plugins=(git docker terraform uv)/' /home/${USERNAME}/.zshrc \
-    && printf '\n# Zsh autosuggestions\nsource /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\n' >> /home/${USERNAME}/.zshrc \
-    && printf '\n# Zsh syntax highlighting\nsource /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh\n' >> /home/${USERNAME}/.zshrc \
+    && printf '\\n# Zsh autosuggestions\\nsource /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\\n' >> /home/${USERNAME}/.zshrc \
+    && printf '\\n# Zsh syntax highlighting\\nsource /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh\\n' >> /home/${USERNAME}/.zshrc \
     && test "$(git -C /home/${USERNAME}/.oh-my-zsh rev-parse HEAD)" = "${OH_MY_ZSH_COMMIT}" \
     && uv --version | grep -F "uv ${UV_VERSION}"
 
@@ -120,7 +129,7 @@ COPY --from=bridge-builder /devbox-status /usr/local/bin/devbox-status
 
 USER root
 RUN mkdir -p /run/devbox-host \
-    && awk -F '"' '/^\[project\]/ { in_project=1; next } /^\[/ { in_project=0 } in_project && /^version = / { print $2; exit }' /opt/devbox-cli/pyproject.toml > /etc/devbox-version \
+    && awk -F '"' '/^\\[project\\]/ { in_project=1; next } /^\\[/ { in_project=0 } in_project && /^version = / { print $2; exit }' /opt/devbox-cli/pyproject.toml > /etc/devbox-version \
     && test -s /etc/devbox-version \
     && chmod +x /usr/local/bin/devbox-entrypoint /usr/local/bin/code \
     && cat >> /etc/zsh/zshrc <<'EOF'
