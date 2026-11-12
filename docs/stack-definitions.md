@@ -18,10 +18,10 @@ Initial curated stacks:
 
 | Stack | Base image | Main tools |
 | --- | --- | --- |
-| `python` | Alpine | Python, uv, pytest, Ruff, mypy |
-| `nodejs` | Alpine | Node.js LTS, npm, Yarn, TypeScript, ESLint, Prettier |
+| `python` | Debian Slim | Python, uv, pytest, Ruff, mypy |
+| `nodejs` | Debian Slim | Node.js LTS, npm, Yarn, TypeScript, ESLint, Prettier |
 | `devops` | Debian slim | AWS CLI, Azure CLI, Google Cloud CLI, Terraform, Ansible, kubectl, Helm |
-| `go` | Alpine | Go, golangci-lint, Delve, Air |
+| `go` | Debian Slim | Go, golangci-lint, Delve, Air |
 
 The exact package and tool declarations are maintained in each stack's
 `stack.yaml`. This table is the curated baseline, not a substitute for those
@@ -32,8 +32,8 @@ definitions.
 The image must start from the smallest supported official base variant that
 can run the selected stack:
 
-- Alpine uses the official versioned Alpine image (for example,
-  `alpine:3.22`).
+- Debian uses the official versioned Debian image (for example,
+  `debian:trixie-slim`).
 - Debian uses the official `slim` variant (for example,
   `debian:trixie-slim`), never the full Debian image unless a documented
   compatibility requirement makes it unavoidable.
@@ -44,18 +44,9 @@ what DevBox Core and the selected stack actually require. Build-only
 dependencies must not remain in the final runtime image; prefer multi-stage
 builds or remove temporary dependencies in the same image layer.
 
-The DevOps stack uses Debian slim because some cloud vendor CLIs and their
-dependencies do not provide equivalent official support on Alpine/musl.
-Alpine remains the lighter choice for Python, Node.js and Go where their
-supported installation methods permit it.
+Debian Slim is the only supported base for Python, Node.js, DevOps and Go stacks. This keeps package management and runtime compatibility consistent across all environments.
 
-Core installation is being made distribution-aware: the Dockerfile has
-separate Alpine and Debian package-manager paths, including Docker CLI/Compose
-on Debian through Docker's official APT repository. Runtime dependencies are
-installed without compiler toolchains or development headers; utilities needed
-only by the optional Terraform installer are installed and removed in that
-build step. Package discovery commands are still Alpine-specific and must be
-ported before Debian package-management parity is complete. Stack-specific
+The Dockerfile uses APT for Core and stack packages, including Docker CLI/Compose from Docker's official APT repository. Runtime dependencies are installed without compiler toolchains or development headers; utilities needed only by the optional Terraform installer are installed and removed in that build step. `dm tools search/add/remove/list` uses Debian APT package indexes. Stack-specific
 tools and packages must not leak into Core.
 
 ## Version policy
@@ -107,16 +98,15 @@ Schema version 2 supports the following fields:
 | `schema_version` | Must be `2`. |
 | `name` | Stack identifier; must match its directory. |
 | `description` | Short human-readable description. |
-| `base.distribution` | Supported distribution: `alpine` or `debian`. |
+| `base.distribution` | Must be `debian`. |
 | `base.version` | Explicit upstream distribution version. |
-| `packages.alpine` | Optional list of additional Alpine packages. |
+| `packages.debian` | Optional list of additional Debian packages. |
 | `packages.debian` | Optional list of additional Debian packages. |
 | `tools.<name>.version` | Exact tool version; mutually exclusive with `channel`. |
 | `tools.<name>.channel` | Release channel: `lts` or `stable`; mutually exclusive with `version`. |
 | `environment` | Environment variables available in the container. |
 
-The selected base is normalized to the smallest supported official image
-variant: `alpine:<version>` or `debian:<version>-slim`. The current Docker build
+The selected base is normalized to the official Debian Slim image: `debian:<version>-slim`. The current Docker build
 accepts this exact reference through the `BASE_IMAGE` build argument and checks
 it against the stack resolver output. Until host-side stack selection propagates
 this automatically, callers must set `BASE_IMAGE` to match the stack definition.
@@ -137,11 +127,11 @@ name: python
 description: Python development environment.
 
 base:
-  distribution: alpine
-  version: "3.22"
+  distribution: debian
+  version: "trixie"
 
 packages:
-  alpine:
+  debian:
     - git
     - jq
 
