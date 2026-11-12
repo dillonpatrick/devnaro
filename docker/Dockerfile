@@ -95,6 +95,7 @@ RUN set -eu; \
         | awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { print "Invalid package entry at line " NR ": " $0 > "/dev/stderr"; exit 1 } { if (!seen[$1]++) print $1 }' \
         > /tmp/devbox-extra-packages; \
       if [ -s /tmp/devbox-extra-packages ]; then \
+        apt-get update; \
         xargs -r apt-get install -y --no-install-recommends < /tmp/devbox-extra-packages; \
         rm -rf /var/lib/apt/lists/*; \
       fi; \
