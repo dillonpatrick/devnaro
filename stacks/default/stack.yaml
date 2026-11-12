@@ -1,7 +1,11 @@
-schema_version: 1
+schema_version: 2
 
 name: default
-description: Default DevBox environment, preserving the current toolset.
+description: Temporary compatibility stack during schema migration.
+
+base:
+  distribution: alpine
+  version: "3.22"
 
 packages:
   alpine: []
