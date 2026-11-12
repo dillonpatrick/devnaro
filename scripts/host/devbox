@@ -75,9 +75,10 @@ usage() {
     for command_name in "${DEVBOX_HOST_COMMANDS[@]}"; do
         print_command "$command_name" "${DEVBOX_HOST_COMMAND_DESCRIPTIONS[$command_name]}"
     done
-    local subcommand_name
+    local subcommand_name subcommand_key
     for subcommand_name in "${DEVBOX_HOST_SUBCOMMANDS_manager[@]}"; do
-        print_command "manager $subcommand_name" "${DEVBOX_HOST_SUBCOMMAND_DESCRIPTIONS[manager\ $subcommand_name]}"
+        subcommand_key="manager $subcommand_name"
+        print_command "$subcommand_key" "${DEVBOX_HOST_SUBCOMMAND_DESCRIPTIONS[$subcommand_key]}"
     done
     print_box_line "" ""
     print_box_line "Examples:" "${BOLD}${CYAN}Examples:${RESET}"
