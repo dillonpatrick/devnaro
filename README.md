@@ -39,6 +39,8 @@ Host
 |   |   |   +-- start.sh
 |   |   |   +-- stop.sh
 |   |   |   +-- clean.sh
+|   |   +-- compose.sh (shared Docker Compose entry point)
+|   |   +-- ui.sh (shared lifecycle terminal helpers)
 |   |   +-- container/
 |   |       +-- entrypoint.sh
 |   +-- src/devbox_manager/
