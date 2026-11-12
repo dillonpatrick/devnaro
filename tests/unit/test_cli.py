@@ -350,6 +350,7 @@ def test_tools_add_does_not_add_already_installed_debian_package(monkeypatch, tm
 
     class Result:
         returncode = 0
+        stdout = "install ok installed"
 
     monkeypatch.setattr(cli.subprocess, "run", lambda *args, **kwargs: Result())
 
