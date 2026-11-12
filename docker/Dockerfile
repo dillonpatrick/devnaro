@@ -15,7 +15,8 @@ FROM python:3.12-alpine3.22 AS stack-resolver
 
 ARG STACK_NAME=default
 WORKDIR /resolver
-RUN pip install --no-cache-dir "PyYAML==6.0.3"
+RUN mkdir -p /resolver/devbox_manager \
+    && pip install --no-cache-dir "PyYAML==6.0.3"
 COPY src/devbox_manager/packages_manifest.py ./devbox_manager/packages_manifest.py
 COPY src/devbox_manager/stack_resolver.py ./devbox_manager/stack_resolver.py
 COPY stacks/ ./stacks/
@@ -58,7 +59,7 @@ RUN set -eu; \
         if [ -n "$matches" ]; then set -- "$@" "$package"; \
         else \
             warning="WARNING: Alpine package '$package' was not found; skipping."; \
-            printf '%s\\n' "$warning" >&2; \
+            printf '%s\n' "$warning" >&2; \
             printf '%s\\n' "$warning" >> /opt/devbox-config/package-warnings.txt; \
         fi; \
     done < /tmp/devbox-extra-packages; \
@@ -116,7 +117,7 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \
     && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc \
     && sed -i 's/^plugins=(git)$/plugins=(git docker terraform uv)/' /home/${USERNAME}/.zshrc \
-    && printf '\\n# Zsh autosuggestions\\nsource /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\\n' >> /home/${USERNAME}/.zshrc \
+    && printf '\n# Zsh autosuggestions\\nsource /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\\n' >> /home/${USERNAME}/.zshrc \
     && printf '\\n# Zsh syntax highlighting\\nsource /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh\\n' >> /home/${USERNAME}/.zshrc \
     && test "$(git -C /home/${USERNAME}/.oh-my-zsh rev-parse HEAD)" = "${OH_MY_ZSH_COMMIT}" \
     && if [ -x /opt/uv-venv/bin/uv ]; then /opt/uv-venv/bin/uv --version; fi

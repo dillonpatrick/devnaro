@@ -57,7 +57,7 @@ def test_build_inputs_are_deterministic_and_plain_data():
         ({"packages": {"alpine": ["git", "git"]}}, "Duplicate Alpine package"),
         ({"tools": {"node": {"version": "22"}}}, "Unsupported tool"),
         ({"tools": {"uv": {}}}, "version is required"),
-        ({"tools": {"uv": {"version": "$LATEST"}}, "Invalid version"),
+        ({"tools": {"uv": {"version": "$LATEST"}}}, "Invalid version"),
         ({"environment": {"lowercase": "value"}}, "Invalid environment variable"),
         ({"environment": {"APP_ENV": 1}}, "must be a string"),
         ({"environment": {"APP_ENV": "$HOME"}}, "unsupported expansion"),
