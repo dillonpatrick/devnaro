@@ -162,6 +162,8 @@ Run these commands in a host terminal:
 | `devbox recreate-all` | Rebuild all DevBox resources, including the home volume |
 | `devbox status` | Show container status |
 | `devbox info` | Show DevBox stack, base image, installed tools, and host integrations |
+| `devbox tools list` | List development tools supported by DevBox and their installation status |
+| `devbox tools search QUERY` | Search supported development tools by name, ID, description, or category |
 | `devbox logs` | Show container logs |
 | `devbox networks` | Show networks connected to DevBox |
 | `devbox doctor` | Run container-side health checks |
@@ -271,7 +273,7 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 
 The project requires Python 3.12 or newer. The `devbox-manager` Python CLI is installed inside the container in an isolated virtual environment at `/opt/devbox-venv`. The `dm` shortcut invokes the same CLI.
 
-Available commands include `info` (stack, base image, installed tools, and host integrations), status, health checks, network listing, and Network Manager status/logs. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
+Available commands include `info` (stack, base image, installed tools, and host integrations), `tools list` (the curated catalog and current installation status), `tools search QUERY`, status, health checks, network listing, and Network Manager status/logs. The catalog describes tools DevBox supports; it is intentionally separate from `info`, which discovers executables actually present in the running environment. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
 
 ## Network Manager
 
