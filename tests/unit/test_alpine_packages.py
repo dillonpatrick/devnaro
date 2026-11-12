@@ -103,3 +103,41 @@ def test_parse_index_rejects_invalid_archive():
         assert "package index is invalid" in str(error)
     else:
         raise AssertionError("Invalid archives must be rejected.")
+
+
+
+def test_available_alpine_packages_checks_both_repositories_once(monkeypatch):
+    repositories = {
+        "main": [
+            AlpinePackage("nodejs", "22.23-r0", "JavaScript runtime", "main", "x86_64", "3.22"),
+        ],
+        "community": [
+            AlpinePackage("opentofu", "1.9-r0", "Infrastructure as code", "community", "x86_64", "3.22"),
+        ],
+    }
+    calls = []
+
+    monkeypatch.setattr(alpine_packages, "_current_alpine_version", lambda: "3.22")
+    monkeypatch.setattr(alpine_packages, "_current_architecture", lambda: "x86_64")
+
+    def fetch(version, architecture, repository):
+        calls.append(repository)
+        return repositories[repository]
+
+    monkeypatch.setattr(alpine_packages, "_fetch_repository_index", fetch)
+
+    result = alpine_packages.available_alpine_packages(
+        ("nodejs", "opentofu", "venv", "potato")
+    )
+
+    assert result == frozenset({"nodejs", "opentofu"})
+    assert calls == ["main", "community"]
+
+
+def test_available_alpine_packages_skips_repository_lookup_for_empty_input(monkeypatch):
+    def unexpected_call(*args):
+        raise AssertionError("Empty package lists should not query repositories.")
+
+    monkeypatch.setattr(alpine_packages, "_current_alpine_version", unexpected_call)
+
+    assert alpine_packages.available_alpine_packages(()) == frozenset()
