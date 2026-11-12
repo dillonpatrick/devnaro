@@ -619,12 +619,18 @@ def _completion_candidates(words: list[str]) -> list[str]:
 
         return sorted(
             name
-            for name in commands
-            if name.startswith(current)
+            for name, child in commands.items()
+            if not getattr(child, "hidden", False)
+            and name != "__complete"
+            and name.startswith(current)
         )
 
     if getattr(command, "commands", None):
-        return sorted(command.commands)
+        return sorted(
+            name
+            for name, child in command.commands.items()
+            if not getattr(child, "hidden", False) and name != "__complete"
+        )
 
     return sorted(
         option
