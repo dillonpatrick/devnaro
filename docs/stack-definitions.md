@@ -49,9 +49,14 @@ dependencies do not provide equivalent official support on Alpine/musl.
 Alpine remains the lighter choice for Python, Node.js and Go where their
 supported installation methods permit it.
 
-Core installation must be distribution-aware: the same Core capabilities are
-provided on both distributions, using the appropriate package manager and
-package names. Stack-specific tools and packages must not leak into Core.
+Core installation is being made distribution-aware: the Dockerfile has
+separate Alpine and Debian package-manager paths, including Docker CLI/Compose
+on Debian through Docker's official APT repository. Runtime dependencies are
+installed without compiler toolchains or development headers; utilities needed
+only by the optional Terraform installer are installed and removed in that
+build step. Package discovery commands are still Alpine-specific and must be
+ported before Debian package-management parity is complete. Stack-specific
+tools and packages must not leak into Core.
 
 ## Version policy
 
@@ -111,8 +116,12 @@ Schema version 2 supports the following fields:
 | `environment` | Environment variables available in the container. |
 
 The selected base is normalized to the smallest supported official image
-variant: `alpine:<version>` or `debian:<version>-slim`. Package lists are
-distribution-specific. Empty or omitted package lists add no packages.
+variant: `alpine:<version>` or `debian:<version>-slim`. The current Docker build
+accepts this exact reference through the `BASE_IMAGE` build argument and checks
+it against the stack resolver output. Until host-side stack selection propagates
+this automatically, callers must set `BASE_IMAGE` to match the stack definition.
+Package lists are distribution-specific. Empty or omitted package lists add no
+packages.
 
 The schema remains strict: unknown fields are rejected, tool installers are
 owned by DevBox, and stack files cannot execute arbitrary shell commands.
