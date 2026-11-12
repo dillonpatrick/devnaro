@@ -246,12 +246,14 @@ def test_tools_search_reports_network_errors(monkeypatch):
     assert "repository unavailable" in result.stdout
 
 
-def test_tools_help_lists_only_external_search():
+def test_tools_help_lists_search_and_manifest_management():
     result = runner.invoke(app, ["tools", "--help"])
 
     assert result.exit_code == 0
     assert "search" in result.stdout
-    assert "list" not in result.stdout
+    assert "add" in result.stdout
+    assert "remove" in result.stdout
+    assert "list" in result.stdout
 
 
 def test_tools_list_shows_declared_packages(monkeypatch, tmp_path):
