@@ -175,30 +175,29 @@ DevBox runs interactive sessions as an unprivileged user. The `sudo` command is 
 
 ### Add system packages or development tools
 
-Additional Alpine packages are declared in `docker/packages.txt`, one package name per line. This is the user-customizable manifest for tools beyond DevBox's core runtime dependencies, which remain in `docker/Dockerfile`.
+Additional Alpine packages are declared in `docker/packages.txt`, one package name per line. DevBox mounts this file into the container so you can manage it through the `dm` CLI without leaving your shell. This is the user-customizable manifest for tools beyond DevBox's core runtime dependencies, which remain in `docker/Dockerfile`.
 
-For example:
-
-```text
-# Additional command-line tools
-jq
-ripgrep
-tree
-```
-
-Use the package search command inside the container to find the official Alpine package name:
+Search the official Alpine repositories to find a package name, then add it to the manifest:
 
 ```bash
 dm tools search ripgrep
+dm tools add ripgrep
+dm tools list
 ```
 
-After editing `docker/packages.txt`, rebuild and recreate DevBox:
+To remove an additional package:
+
+```bash
+dm tools remove ripgrep
+```
+
+The add/remove commands update the host-backed `docker/packages.txt` file. They do not install or uninstall anything in the running container. After changing the manifest, DevBox displays a reminder to run this command in a **host terminal**:
 
 ```bash
 devbox recreate
 ```
 
-The Docker build validates manifest entries and installs the listed packages from the configured Alpine repositories. Blank lines and full-line comments are ignored. Invalid entries fail the image build instead of being silently skipped. The manifest is part of the repository, so the same additional packages are installed whenever the image is built on another machine.
+The recreate operation rebuilds the image and creates a new container, applying the complete manifest. The Docker build validates manifest entries and installs the listed packages from the configured Alpine repositories. Blank lines and full-line comments are ignored. Invalid entries fail the image build instead of being silently skipped. Because the manifest is part of the repository, the same additional packages are installed whenever the image is built on another machine.
 
 Do not install packages manually into a running container; declare them in this manifest so the environment remains reproducible. Keep core DevBox dependencies in the Dockerfile. For tools that are not available as Alpine packages, add their installation steps to the Dockerfile as part of the image build.
 
@@ -227,6 +226,9 @@ The host-side bridge is compiled as a static Go binary during the DevBox image b
 |---|---|
 | `dm info` | Show the DevBox stack, base image, installed tools, and host integrations |
 | `dm tools search QUERY` | Search official Alpine Linux `main` and `community` package repositories |
+| `dm tools add PACKAGE` | Add an Alpine package to `docker/packages.txt` |
+| `dm tools remove PACKAGE` | Remove an Alpine package from `docker/packages.txt` |
+| `dm tools list` | List additional packages declared for the next image build |
 | `dm status` | Show DevBox container status |
 | `dm doctor` | Run environment health checks |
 | `dm networks` | List networks connected to DevBox |
@@ -261,7 +263,7 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 
 The project requires Python 3.12 or newer. The `devbox-manager` Python CLI is installed inside the container in an isolated virtual environment at `/opt/devbox-venv`. The `dm` shortcut invokes the same CLI.
 
-Available commands include `info` (stack, base image, installed tools, and host integrations), `tools search QUERY`, status, health checks, network listing, and Network Manager status/logs. Package search is available only inside the container through `dm tools search QUERY`; it queries the official Alpine Linux `main` and `community` repositories for the container's Alpine release and CPU architecture. It does not install packages or modify the image. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
+Available commands include `info` (stack, base image, installed tools, and host integrations), `tools search/add/remove/list`, status, health checks, network listing, and Network Manager status/logs. Package search and manifest management are available only inside the container. Search queries the official Alpine Linux `main` and `community` repositories for the container's Alpine release and CPU architecture. The add/remove commands update the host-backed manifest but do not modify the running image; run `devbox recreate` on the host to apply changes. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
 
 ## Network Manager
 
