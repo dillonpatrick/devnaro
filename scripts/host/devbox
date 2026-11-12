@@ -9,8 +9,15 @@ SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 DEVBOX_DIR="$(cd -- "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/devbox"
 CONFIG_FILE="$CONFIG_DIR/config"
+source "$DEVBOX_DIR/scripts/host/command_registry.sh"
 
 command="${1:-shell}"
+
+if [[ "$command" == "__complete" ]]; then
+    shift
+    devbox_host_completion "$@"
+    exit 0
+fi
 
 bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
@@ -52,10 +59,10 @@ print_command() {
 }
 
 usage() {
-    printf "\n%b╭%s╮%b\n" "$CYAN" "$HELP_BORDER" "$RESET"
+    printf "\\n%b╭%s╮%b\\n" "$CYAN" "$HELP_BORDER" "$RESET"
     print_box_line "DevBox - Docker development environment" \
         "${BOLD}${CYAN}DevBox${RESET} ${DIM}- Docker development environment${RESET}"
-    printf "%b├%s┤%b\n" "$CYAN" "$HELP_BORDER" "$RESET"
+    printf "%b├%s┤%b\\n" "$CYAN" "$HELP_BORDER" "$RESET"
     print_box_line "Usage:" "${BOLD}${CYAN}Usage:${RESET}"
     print_box_line "  devbox [command]" "  ${GREEN}devbox${RESET} [command]"
     print_box_line "  devbox config [show|get workspace|set workspace PATH]" \
@@ -64,22 +71,12 @@ usage() {
         "  ${GREEN}devbox${RESET} manager [status|logs]"
     print_box_line "" ""
     print_box_line "Host commands:" "${BOLD}${CYAN}Host commands:${RESET}"
-    print_command start "Build (if needed) and start DevBox"
-    print_command shell "Enter the running DevBox container (default)"
-    print_command stop "Stop the container without removing resources"
-    print_command clean "Remove DevBox containers, networks, volumes, and local images"
-    print_command restart "Restart the existing container"
-    print_command recreate "Recreate the container and network, preserving its home volume"
-    print_command recreate-all "Rebuild all DevBox resources, including the home volume"
-    print_command status "Show container status"
-    print_command info "Show DevBox stack, base image, and installed tools"
-    print_command logs "Show container logs"
-    print_command networks "List networks connected to DevBox"
-    print_command doctor "Run health checks inside the container"
-    print_command config "Show machine-specific configuration"
+    local command_name
+    for command_name in "${DEVBOX_HOST_COMMANDS[@]}"; do
+        print_command "$command_name" "${DEVBOX_HOST_COMMAND_DESCRIPTIONS[$command_name]}"
+    done
     print_command "manager status" "Show Network Manager process status"
     print_command "manager logs" "Show Network Manager logs"
-    print_command help "Show this help message"
     print_box_line "" ""
     print_box_line "Examples:" "${BOLD}${CYAN}Examples:${RESET}"
     print_box_line "  devbox start" "  ${GREEN}devbox start${RESET}"
@@ -89,7 +86,7 @@ usage() {
     print_box_line "  devbox config set workspace PATH" \
         "  ${GREEN}devbox config set workspace PATH${RESET}"
     print_box_line "  devbox manager logs" "  ${GREEN}devbox manager logs${RESET}"
-    printf "%b╰%s╯%b\n\n" "$CYAN" "$HELP_BORDER" "$RESET"
+    printf "%b╰%s╯%b\\n\\n" "$CYAN" "$HELP_BORDER" "$RESET"
 }
 
 compose() {
