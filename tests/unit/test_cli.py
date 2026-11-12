@@ -270,16 +270,24 @@ def test_tools_list_shows_only_packages_available_in_alpine(monkeypatch, tmp_pat
         "available_alpine_packages",
         lambda packages: frozenset({"nodejs", "opentofu"}),
     )
+    monkeypatch.setattr(
+        cli,
+        "_is_image_provided_tool",
+        lambda package: package == "nodejs",
+    )
 
     result = runner.invoke(app, ["tools", "list"])
 
     assert result.exit_code == 0
     assert "Additional image packages" in result.stdout
     assert "nodejs" in result.stdout
+    assert "Already installed" in result.stdout
     assert "opentofu" in result.stdout
-    assert "venv" not in result.stdout
-    assert "potato" not in result.stdout
-    assert "2 valid package(s)" in result.stdout
+    assert "Available" in result.stdout
+    assert "venv" in result.stdout
+    assert "Unavailable" in result.stdout
+    assert "potato" in result.stdout
+    assert "2 unavailable" in result.stdout
     assert "devbox recreate" in result.stdout
 
 
@@ -301,6 +309,42 @@ def test_tools_list_reports_repository_validation_errors(monkeypatch, tmp_path):
     assert result.exit_code == 1
     assert "Package validation failed" in result.stdout
     assert "repository unavailable" in result.stdout
+
+def test_tools_add_does_not_add_image_provided_uv(monkeypatch, tmp_path):
+    from devbox_manager import cli
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("# additional tools\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+    monkeypatch.setattr(cli.shutil, "which", lambda command: "/opt/uv-venv/bin/uv")
+
+    result = runner.invoke(app, ["tools", "add", "uv"])
+
+    assert result.exit_code == 0
+    assert "Package already provided" in result.stdout
+    assert "already installed" in result.stdout
+    assert manifest.read_text(encoding="utf-8") == "# additional tools\n"
+
+
+def test_tools_add_does_not_add_already_installed_apk_package(monkeypatch, tmp_path):
+    from devbox_manager import cli
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+    monkeypatch.setattr(cli.shutil, "which", lambda command: None)
+
+    class Result:
+        returncode = 0
+
+    monkeypatch.setattr(cli.subprocess, "run", lambda *args, **kwargs: Result())
+
+    result = runner.invoke(app, ["tools", "add", "nodejs"])
+
+    assert result.exit_code == 0
+    assert "Package already provided" in result.stdout
+    assert manifest.read_text(encoding="utf-8") == ""
+
 
 def test_tools_add_updates_manifest_and_explains_recreate(monkeypatch, tmp_path):
     from devbox_manager import cli
