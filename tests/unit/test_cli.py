@@ -175,22 +175,55 @@ def test_tools_list_shows_catalog_and_installation_status(monkeypatch):
     assert "Pinned version" in result.stdout
 
 
-def test_tools_search_filters_catalog(monkeypatch):
+def test_tools_search_queries_external_alpine_packages(monkeypatch):
     from devbox_manager import cli
+    from devbox_manager.alpine_packages import AlpinePackage
 
-    monkeypatch.setattr(cli.shutil, "which", lambda executable: None)
-    result = runner.invoke(app, ["tools", "search", "cloud"])
+    monkeypatch.setattr(
+        cli,
+        "search_alpine_packages",
+        lambda query: (
+            AlpinePackage(
+                name="terraform",
+                version="1.9.8-r0",
+                description="Infrastructure as Code tool",
+                repository="community",
+                architecture="x86_64",
+                alpine_version="3.22",
+            ),
+        ),
+    )
+    result = runner.invoke(app, ["tools", "search", "terraform"])
 
     assert result.exit_code == 0
-    assert "Terraform" in result.stdout
-    assert "Python" not in result.stdout
+    assert "Alpine package search" in result.stdout
+    assert "terraform" in result.stdout
+    assert "1.9.8-r0" in result.stdout
+    assert "community" in result.stdout
 
 
-def test_tools_search_reports_no_matches():
+def test_tools_search_reports_no_external_matches(monkeypatch):
+    from devbox_manager import cli
+
+    monkeypatch.setattr(cli, "search_alpine_packages", lambda query: ())
     result = runner.invoke(app, ["tools", "search", "no-such-tool"])
 
     assert result.exit_code == 0
-    assert "No matching tools found" in result.stdout
+    assert "No matching Alpine packages found" in result.stdout
+
+
+def test_tools_search_reports_network_errors(monkeypatch):
+    from devbox_manager import cli
+    from devbox_manager.alpine_packages import AlpinePackageSearchError
+
+    def fail_search(query):
+        raise AlpinePackageSearchError("repository unavailable")
+
+    monkeypatch.setattr(cli, "search_alpine_packages", fail_search)
+    result = runner.invoke(app, ["tools", "search", "terraform"])
+
+    assert result.exit_code == 1
+    assert "repository unavailable" in result.stdout
 
 
 def test_tools_help():
