@@ -261,7 +261,7 @@ def test_tools_list_shows_only_packages_available_in_alpine(monkeypatch, tmp_pat
 
     manifest = tmp_path / "packages.txt"
     manifest.write_text(
-        "# additional tools\\nnodejs\\nopentofu\\nvenv\\npotato\\n",
+        "# additional tools\nnodejs\nopentofu\nvenv\npotato\n",
         encoding="utf-8",
     )
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
@@ -275,20 +275,28 @@ def test_tools_list_shows_only_packages_available_in_alpine(monkeypatch, tmp_pat
         "_is_image_provided_tool",
         lambda package: package == "nodejs",
     )
+    rendered = {}
+    monkeypatch.setattr(
+        cli,
+        "render_panel",
+        lambda console, title, content, **kwargs: rendered.update(
+            title=title, content=content, subtitle=kwargs.get("subtitle")
+        ),
+    )
 
     result = runner.invoke(app, ["tools", "list"])
 
     assert result.exit_code == 0
-    assert "Additional image packages" in result.stdout
-    assert "nodejs" in result.stdout
-    assert "Already installed" in result.stdout
-    assert "opentofu" in result.stdout
-    assert "Available" in result.stdout
-    assert "venv" in result.stdout
-    assert "Unavailable" in result.stdout
-    assert "potato" in result.stdout
-    assert "2 unavailable" in result.stdout
-    assert "devbox recreate" in result.stdout
+    assert rendered["title"] == "Additional image packages"
+    assert "nodejs" in rendered["content"]
+    assert "Already installed" in rendered["content"]
+    assert "opentofu" in rendered["content"]
+    assert "Available" in rendered["content"]
+    assert "venv" in rendered["content"]
+    assert "Unavailable" in rendered["content"]
+    assert "potato" in rendered["content"]
+    assert "2 unavailable" in rendered["subtitle"]
+    assert "devbox recreate" in rendered["content"]
 
 
 def test_tools_list_reports_repository_validation_errors(monkeypatch, tmp_path):
@@ -296,7 +304,7 @@ def test_tools_list_reports_repository_validation_errors(monkeypatch, tmp_path):
     from devbox_manager.alpine_packages import AlpinePackageSearchError
 
     manifest = tmp_path / "packages.txt"
-    manifest.write_text("nodejs\\n", encoding="utf-8")
+    manifest.write_text("nodejs\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
 
     def fail_lookup(packages):
@@ -350,7 +358,7 @@ def test_tools_add_rejects_package_missing_from_alpine(monkeypatch, tmp_path):
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
-    manifest.write_text("# additional tools\\n", encoding="utf-8")
+    manifest.write_text("# additional tools\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
     monkeypatch.setattr(cli.shutil, "which", lambda command: None)
 
@@ -365,7 +373,7 @@ def test_tools_add_rejects_package_missing_from_alpine(monkeypatch, tmp_path):
     assert result.exit_code == 1
     assert "Package not found" in result.stdout
     assert "No manifest change was made" in result.stdout
-    assert manifest.read_text(encoding="utf-8") == "# additional tools\\n"
+    assert manifest.read_text(encoding="utf-8") == "# additional tools\n"
 
 
 def test_tools_add_fails_safely_when_alpine_lookup_fails(monkeypatch, tmp_path):
