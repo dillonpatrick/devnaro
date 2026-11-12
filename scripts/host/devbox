@@ -62,8 +62,6 @@ usage() {
         "  ${GREEN}devbox${RESET} config [show|get workspace|set workspace PATH]"
     print_box_line "  devbox manager [status|logs]" \
         "  ${GREEN}devbox${RESET} manager [status|logs]"
-    print_box_line "  devbox tools [list|search QUERY]" \
-        "  ${GREEN}devbox${RESET} tools [list|search QUERY]"
     print_box_line "" ""
     print_box_line "Host commands:" "${BOLD}${CYAN}Host commands:${RESET}"
     print_command start "Build (if needed) and start DevBox"
@@ -75,8 +73,6 @@ usage() {
     print_command recreate-all "Rebuild all DevBox resources, including the home volume"
     print_command status "Show container status"
     print_command info "Show DevBox stack, base image, and installed tools"
-    print_command "tools list" "List supported development tools"
-    print_command "tools search" "Search official Alpine packages"
     print_command logs "Show container logs"
     print_command networks "List networks connected to DevBox"
     print_command doctor "Run health checks inside the container"
@@ -214,12 +210,6 @@ case "$command" in
         exec docker compose --project-directory "$DEVBOX_DIR" \
             -f "$DEVBOX_DIR/docker/docker-compose.yml" \
             -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager info
-        ;;
-    tools)
-        require_running
-        exec docker compose --project-directory "$DEVBOX_DIR" \
-            -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-            -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager tools "${@:2}"
         ;;
     logs)
         compose logs devbox
