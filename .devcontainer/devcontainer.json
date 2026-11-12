@@ -1,6 +1,6 @@
 
 {
-  "name": "DevBox Alpine Linux 3.22",
+  "name": "DevBox Debian Trixie Slim",
   "dockerComposeFile": [
     "../docker/docker-compose.yml",
     "../docker/docker-compose.ports.yml"
