@@ -1,6 +1,6 @@
-ARG BASE_IMAGE=alpine:3.22
+ARG BASE_IMAGE=debian:trixie-slim
 
-FROM --platform=$BUILDPLATFORM golang:1.24.3-alpine3.22 AS bridge-builder
+FROM --platform=$BUILDPLATFORM golang:1.24.3-bookworm AS bridge-builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -13,7 +13,7 @@ RUN go test ./status.go ./status_test.go \
     && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-status ./status.go
 
 # Resolve and validate the selected stack without adding Python/YAML to the host.
-FROM python:3.12-alpine3.22 AS stack-resolver
+FROM python:3.12-slim-bookworm AS stack-resolver
 
 ARG STACK_NAME=default
 WORKDIR /resolver
@@ -28,7 +28,7 @@ RUN mkdir -p /out \
         --output-dir /out
 
 # The host-side stack selection supplies this value from the validated stack.
-# Alpine and Debian use the same Core setup contract, with distro-specific packages.
+# All DevBox environments use Debian Slim.
 FROM ${BASE_IMAGE} AS runtime
 
 ARG USERNAME=devuser
@@ -51,54 +51,28 @@ COPY docker/packages.txt /tmp/devbox-user-packages.txt
 # Install only runtime requirements for the DevBox Core.
 # Compiler toolchains and development headers are intentionally not part of the final image.
 RUN set -eux; \
-    if [ -f /etc/alpine-release ]; then \
-      apk add --no-cache \
-        bash ca-certificates curl docker-cli docker-cli-compose git gnupg \
-        nano procps python3 py3-pip py3-setuptools zsh \
-        zsh-autosuggestions zsh-syntax-highlighting; \
-      python3 --version | grep -E '^Python 3\.12\.'; \
-    elif [ -f /etc/debian_version ]; then \
-      . /etc/os-release; \
-      test "$ID" = debian; \
-      apt-get update; \
-      apt-get install -y --no-install-recommends \
-        bash ca-certificates curl git gnupg nano procps python3 python3-pip \
-        python3-venv passwd zsh zsh-autosuggestions zsh-syntax-highlighting; \
-      install -m 0755 -d /etc/apt/keyrings; \
-      curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
-      chmod a+r /etc/apt/keyrings/docker.asc; \
-      printf 'Types: deb\nURIs: https://download.docker.com/linux/debian\nSuites: %s\nComponents: stable\nArchitectures: %s\nSigned-By: /etc/apt/keyrings/docker.asc\n' "$VERSION_CODENAME" "$(dpkg --print-architecture)" \
-        > /etc/apt/sources.list.d/docker.sources; \
-      apt-get update; \
-      apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin; \
-      rm -rf /var/lib/apt/lists/*; \
-    else \
-      echo "Unsupported DevBox base image: expected Alpine or Debian." >&2; \
-      exit 1; \
-    fi
+    . /etc/os-release; \
+    test "$ID" = debian; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      bash ca-certificates curl git gnupg nano procps python3 python3-pip \
+      python3-venv passwd zsh zsh-autosuggestions zsh-syntax-highlighting; \
+    install -m 0755 -d /etc/apt/keyrings; \
+    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
+    chmod a+r /etc/apt/keyrings/docker.asc; \
+    printf 'Types: deb\nURIs: https://download.docker.com/linux/debian\nSuites: %s\nComponents: stable\nArchitectures: %s\nSigned-By: /etc/apt/keyrings/docker.asc\n' "$VERSION_CODENAME" "$(dpkg --print-architecture)" \
+      > /etc/apt/sources.list.d/docker.sources; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin
 
-# Install stack and user-managed packages with the selected distribution's package manager.
+# Install stack and user-managed packages from Debian repositories.
 RUN set -eu; \
-    if [ -f /etc/alpine-release ]; then \
-      cat /opt/devbox-config/stack/alpine-packages.txt /tmp/devbox-user-packages.txt \
-        | awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { print "Invalid package entry at line " NR ": " $0 > "/dev/stderr"; exit 1 } { if (!seen[$1]++) print $1 }' \
-        > /tmp/devbox-extra-packages; \
-      set --; \
-      while IFS= read -r package; do \
-        [ -z "$package" ] && continue; \
-        if apk search -e "$package" >/dev/null 2>&1; then set -- "$@" "$package"; \
-        else warning="WARNING: Alpine package '$package' was not found; skipping."; printf '%s\\n' "$warning" >&2; printf '%s\\n' "$warning" >> /opt/devbox-config/package-warnings.txt; fi; \
-      done < /tmp/devbox-extra-packages; \
-      if [ "$#" -gt 0 ]; then apk add --no-cache "$@"; fi; \
-    else \
-      cat /opt/devbox-config/stack/debian-packages.txt /tmp/devbox-user-packages.txt \
-        | awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { print "Invalid package entry at line " NR ": " $0 > "/dev/stderr"; exit 1 } { if (!seen[$1]++) print $1 }' \
-        > /tmp/devbox-extra-packages; \
-      if [ -s /tmp/devbox-extra-packages ]; then \
-        apt-get update; \
-        xargs -r apt-get install -y --no-install-recommends < /tmp/devbox-extra-packages; \
-        rm -rf /var/lib/apt/lists/*; \
-      fi; \
+    cat /opt/devbox-config/stack/debian-packages.txt /tmp/devbox-user-packages.txt \
+      | awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { print "Invalid package entry at line " NR ": " $0 > "/dev/stderr"; exit 1 } { if (!seen[$1]++) print $1 }' \
+      > /tmp/devbox-extra-packages; \
+    if [ -s /tmp/devbox-extra-packages ]; then \
+      apt-get update; \
+      xargs -r apt-get install -y --no-install-recommends < /tmp/devbox-extra-packages; \
     fi; \
     rm -f /tmp/devbox-user-packages.txt /tmp/devbox-extra-packages
 
@@ -107,17 +81,15 @@ RUN set -eux; \
     TERRAFORM_VERSION="$(cat /opt/devbox-config/stack/terraform-version)"; \
     if [ -n "$TERRAFORM_VERSION" ]; then \
       case "$TARGETARCH" in amd64) TERRAFORM_ARCH=amd64 ;; arm64) TERRAFORM_ARCH=arm64 ;; *) echo "Unsupported Terraform architecture: $TARGETARCH" >&2; exit 1 ;; esac; \
-      if command -v apk >/dev/null 2>&1; then TOOL_ARCH="$TERRAFORM_ARCH"; else TOOL_ARCH="$TERRAFORM_ARCH"; fi; \
-      if command -v apk >/dev/null 2>&1; then apk add --no-cache unzip wget; \
-      else apt-get update && apt-get install -y --no-install-recommends unzip wget; fi; \
+      TOOL_ARCH="$TERRAFORM_ARCH"; \
+      apt-get update && apt-get install -y --no-install-recommends unzip wget; \
       wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TOOL_ARCH}.zip" -O /tmp/terraform.zip; \
       unzip /tmp/terraform.zip -d /usr/local/bin; rm /tmp/terraform.zip; \
       terraform version | grep -F "Terraform v${TERRAFORM_VERSION}"; \
-      if command -v apk >/dev/null 2>&1; then apk del unzip wget; \
-      else apt-get purge -y unzip wget && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*; fi; \
+      apt-get purge -y unzip wget && apt-get autoremove -y; \
     fi
 
-# Keep the bootstrap uv private to DevBox; install the stack's uv separately.
+# Keep the bootstrap uv/ private to DevBox; install the stack's uv separately.
 RUN python3 -m venv /opt/devbox-bootstrap-uv \
     && /opt/devbox-bootstrap-uv/bin/pip install --no-cache-dir "uv==${DEVBOX_BOOTSTRAP_UV_VERSION}"
 
@@ -137,23 +109,14 @@ RUN python3 -m venv /opt/devbox-venv \
 
 ENV PATH="/opt/devbox-venv/bin:/opt/uv-venv/bin:$PATH"
 
-# Keep Alpine's BusyBox account tooling and Debian's shadow tooling behind one contract.
+# Configure the non-root developer account and Docker socket group.
 RUN set -eux; \
-    if [ -f /etc/alpine-release ]; then \
-      if ! getent group "$DOCKER_GID" >/dev/null; then addgroup -g "$DOCKER_GID" docker_host; fi; \
-      DOCKER_GROUP="$(getent group "$DOCKER_GID" | cut -d: -f1)"; \
-      if ! getent group "$USER_GID" >/dev/null; then addgroup -g "$USER_GID" "$USERNAME"; fi; \
-      USER_GROUP="$(getent group "$USER_GID" | cut -d: -f1)"; \
-      adduser -D -u "$USER_UID" -G "$USER_GROUP" -s /bin/zsh -h "/home/$USERNAME" "$USERNAME"; \
-    else \
-      if ! getent group "$DOCKER_GID" >/dev/null; then groupadd --gid "$DOCKER_GID" docker_host; fi; \
-      DOCKER_GROUP="$(getent group "$DOCKER_GID" | cut -d: -f1)"; \
-      if ! getent group "$USER_GID" >/dev/null; then groupadd --gid "$USER_GID" "$USERNAME"; fi; \
-      USER_GROUP="$(getent group "$USER_GID" | cut -d: -f1)"; \
-      useradd --uid "$USER_UID" --gid "$USER_GROUP" --create-home --home-dir "/home/$USERNAME" --shell /bin/zsh "$USERNAME"; \
-    fi; \
-    if [ -f /etc/alpine-release ]; then addgroup "$USERNAME" "$DOCKER_GROUP"; \
-    else usermod -aG "$DOCKER_GROUP" "$USERNAME"; fi; \
+    if ! getent group "$DOCKER_GID" >/dev/null; then groupadd --gid "$DOCKER_GID" docker_host; fi; \
+    DOCKER_GROUP="$(getent group "$DOCKER_GID" | cut -d: -f1)"; \
+    if ! getent group "$USER_GID" >/dev/null; then groupadd --gid "$USER_GID" "$USERNAME"; fi; \
+    USER_GROUP="$(getent group "$USER_GID" | cut -d: -f1)"; \
+    useradd --uid "$USER_UID" --gid "$USER_GROUP" --create-home --home-dir "/home/$USERNAME" --shell /bin/zsh "$USERNAME"; \
+    usermod -aG "$DOCKER_GROUP" "$USERNAME"; \
     mkdir -p "/home/$USERNAME"; \
     chown -R "$USER_UID":"$USER_GID" "/home/$USERNAME"
 
@@ -168,13 +131,8 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \
     && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc \
     && sed -i 's/^plugins=(git)$/plugins=(git docker terraform uv)/' /home/${USERNAME}/.zshrc \
-    && if [ -f /etc/alpine-release ]; then \
-         AUTOSUGGESTIONS=/usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh; \
-         SYNTAX_HIGHLIGHTING=/usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh; \
-       else \
-         AUTOSUGGESTIONS=/usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh; \
-         SYNTAX_HIGHLIGHTING=/usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh; \
-       fi \
+    && AUTOSUGGESTIONS=/usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
+    && SYNTAX_HIGHLIGHTING=/usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
     && printf '\\n# Zsh autosuggestions\\nsource %s\\n' "$AUTOSUGGESTIONS" >> /home/${USERNAME}/.zshrc \
     && printf '\\n# Zsh syntax highlighting\\nsource %s\\n' "$SYNTAX_HIGHLIGHTING" >> /home/${USERNAME}/.zshrc \
     && test "$(git -C /home/${USERNAME}/.oh-my-zsh rev-parse HEAD)" = "${OH_MY_ZSH_COMMIT}" \
