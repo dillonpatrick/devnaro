@@ -12,7 +12,8 @@ RUN go test ./status.go ./status_test.go \
 
 FROM alpine:3.22
 
-RUN mkdir -p /opt/devbox-config && touch /opt/devbox-config/packages.txt
+RUN mkdir -p /opt/devbox-config \
+    && touch /opt/devbox-config/packages.txt /opt/devbox-config/package-warnings.txt
 
 ARG USERNAME=devuser
 ARG USER_UID=1000
@@ -62,7 +63,9 @@ RUN set -eu; \
         if [ -n "$matches" ]; then \
             set -- "$@" "$package"; \
         else \
-            printf "WARNING: Alpine package '%s' was not found; skipping.\\n" "$package" >&2; \
+            warning="WARNING: Alpine package '$package' was not found; skipping."; \
+            printf '%s\n' "$warning" >&2; \
+            printf '%s\n' "$warning" >> /opt/devbox-config/package-warnings.txt; \
         fi; \
     done < /tmp/devbox-extra-packages; \
     if [ "$#" -gt 0 ]; then \
