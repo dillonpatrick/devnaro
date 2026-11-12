@@ -54,6 +54,7 @@ COPY docker/packages.txt /tmp/devbox-packages.txt
 # Install valid user-selected packages; warn and skip names absent from Alpine repositories.
 # Keep apk add itself strict so repository/network failures still fail the image build.
 RUN set -eu; \
+    apk update; \
     awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { print "Invalid package entry at line " NR ": " $0 > "/dev/stderr"; exit 1 } { print $1 }' /tmp/devbox-packages.txt > /tmp/devbox-extra-packages; \
     set --; \
     while IFS= read -r package; do \
