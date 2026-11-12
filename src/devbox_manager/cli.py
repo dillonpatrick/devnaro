@@ -164,15 +164,23 @@ def tools_list() -> None:
         render_panel(console, "Package manifest read failed", f"[error]{error}[/error]", border_style="error")
         raise typer.Exit(code=1) from error
 
-    if packages:
-        content = "\n".join(f"[info]•[/info] {package}" for package in packages)
-    else:
-        content = "[muted]No additional packages declared.[/muted]"
+    package_lines = (
+        [f"[info]•[/info] {package}" for package in packages]
+        if packages
+        else ["[muted]No additional packages declared.[/muted]"]
+    )
+    package_lines.extend(
+        [
+            "",
+            "[warning]Run on the host to apply changes:[/warning]",
+            "[accent]devbox recreate[/accent]",
+        ]
+    )
     render_panel(
         console,
         "Additional image packages",
-        content,
-        subtitle=f"{len(packages)} package(s) · Applied after devbox recreate",
+        "\n".join(package_lines),
+        subtitle=f"{len(packages)} package(s)",
     )
 
 
