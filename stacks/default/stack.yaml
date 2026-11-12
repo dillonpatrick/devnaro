@@ -1,0 +1,15 @@
+schema_version: 1
+
+name: default
+description: Default DevBox environment, preserving the current toolset.
+
+packages:
+  alpine: []
+
+tools:
+  terraform:
+    version: "1.17.1"
+  uv:
+    version: "0.13.7"
+
+environment: {}
