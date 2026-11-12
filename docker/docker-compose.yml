@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile
       args:
-        BASE_IMAGE: ${BASE_IMAGE:-alpine:3.22}
+        BASE_IMAGE: ${BASE_IMAGE:-debian:trixie-slim}
         STACK_NAME: ${STACK_NAME:-default}
         USERNAME: ${USERNAME:-devuser}
         USER_UID: ${USER_UID:-1000}
