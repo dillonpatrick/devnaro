@@ -111,7 +111,7 @@ def test_welcome_commands_come_from_registered_typer_tree():
     assert "dm network-manager logs" in commands
     assert "dm tools search QUERY" in commands
     assert all("__complete" not in usage for usage in commands)
-    assert "Search Debian APT package indexes for available packages." in commands[
+    assert "Search official Debian APT package indexes for available packages." in commands[
         "dm tools search QUERY"
     ]
 
