@@ -50,7 +50,27 @@ The merge commit passed all three GitHub Actions jobs:
 
 ## Phase 1 — Consolidation and maintenance
 
-Work on a dedicated branch before starting Multi-DevBox.
+Status: in progress on branch `refactor/phase-1-consolidation`.
+
+Completed on this branch so far:
+- Saved this status and roadmap document in the repository.
+- Added `scripts/host/compose.sh` as the single source for DevBox Compose project arguments; host CLI, lifecycle scripts and Makefile now delegate to it.
+- Added `scripts/host/ui.sh` for the terminal helpers shared by stop and clean.
+- Fixed the malformed workflow branch filter.
+- Fixed the literal escaped newline in the package lookup error.
+- Corrected the README package manifest location and documented the new shared host helpers.
+- Consolidated Alpine repository index loading so search and availability checks use one shared path.
+- Added positive and negative package-name validation test cases.
+
+Deliberately not added:
+- A separate tool catalog: the special cases for non-apk tools (Terraform and uv) currently live in one function, while apk itself verifies packages installed by Alpine. A new catalog would duplicate information without multiple real consumers.
+- A Python runtime dependency for Docker build-time manifest validation. Compatibility is being covered with tests rather than coupling the Docker build to the CLI runtime.
+- Broad host UI refactoring: the larger startup UI is unique; only genuinely shared stop/clean helpers were extracted.
+
+Remaining in Phase 1:
+- Finish review of CI Action pin versions/deprecation warnings.
+- Run and inspect the complete CI after all refactoring changes.
+- Review the final diff for behavior changes and update this progress snapshot before merging.
 
 1. Fix confirmed maintenance defects:
    - Malformed branch entry in `.github/workflows/devbox-validation.yml` (literal escaped newline in the branch list).
