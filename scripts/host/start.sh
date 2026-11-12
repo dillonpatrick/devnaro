@@ -209,6 +209,7 @@ CODE_SOCKET_PATH="$RUNTIME_DIR/devbox-code-$USER_UID.sock"
 CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
 CODE_BRIDGE_LOG="$RUNTIME_DIR/devbox-code-$USER_UID.log"
 CODE_BRIDGE_BINARY="$RUNTIME_DIR/devbox-host-bridge-$USER_UID"
+STATUS_BINARY="$RUNTIME_DIR/devbox-status-$USER_UID"
 mkdir -p "$RUNTIME_DIR"
 
 detail "Location: ${WORKSPACE_PATH}"
@@ -253,25 +254,31 @@ if [[ -z "$IMAGE_ID" ]]; then
     exit 1
 fi
 
-TEMP_CONTAINER="$(docker create "$IMAGE_ID")"
-rm -f "$CODE_BRIDGE_BINARY"
-if ! docker cp "$TEMP_CONTAINER:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY"; then
-    docker rm "$TEMP_CONTAINER" >/dev/null
-    info "The existing image does not contain the standalone bridge. Rebuilding..."
-    IMAGE_ID="$(resolve_bridge_image)"
-    if [[ -z "$IMAGE_ID" ]]; then
-        error "Unable to resolve the rebuilt DevBox image."
-        exit 1
+extract_host_binaries() {
+    local image_id="$1"
+    local container_id
+    container_id="$(docker create "$image_id")"
+    rm -f "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
+
+    if ! docker cp "$container_id:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY" ||
+       ! docker cp "$container_id:/usr/local/bin/devbox-status" "$STATUS_BINARY"; then
+        docker rm "$container_id" >/dev/null
+        rm -f "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
+        return 1
     fi
-    TEMP_CONTAINER="$(docker create "$IMAGE_ID")"
-    if ! docker cp "$TEMP_CONTAINER:/usr/local/bin/devbox-host-bridge" "$CODE_BRIDGE_BINARY"; then
-        docker rm "$TEMP_CONTAINER" >/dev/null
-        error "Unable to extract the host VS Code bridge from the rebuilt image."
+
+    docker rm "$container_id" >/dev/null
+    chmod 700 "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
+}
+
+if ! extract_host_binaries "$IMAGE_ID"; then
+    info "The existing image is missing a DevBox host binary. Rebuilding..."
+    IMAGE_ID="$(resolve_bridge_image)"
+    if [[ -z "$IMAGE_ID" ]] || ! extract_host_binaries "$IMAGE_ID"; then
+        error "Unable to extract DevBox host binaries from the image."
         exit 1
     fi
 fi
-docker rm "$TEMP_CONTAINER" >/dev/null
-chmod 700 "$CODE_BRIDGE_BINARY"
 
 if [[ ! -S "$CODE_SOCKET_PATH" ]] || [[ ! -f "$CODE_BRIDGE_PID" ]] || ! kill -0 "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null; then
     rm -f "$CODE_SOCKET_PATH" "$CODE_BRIDGE_PID"
