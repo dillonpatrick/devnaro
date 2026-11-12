@@ -45,10 +45,15 @@ def test_remove_package_preserves_comments_and_other_entries(tmp_path):
     assert manifest.read_text(encoding="utf-8") == "# tools\njq\ntree\n"
 
 
-@pytest.mark.parametrize("package", ["", "two packages", "../jq", "jq;rm", "#comment"])
+@pytest.mark.parametrize("package", ["", "two packages", "../jq", "jq;rm", "#comment", "jq\\nnodejs"])
 def test_validate_package_name_rejects_invalid_values(package):
     with pytest.raises(PackageManifestError):
         validate_package_name(package)
+
+
+@pytest.mark.parametrize("package", ["jq", "nodejs22", "py3.12", "lib+compat", "foo_bar", "foo-bar"])
+def test_validate_package_name_accepts_alpine_safe_names(package):
+    assert validate_package_name(package) == package
 
 
 def test_read_manifest_rejects_multiple_names_on_one_line(tmp_path):
