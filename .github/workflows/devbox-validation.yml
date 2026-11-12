@@ -7,6 +7,7 @@ on:
       - feat/python-cli-foundation
       - feat/stop-clean-lifecycle
       - feat/alpine-linux-experiment
+      - feat/stack-definition-foundation
   pull_request:
     branches:
       - main
