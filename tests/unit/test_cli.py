@@ -254,8 +254,76 @@ def test_tools_help_lists_only_external_search():
     assert "list" not in result.stdout
 
 
-def test_tools_list_is_not_available():
+def test_tools_list_shows_declared_packages(monkeypatch, tmp_path):
+    from devbox_manager import cli
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("# additional tools\\njq\\nripgrep\\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+
     result = runner.invoke(app, ["tools", "list"])
 
-    assert result.exit_code != 0
-    assert "No such command" in result.output
+    assert result.exit_code == 0
+    assert "Additional image packages" in result.stdout
+    assert "jq" in result.stdout
+    assert "ripgrep" in result.stdout
+    assert "devbox recreate" in result.stdout
+
+
+def test_tools_add_updates_manifest_and_explains_recreate(monkeypatch, tmp_path):
+    from devbox_manager import cli
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("# additional tools\\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+
+    result = runner.invoke(app, ["tools", "add", "jq"])
+
+    assert result.exit_code == 0
+    assert "Package manifest updated" in result.stdout
+    assert "devbox recreate" in result.stdout
+    assert "only after" in result.stdout
+    assert manifest.read_text(encoding="utf-8") == "# additional tools\\njq\\n"
+
+
+def test_tools_add_rejects_invalid_package(monkeypatch, tmp_path):
+    from devbox_manager import cli
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+
+    result = runner.invoke(app, ["tools", "add", "../jq"])
+
+    assert result.exit_code == 1
+    assert "Invalid package name" in result.stdout
+    assert manifest.read_text(encoding="utf-8") == ""
+
+
+def test_tools_remove_updates_manifest(monkeypatch, tmp_path):
+    from devbox_manager import cli
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("# additional tools\\njq\\nripgrep\\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+
+    result = runner.invoke(app, ["tools", "remove", "jq"])
+
+    assert result.exit_code == 0
+    assert "Package manifest updated" in result.stdout
+    assert "devbox recreate" in result.stdout
+    assert manifest.read_text(encoding="utf-8") == "# additional tools\\nripgrep\\n"
+
+
+def test_tools_remove_reports_missing_package(monkeypatch, tmp_path):
+    from devbox_manager import cli
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("jq\\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+
+    result = runner.invoke(app, ["tools", "remove", "ripgrep"])
+
+    assert result.exit_code == 1
+    assert "not present in the manifest" in result.stdout
+    assert manifest.read_text(encoding="utf-8") == "jq\\n"
