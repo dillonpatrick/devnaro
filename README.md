@@ -174,26 +174,32 @@ DevBox runs interactive sessions as an unprivileged user. The `sudo` command is 
 
 ### Add system packages or development tools
 
-To make an additional Alpine package available in DevBox, edit the package list in the `RUN apk add --no-cache` section of `docker/Dockerfile`. For example, add `jq` on its own line:
+Additional Alpine packages are declared in `docker/packages.txt`, one package name per line. This is the user-customizable manifest for tools beyond DevBox's core runtime dependencies, which remain in `docker/Dockerfile`.
 
-```dockerfile
-RUN apk add --no-cache \\
-    ca-certificates \\
-    curl \\
-    docker-cli \\
-    jq \\
-    git
+For example:
+
+```text
+# Additional command-line tools
+jq
+ripgrep
+tree
 ```
 
-Then recreate DevBox:
+Use the package search command inside the container to find the official Alpine package name:
+
+```bash
+dm tools search ripgrep
+```
+
+After editing `docker/packages.txt`, rebuild and recreate DevBox:
 
 ```bash
 devbox recreate
 ```
 
-This rebuilds the image and recreates the container while preserving the `devbox_home` volume and workspace. The new package will be available in the next container session. Do not install `sudo` just to work around the default user permissions; declare the tools you need in the Dockerfile instead.
+The Docker build validates manifest entries and installs the listed packages from the configured Alpine repositories. Blank lines and full-line comments are ignored. Invalid entries fail the image build instead of being silently skipped. The manifest is part of the repository, so the same additional packages are installed whenever the image is built on another machine.
 
-For tools that are not available as Alpine packages, add their installation steps to the Dockerfile as part of the image build. Keep build-time dependencies and temporary files out of the final image when they are not needed at runtime.
+Do not install packages manually into a running container; declare them in this manifest so the environment remains reproducible. Keep core DevBox dependencies in the Dockerfile. For tools that are not available as Alpine packages, add their installation steps to the Dockerfile as part of the image build.
 
 After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 
