@@ -226,4 +226,4 @@ def test_tools_list_is_not_available():
     result = runner.invoke(app, ["tools", "list"])
 
     assert result.exit_code != 0
-    assert "No such command" in result.stdout
+    assert "No such command" in result.output
