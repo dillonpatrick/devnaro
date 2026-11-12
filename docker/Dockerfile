@@ -47,7 +47,7 @@ RUN apk add --no-cache \
     zsh \
     zsh-autosuggestions \
     zsh-syntax-highlighting \
-    && python3 --version | grep -E '^Python 3\\.12\\.'
+    && python3 --version | grep -E '^Python 3\.12\.'
 
 COPY docker/packages.txt /tmp/devbox-packages.txt
 
@@ -116,8 +116,8 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \
     && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc \
     && sed -i 's/^plugins=(git)$/plugins=(git docker terraform uv)/' /home/${USERNAME}/.zshrc \
-    && printf '\\n# Zsh autosuggestions\\nsource /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\\n' >> /home/${USERNAME}/.zshrc \
-    && printf '\\n# Zsh syntax highlighting\\nsource /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh\\n' >> /home/${USERNAME}/.zshrc \
+    && printf '\n# Zsh autosuggestions\nsource /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\n' >> /home/${USERNAME}/.zshrc \
+    && printf '\n# Zsh syntax highlighting\nsource /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh\n' >> /home/${USERNAME}/.zshrc \
     && test "$(git -C /home/${USERNAME}/.oh-my-zsh rev-parse HEAD)" = "${OH_MY_ZSH_COMMIT}" \
     && uv --version | grep -F "uv ${UV_VERSION}"
 
@@ -129,7 +129,7 @@ COPY --from=bridge-builder /devbox-status /usr/local/bin/devbox-status
 
 USER root
 RUN mkdir -p /run/devbox-host \
-    && awk -F '"' '/^\\[project\\]/ { in_project=1; next } /^\\[/ { in_project=0 } in_project && /^version = / { print $2; exit }' /opt/devbox-cli/pyproject.toml > /etc/devbox-version \
+    && awk -F '"' '/^\[project\]/ { in_project=1; next } /^\[/ { in_project=0 } in_project && /^version = / { print $2; exit }' /opt/devbox-cli/pyproject.toml > /etc/devbox-version \
     && test -s /etc/devbox-version \
     && chmod +x /usr/local/bin/devbox-entrypoint /usr/local/bin/code \
     && cat >> /etc/zsh/zshrc <<'EOF'
