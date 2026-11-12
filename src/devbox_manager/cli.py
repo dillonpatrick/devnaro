@@ -31,6 +31,7 @@ from devbox_manager.packages_manifest import (
     add_package,
     read_manifest,
     remove_package,
+    validate_package_name,
 )
 from typer.main import get_command
 
@@ -150,9 +151,10 @@ def _is_image_provided_tool(package: str) -> bool:
 
 @tools_app.command("add")
 def tools_add(package: str = typer.Argument(..., help="Alpine package name to add to the image.")) -> None:
-    """Add an Alpine package to the image manifest."""
+    """Add an available Alpine package to the image manifest."""
     try:
-        normalized = package.strip()
+        normalized = validate_package_name(package)
+
         if _is_image_provided_tool(normalized):
             render_panel(
                 console,
@@ -161,15 +163,36 @@ def tools_add(package: str = typer.Argument(..., help="Alpine package name to ad
             )
             return
 
-        changed = add_package(package, PACKAGE_MANIFEST_PATH)
+        try:
+            available = available_alpine_packages((normalized,))
+        except AlpinePackageSearchError as error:
+            render_panel(
+                console,
+                "Package validation failed",
+                f"[error]Could not verify whether {normalized} exists in Alpine repositories:[/error]\\n{error}",
+                border_style="error",
+            )
+            raise typer.Exit(code=1) from error
+
+        if normalized not in available:
+            render_panel(
+                console,
+                "Package not found",
+                f"[error]{normalized} does not exist in the configured Alpine repositories. No manifest change was made.[/error]\n"
+                "[muted]Use dm tools search to find an available package.[/muted]",
+                border_style="error",
+            )
+            raise typer.Exit(code=1)
+
+        changed = add_package(normalized, PACKAGE_MANIFEST_PATH)
     except PackageManifestError as error:
         render_panel(console, "Package manifest update failed", f"[error]{error}[/error]", border_style="error")
         raise typer.Exit(code=1) from error
 
     if changed:
-        _render_manifest_updated("Added", package)
+        _render_manifest_updated("Added", normalized)
     else:
-        render_panel(console, "Package already declared", f"[muted]{package} is already in the manifest.[/muted]")
+        render_panel(console, "Package already declared", f"[muted]{normalized} is already in the manifest.[/muted]")
 
 @tools_app.command("remove")
 def tools_remove(package: str = typer.Argument(..., help="Alpine package name to remove from the image.")) -> None:
