@@ -132,7 +132,7 @@ def tools_search(query: str = typer.Argument(..., help="Text to search Alpine pa
         console,
         "Alpine package search",
         table if packages else "[muted]No matching Alpine packages found.[/muted]",
-        subtitle=f"{len(packages)} package(s) · Alpine Linux {packages[0].alpine_version if packages else '3.22'}",
+        subtitle=f"{len(packages)} package(s) · Official Alpine main + community repositories",
     )
 
 
