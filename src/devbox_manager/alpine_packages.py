@@ -159,3 +159,24 @@ def search_alpine_packages(query: str) -> tuple[AlpinePackage, ...]:
         ),
     )
     return tuple(ordered[:MAX_RESULTS])
+
+
+
+def available_alpine_packages(package_names: set[str] | tuple[str, ...]) -> frozenset[str]:
+    """Return manifest package names present in the current Alpine repositories."""
+    requested = {name.strip() for name in package_names if name.strip()}
+    if not requested:
+        return frozenset()
+
+    alpine_version = _current_alpine_version()
+    architecture = _current_architecture()
+    available: set[str] = set()
+
+    for repository in REPOSITORIES:
+        for package in _fetch_repository_index(
+            alpine_version, architecture, repository
+        ):
+            if package.name in requested:
+                available.add(package.name)
+
+    return frozenset(available)
