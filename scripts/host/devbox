@@ -76,7 +76,7 @@ usage() {
     print_command status "Show container status"
     print_command info "Show DevBox stack, base image, and installed tools"
     print_command "tools list" "List supported development tools"
-    print_command "tools search" "Search supported development tools"
+    print_command "tools search" "Search official Alpine packages"
     print_command logs "Show container logs"
     print_command networks "List networks connected to DevBox"
     print_command doctor "Run health checks inside the container"
