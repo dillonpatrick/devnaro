@@ -9,8 +9,15 @@ SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 DEVBOX_DIR="$(cd -- "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/devbox"
 CONFIG_FILE="$CONFIG_DIR/config"
+source "$DEVBOX_DIR/scripts/host/command_registry.sh"
 
 command="${1:-shell}"
+
+if [[ "$command" == "__complete" ]]; then
+    shift
+    devbox_host_completion "$@"
+    exit 0
+fi
 
 bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
@@ -64,22 +71,15 @@ usage() {
         "  ${GREEN}devbox${RESET} manager [status|logs]"
     print_box_line "" ""
     print_box_line "Host commands:" "${BOLD}${CYAN}Host commands:${RESET}"
-    print_command start "Build (if needed) and start DevBox"
-    print_command shell "Enter the running DevBox container (default)"
-    print_command stop "Stop the container without removing resources"
-    print_command clean "Remove DevBox containers, networks, volumes, and local images"
-    print_command restart "Restart the existing container"
-    print_command recreate "Recreate the container and network, preserving its home volume"
-    print_command recreate-all "Rebuild all DevBox resources, including the home volume"
-    print_command status "Show container status"
-    print_command info "Show DevBox stack, base image, and installed tools"
-    print_command logs "Show container logs"
-    print_command networks "List networks connected to DevBox"
-    print_command doctor "Run health checks inside the container"
-    print_command config "Show machine-specific configuration"
-    print_command "manager status" "Show Network Manager process status"
-    print_command "manager logs" "Show Network Manager logs"
-    print_command help "Show this help message"
+    local command_name
+    for command_name in "${DEVBOX_HOST_COMMANDS[@]}"; do
+        print_command "$command_name" "${DEVBOX_HOST_COMMAND_DESCRIPTIONS[$command_name]}"
+    done
+    local subcommand_name subcommand_key
+    for subcommand_name in "${DEVBOX_HOST_SUBCOMMANDS_manager[@]}"; do
+        subcommand_key="manager $subcommand_name"
+        print_command "$subcommand_key" "${DEVBOX_HOST_SUBCOMMAND_DESCRIPTIONS[$subcommand_key]}"
+    done
     print_box_line "" ""
     print_box_line "Examples:" "${BOLD}${CYAN}Examples:${RESET}"
     print_box_line "  devbox start" "  ${GREEN}devbox start${RESET}"
@@ -210,6 +210,10 @@ case "$command" in
         exec docker compose --project-directory "$DEVBOX_DIR" \
             -f "$DEVBOX_DIR/docker/docker-compose.yml" \
             -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager info
+        ;;
+    tools)
+        printf '%s\n' "The tools command is available only inside the container. Run 'devbox shell', then 'dm tools search QUERY'." >&2
+        exit 2
         ;;
     logs)
         compose logs devbox

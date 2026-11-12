@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 BIN_DIR="${DEVBOX_BIN_DIR:-$HOME/.local/bin}"
 CLI_SOURCE="$SCRIPT_DIR/scripts/host/devbox"
 CLI_TARGET="$BIN_DIR/devbox"
+source "$SCRIPT_DIR/scripts/host/command_registry.sh"
 
 if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
     RESET='\033[0m'
@@ -98,28 +99,51 @@ if [[ -n "$SHELL_CONFIG" ]]; then
     fi
     success "PATH configuration updated in $SHELL_CONFIG"
     info "Open a new terminal, or run: source $SHELL_CONFIG"
+
+    # Host completion queries the CLI's central command registry.
+    if ! grep -Fq '# >>> DevBox completion >>>' "$SHELL_CONFIG"; then
+        if [[ "$HOST_SHELL" == "bash" ]]; then
+            cat >> "$SHELL_CONFIG" <<'EOF'
+
+# >>> DevBox completion >>>
+_devbox_completion() {
+    local -a suggestions
+    suggestions=( $(devbox __complete "${COMP_WORDS[@]:1}") )
+    COMPREPLY=("${suggestions[@]}")
+}
+complete -F _devbox_completion devbox
+# <<< DevBox completion <<<
+EOF
+        elif [[ "$HOST_SHELL" == "zsh" ]]; then
+            cat >> "$SHELL_CONFIG" <<'EOF'
+
+# >>> DevBox completion >>>
+autoload -Uz compinit
+if (( ! $+functions[compdef] )); then
+    compinit
+fi
+_devbox_completion() {
+    local -a suggestions
+    suggestions=("${(@f)$(devbox __complete "${words[@]:2}")}")
+    compadd -- "${suggestions[@]}"
+}
+compdef _devbox_completion devbox
+# <<< DevBox completion <<<
+EOF
+        fi
+    fi
 else
     warning "Add $BIN_DIR to PATH in your shell configuration."
 fi
 
 printf '\n%bHost commands%b\n' "${CYAN}${BOLD}" "$RESET"
-printf '  %-24s %s\n' 'devbox start' 'Build (if needed) and start the environment'
-printf '  %-24s %s\n' 'devbox shell' 'Open an interactive shell in the container'
-printf '  %-24s %s\n' 'devbox stop' 'Stop the container, keeping its resources'
-printf '  %-24s %s\n' 'devbox clean' 'Remove containers, networks, volumes, and local images'
-printf '  %-24s %s\n' 'devbox restart' 'Restart the existing container'
-printf '  %-24s %s\n' 'devbox recreate' 'Recreate the container, preserving its home volume'
-printf '  %-24s %s\n' 'devbox recreate-all' 'Rebuild all resources, including the home volume'
-printf '  %-24s %s\n' 'devbox status' 'Show container status'
-printf '  %-24s %s\n' 'devbox info' 'Show stack, base image, installed tools, and host integrations'
-printf '  %-24s %s\n' 'devbox config' 'Show or change machine-specific settings'
-printf '  %-24s %s\n' 'devbox help' 'Show command help'
-printf '\n%bInside the container%b\n' "${CYAN}${BOLD}" "$RESET"
-printf '  %-32s %s\n' 'dm status' 'Show DevBox container status'
-printf '  %-32s %s\n' 'dm doctor' 'Run environment health checks'
-printf '  %-32s %s\n' 'dm networks' 'List networks connected to DevBox'
-printf '  %-32s %s\n' 'dm network-manager status' 'Show Network Manager status'
-printf '  %-32s %s\n' 'dm network-manager logs' 'Show Network Manager logs'
+for command_name in "${DEVBOX_HOST_COMMANDS[@]}"; do
+    printf '  %-24s %s\n' "devbox $command_name" "${DEVBOX_HOST_COMMAND_DESCRIPTIONS[$command_name]}"
+done
+for subcommand_name in "${DEVBOX_HOST_SUBCOMMANDS_manager[@]}"; do
+    subcommand_key="manager $subcommand_name"
+    printf '  %-24s %s\n' "devbox $subcommand_key" "${DEVBOX_HOST_SUBCOMMAND_DESCRIPTIONS[$subcommand_key]}"
+done
 printf '\n%bRepository tasks%b (run from the DevBox repository)\n' "${CYAN}${BOLD}" "$RESET"
 printf '  %-24s %s\n' 'make install' 'Install the host-side devbox command'
 printf '  %-24s %s\n' 'make uninstall' 'Remove DevBox from the host, preserving repository and workspace'

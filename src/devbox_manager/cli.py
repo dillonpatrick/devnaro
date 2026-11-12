@@ -20,6 +20,20 @@ from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
+from devbox_manager.alpine_packages import (
+    AlpinePackageSearchError,
+    available_alpine_packages,
+    search_alpine_packages,
+)
+from devbox_manager.packages_manifest import (
+    PackageManifestError,
+    PACKAGE_MANIFEST_PATH,
+    add_package,
+    read_manifest,
+    remove_package,
+    validate_package_name,
+)
+from typer.main import get_command
 
 configure_typer_help()
 
@@ -54,6 +68,210 @@ network_app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 app.add_typer(network_app, name="network-manager")
+tools_app = typer.Typer(
+    help="Search Alpine packages and manage additional image packages.",
+    no_args_is_help=True,
+    cls=DevBoxTyperGroup,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+app.add_typer(tools_app, name="tools")
+
+
+
+@tools_app.command("search")
+def tools_search(query: str = typer.Argument(..., help="Text to search Alpine package names and descriptions.")) -> None:
+    """Search official Alpine Linux repositories for available packages."""
+    try:
+        packages = search_alpine_packages(query)
+    except AlpinePackageSearchError as error:
+        render_panel(
+            console,
+            "Alpine package search failed",
+            f"[error]{error}[/error]",
+            border_style="error",
+        )
+        raise typer.Exit(code=1) from error
+
+    table = Table(box=box.ROUNDED, header_style="heading")
+    table.add_column("Package", style="info")
+    table.add_column("Version")
+    table.add_column("Repository")
+    table.add_column("Description", overflow="fold")
+
+    for package in packages:
+        table.add_row(
+            package.name,
+            package.version,
+            package.repository,
+            package.description,
+        )
+
+    render_panel(
+        console,
+        "Alpine package search",
+        table if packages else "[muted]No matching Alpine packages found.[/muted]",
+        subtitle=f"{len(packages)} package(s) · Official Alpine main + community repositories",
+    )
+
+
+def _render_manifest_updated(action: str, package: str) -> None:
+    """Explain that manifest changes require a host-side image recreation."""
+    render_panel(
+        console,
+        "Package manifest updated",
+        f"[success]{action} {package}.[/success]\n\n"
+        "[warning]Changes take effect only after running this command on the host:[/warning]\n"
+        "[accent]devbox recreate[/accent]",
+    )
+
+
+def _is_image_provided_tool(package: str) -> bool:
+    """Return whether a package is already provided by the base DevBox image."""
+    image_managed_commands = {
+        "terraform": "terraform",
+        "uv": "uv",
+    }
+    command = image_managed_commands.get(package)
+    if command and shutil.which(command):
+        return True
+
+    try:
+        result = subprocess.run(
+            ["apk", "info", "-e", package],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+    return result.returncode == 0
+
+
+@tools_app.command("add")
+def tools_add(package: str = typer.Argument(..., help="Alpine package name to add to the image.")) -> None:
+    """Add an available Alpine package to the image manifest."""
+    try:
+        normalized = validate_package_name(package)
+
+        if _is_image_provided_tool(normalized):
+            render_panel(
+                console,
+                "Package already provided",
+                f"[muted]{normalized} is already installed in the DevBox image. No manifest change was made.[/muted]",
+            )
+            return
+
+        try:
+            available = available_alpine_packages((normalized,))
+        except AlpinePackageSearchError as error:
+            render_panel(
+                console,
+                "Package validation failed",
+                f"[error]Could not verify whether {normalized} exists in Alpine repositories:[/error]\\n{error}",
+                border_style="error",
+            )
+            raise typer.Exit(code=1) from error
+
+        if normalized not in available:
+            render_panel(
+                console,
+                "Package not found",
+                f"[error]{normalized} does not exist in the configured Alpine repositories. No manifest change was made.[/error]\n"
+                "[muted]Use dm tools search to find an available package.[/muted]",
+                border_style="error",
+            )
+            raise typer.Exit(code=1)
+
+        changed = add_package(normalized, PACKAGE_MANIFEST_PATH)
+    except PackageManifestError as error:
+        render_panel(console, "Package manifest update failed", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+
+    if changed:
+        _render_manifest_updated("Added", normalized)
+    else:
+        render_panel(console, "Package already declared", f"[muted]{normalized} is already in the manifest.[/muted]")
+
+@tools_app.command("remove")
+def tools_remove(package: str = typer.Argument(..., help="Alpine package name to remove from the image.")) -> None:
+    """Remove an Alpine package from the image manifest."""
+    try:
+        changed = remove_package(package, PACKAGE_MANIFEST_PATH)
+    except PackageManifestError as error:
+        render_panel(console, "Package manifest update failed", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+
+    if changed:
+        _render_manifest_updated("Removed", package)
+    else:
+        render_panel(
+            console,
+            "Package not declared",
+            f"[warning]{package} is not present in the manifest.[/warning]",
+        )
+        raise typer.Exit(code=1)
+
+
+@tools_app.command("list")
+def tools_list() -> None:
+    """List declared packages and their status in the DevBox image."""
+    try:
+        packages = read_manifest(PACKAGE_MANIFEST_PATH)
+    except PackageManifestError as error:
+        render_panel(console, "Package manifest read failed", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+
+    try:
+        valid_packages = available_alpine_packages(packages)
+    except AlpinePackageSearchError as error:
+        render_panel(
+            console,
+            "Package validation failed",
+            f"[error]Could not verify Alpine packages:[/error]\n{error}",
+            border_style="error",
+        )
+        raise typer.Exit(code=1) from error
+
+    package_lines = []
+    installed_count = 0
+    available_count = 0
+    unavailable_count = 0
+
+    for package in packages:
+        if _is_image_provided_tool(package):
+            package_lines.append(f"[success]✓[/success] {package} [muted](Already installed)[/muted]")
+            installed_count += 1
+        elif package in valid_packages:
+            package_lines.append(f"[info]•[/info] {package} [muted](Available)[/muted]")
+            available_count += 1
+        else:
+            package_lines.append(f"[error]✗[/error] {package} [muted](Unavailable)[/muted]")
+            unavailable_count += 1
+
+    if not package_lines:
+        package_lines.append("[muted]No additional packages declared.[/muted]")
+
+    package_lines.extend(
+        [
+            "",
+            "[success]Already installed[/success] · "
+            "[info]Available[/info] · [error]Unavailable[/error]",
+            "",
+            "[warning]Run on the host to apply changes:[/warning]",
+            "[accent]devbox recreate[/accent]",
+        ]
+    )
+    render_panel(
+        console,
+        "Additional image packages",
+        "\n".join(package_lines),
+        subtitle=(
+            f"{installed_count} installed · {available_count} available · "
+            f"{unavailable_count} unavailable"
+        ),
+    )
 
 
 def _format_started_at(value: str) -> str:
@@ -215,7 +433,7 @@ def info() -> None:
         ("Zsh", "zsh"),
         ("Bash", "bash"),
     ]
-    reported: set[str] = set()
+    reported: set[str] = {"devbox-manager"}
     discovered_tools: list[tuple[str, str, str]] = []
 
     for label, executable in known_tools:
@@ -531,6 +749,79 @@ def network_manager_logs(
     )
 
 
+def _registered_cli_commands(command=None, prefix: tuple[str, ...] = ()):
+    """Yield command usage and help directly from the registered Typer command tree."""
+    command = command or get_command(app)
+    for name, child in command.commands.items():
+        path = (*prefix, name)
+        if getattr(child, "hidden", False):
+            continue
+
+        nested_commands = getattr(child, "commands", None)
+        if nested_commands:
+            yield from _registered_cli_commands(child, path)
+            continue
+
+        arguments = [
+            parameter.name.upper()
+            for parameter in child.params
+            if parameter.__class__.__name__.endswith("Argument")
+        ]
+        usage = " ".join(("dm", *path, *arguments))
+        description = child.help or child.short_help or ""
+        yield usage, description
+
+
+def _completion_candidates(words: list[str]) -> list[str]:
+    """Return command names and options from the registered Typer command tree."""
+    command = get_command(app)
+    consumed: list[str] = []
+
+    while words:
+        current = words[0]
+        commands = getattr(command, "commands", None)
+        if not commands:
+            break
+
+        if current in commands:
+            consumed.append(current)
+            command = commands[current]
+            words = words[1:]
+            continue
+
+        return sorted(
+            name
+            for name, child in commands.items()
+            if not getattr(child, "hidden", False)
+            and name != "__complete"
+            and name.startswith(current)
+        )
+
+    if getattr(command, "commands", None):
+        return sorted(
+            name
+            for name, child in command.commands.items()
+            if not getattr(child, "hidden", False) and name != "__complete"
+        )
+
+    return sorted(
+        option
+        for parameter in command.params
+        for option in getattr(parameter, "opts", [])
+        if option.startswith(words[0] if words else "")
+    )
+
+
+@app.command("__complete", hidden=True, context_settings={
+    "allow_extra_args": True,
+    "ignore_unknown_options": True,
+})
+def _complete(ctx: typer.Context) -> None:
+    """Internal completion endpoint consumed by the Zsh integration."""
+    for candidate in _completion_candidates(list(ctx.args)):
+        typer.echo(candidate)
+
+
 @app.command()
 def welcome() -> None:
     """Display the DevBox welcome screen."""
@@ -556,12 +847,8 @@ def welcome() -> None:
     commands.add_column(style="accent", no_wrap=True)
     commands.add_column(style="muted")
     commands.add_row("code .", "Open current project in VS Code")
-    commands.add_row("dm info", "DevBox stack and installed tools")
-    commands.add_row("dm status", "Container status")
-    commands.add_row("dm doctor", "Environment health checks")
-    commands.add_row("dm networks", "Docker networks")
-    commands.add_row("dm network-manager status", "Network Manager status")
-    commands.add_row("dm network-manager logs", "Network Manager logs")
+    for command_usage, description in _registered_cli_commands():
+        commands.add_row(command_usage, description)
     commands.add_row("docker ps", "Running containers")
     commands.add_row("docker compose up -d", "Start project services")
 
