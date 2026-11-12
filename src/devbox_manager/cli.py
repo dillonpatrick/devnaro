@@ -174,7 +174,7 @@ def tools_list() -> None:
         render_panel(
             console,
             "Package validation failed",
-            f"[error]Could not verify Alpine packages:[/error]\\n{error}",
+            f"[error]Could not verify Alpine packages:[/error]\n{error}",
             border_style="error",
         )
         raise typer.Exit(code=1) from error
@@ -194,7 +194,7 @@ def tools_list() -> None:
     render_panel(
         console,
         "Additional image packages",
-        "\\n".join(package_lines),
+        "\n".join(package_lines),
         subtitle=f"{len(valid_packages)} valid package(s)",
     )
 
