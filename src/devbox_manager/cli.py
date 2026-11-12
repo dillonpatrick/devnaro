@@ -146,7 +146,7 @@ def _is_image_provided_tool(package: str) -> bool:
     except (OSError, subprocess.TimeoutExpired):
         return False
 
-    return result.returncode == 0
+    return result.returncode == 0 and result.stdout.strip() == "install ok installed"
 
 
 @tools_app.command("add")
