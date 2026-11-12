@@ -125,6 +125,7 @@ jobs:
           docker exec devbox-ci devbox-manager --version
           docker exec devbox-ci devbox-manager --help
           docker exec devbox-ci devbox-manager info
+          docker exec devbox-ci devbox-manager tools search jq | grep -F jq
           docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v terraform && command -v docker && command -v jq'
           docker exec devbox-ci devbox-manager __complete -- tools '' | grep -Fx 'search'
           docker exec devbox-ci zsh -fc 'source ~/.zshrc; (( $+functions[_devbox_completion] )) && [[ ${_comps[dm]} == _devbox_completion ]]'
