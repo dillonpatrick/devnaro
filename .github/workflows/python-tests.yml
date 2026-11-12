@@ -80,9 +80,40 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: false
+          load: true
           tags: devbox:ci
           build-args: |
             USERNAME=devuser
             USER_UID=1000
             USER_GID=1000
             DOCKER_GID=966
+
+      - name: Start DevBox container
+        run: |
+          mkdir -p "$RUNNER_TEMP/devbox-workspace"
+          docker run --detach --name devbox-ci \
+            --volume "$RUNNER_TEMP/devbox-workspace:/workspace" \
+            devbox:ci
+
+      - name: Run container smoke tests
+        run: |
+          set -euo pipefail
+
+          for attempt in {1..10}; do
+            if [[ "$(docker inspect --format '{{.State.Running}}' devbox-ci)" == "true" ]]; then
+              break
+            fi
+            sleep 1
+          done
+
+          test "$(docker inspect --format '{{.State.Running}}' devbox-ci)" = "true"
+          docker exec devbox-ci devbox-manager --version
+          docker exec devbox-ci devbox-manager --help
+          docker exec devbox-ci devbox-manager info
+          docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v terraform && command -v docker'
+          docker exec devbox-ci sh -ec 'test -x /usr/local/bin/devbox-host-bridge && test -x /usr/local/bin/devbox-status && test -d /workspace'
+          docker exec devbox-ci python3 --version | grep -E '^Python 3\.12\.'
+
+      - name: Remove smoke-test container
+        if: always()
+        run: docker rm --force devbox-ci || true
