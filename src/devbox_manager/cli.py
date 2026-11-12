@@ -20,7 +20,11 @@ from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
-from devbox_manager.alpine_packages import AlpinePackageSearchError, search_alpine_packages
+from devbox_manager.alpine_packages import (
+    AlpinePackageSearchError,
+    available_alpine_packages,
+    search_alpine_packages,
+)
 from devbox_manager.packages_manifest import (
     PackageManifestError,
     PACKAGE_MANIFEST_PATH,
@@ -164,10 +168,21 @@ def tools_list() -> None:
         render_panel(console, "Package manifest read failed", f"[error]{error}[/error]", border_style="error")
         raise typer.Exit(code=1) from error
 
+    try:
+        valid_packages = available_alpine_packages(packages)
+    except AlpinePackageSearchError as error:
+        render_panel(
+            console,
+            "Package validation failed",
+            f"[error]Could not verify Alpine packages:[/error]\\n{error}",
+            border_style="error",
+        )
+        raise typer.Exit(code=1) from error
+
     package_lines = (
-        [f"[info]•[/info] {package}" for package in packages]
-        if packages
-        else ["[muted]No additional packages declared.[/muted]"]
+        [f"[info]•[/info] {package}" for package in packages if package in valid_packages]
+        if valid_packages
+        else ["[muted]No valid additional packages found.[/muted]"]
     )
     package_lines.extend(
         [
@@ -179,8 +194,8 @@ def tools_list() -> None:
     render_panel(
         console,
         "Additional image packages",
-        "\n".join(package_lines),
-        subtitle=f"{len(packages)} package(s)",
+        "\\n".join(package_lines),
+        subtitle=f"{len(valid_packages)} valid package(s)",
     )
 
 
