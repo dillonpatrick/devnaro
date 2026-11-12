@@ -163,7 +163,7 @@ Run these commands in a host terminal:
 | `devbox status` | Show container status |
 | `devbox info` | Show DevBox stack, base image, installed tools, and host integrations |
 | `devbox tools list` | List development tools supported by DevBox and their installation status |
-| `devbox tools search QUERY` | Search supported development tools by name, ID, description, or category |
+| `devbox tools search QUERY` | Search official Alpine Linux `main` and `community` package repositories |
 | `devbox logs` | Show container logs |
 | `devbox networks` | Show networks connected to DevBox |
 | `devbox doctor` | Run container-side health checks |
