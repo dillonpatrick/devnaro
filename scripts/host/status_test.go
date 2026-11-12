@@ -49,6 +49,19 @@ func TestFormatPortsDoesNotGroupNonConsecutiveMappings(t *testing.T) {
     if got != expected { t.Fatalf("unexpected port mappings: %s", got) }
 }
 
+func TestWrapPortLineStaysWithinPanelWidth(t *testing.T) {
+    value := "127.0.0.1:3000-3010->3000-3010/tcp,  127.0.0.1:4173->4173/tcp,  127.0.0.1:5000-5010->5000-5010/tcp"
+    lines := wrapPortLine("Ports     ", value, 78)
+    for _, line := range lines {
+        if visibleLen(line) > 78 {
+            t.Errorf("line exceeds panel width: %d > 78: %q", visibleLen(line), line)
+        }
+    }
+    if len(lines) < 2 {
+        t.Fatalf("expected long port list to wrap, got %d line(s)", len(lines))
+    }
+}
+
 func TestRenderEmptyState(t *testing.T) {
     got := render(nil)
     for _, expected := range []string{"DevBox status", "No container found", "devbox start"} {
