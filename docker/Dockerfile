@@ -44,7 +44,7 @@ RUN mkdir -p /opt/devbox-config \
     && touch /opt/devbox-config/packages.txt /opt/devbox-config/package-warnings.txt
 
 COPY --from=stack-resolver /out/ /opt/devbox-config/stack/
-RUN test "$(cat /opt/devbox-config/stack/base-image)" = "$BASE_IMAGE" \\
+RUN test "$(cat /opt/devbox-config/stack/base-image)" = "$BASE_IMAGE" \
     || { echo "BASE_IMAGE does not match the selected stack definition." >&2; exit 1; }
 COPY docker/packages.txt /tmp/devbox-user-packages.txt
 
