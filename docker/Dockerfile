@@ -75,7 +75,7 @@ RUN set -eu; \
       : > /tmp/devbox-install-packages; \
       while IFS= read -r package; do \
         [ -z "$package" ] && continue; \
-        if apt-cache show "$package" >/dev/null 2>&1; then \
+        if apt-cache show "$package" 2>/dev/null | grep -Fqx "Package: $package"; then \
           printf '%s\n' "$package" >> /tmp/devbox-install-packages; \
         else \
           warning="WARNING: Debian package '$package' was not found; skipping."; \
