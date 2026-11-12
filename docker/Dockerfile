@@ -22,8 +22,6 @@ ARG OH_MY_ZSH_COMMIT=cca3bdfbef8c52ef8939ce7911ff68852b949daa
 ARG TARGETARCH
 
 # Start from the unmodified Alpine base and install the runtime/toolchain.
-COPY docker/packages.txt /tmp/devbox-packages.txt
-
 RUN apk add --no-cache \
     bash \
     build-base \
@@ -48,6 +46,8 @@ RUN apk add --no-cache \
     zsh-autosuggestions \
     zsh-syntax-highlighting \
     && python3 --version | grep -E '^Python 3\.12\.'
+
+COPY docker/packages.txt /tmp/devbox-packages.txt
 
 # Install user-selected additional Alpine packages from the tracked manifest.
 RUN set -eu; \
