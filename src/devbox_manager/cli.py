@@ -20,6 +20,7 @@ from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
+from devbox_manager.tool_catalog import list_tools, search_tools
 
 configure_typer_help()
 
@@ -54,6 +55,54 @@ network_app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 app.add_typer(network_app, name="network-manager")
+tools_app = typer.Typer(
+    help="Browse the curated development tools supported by DevBox.",
+    no_args_is_help=True,
+    cls=DevBoxTyperGroup,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+app.add_typer(tools_app, name="tools")
+
+
+
+def _render_tool_catalog(tools) -> None:
+    """Render catalog entries with their current installation status."""
+    table = Table(box=box.ROUNDED, header_style="heading")
+    table.add_column("Tool", style="info")
+    table.add_column("Category")
+    table.add_column("Status")
+    table.add_column("Pinned version")
+    table.add_column("Description", overflow="fold")
+
+    for tool in tools:
+        installed = shutil.which(tool.executable) is not None
+        status = "[success]Installed[/success]" if installed else "[warning]Not installed[/warning]"
+        table.add_row(
+            tool.name,
+            tool.category,
+            status,
+            tool.version or "-",
+            tool.description,
+        )
+
+    render_panel(
+        console,
+        "DevBox tools",
+        table if tools else "[muted]No matching tools found.[/muted]",
+        subtitle=f"{len(tools)} catalog tool(s)",
+    )
+
+
+@tools_app.command("list")
+def tools_list() -> None:
+    """List all development tools supported by DevBox."""
+    _render_tool_catalog(list_tools())
+
+
+@tools_app.command("search")
+def tools_search(query: str = typer.Argument(..., help="Text to search in tool names, IDs, descriptions, and categories.")) -> None:
+    """Search the supported development tool catalog."""
+    _render_tool_catalog(search_tools(query))
 
 
 def _format_started_at(value: str) -> str:
