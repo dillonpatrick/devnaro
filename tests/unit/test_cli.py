@@ -205,7 +205,7 @@ def test_tools_search_queries_external_debian_packages(monkeypatch):
         lambda query: (
             DebianPackage(
                 name="terraform",
-                version="1.9.8-r0",
+                version="1.9.8-1",
                 description="Infrastructure as Code tool",
                 repository="Debian APT",
             ),
@@ -216,7 +216,7 @@ def test_tools_search_queries_external_debian_packages(monkeypatch):
     assert result.exit_code == 0
     assert "Debian package search" in result.stdout
     assert "terraform" in result.stdout
-    assert "1.9.8-r0" in result.stdout
+    assert "1.9.8-1" in result.stdout
     assert "Debian APT" in result.stdout
 
 
