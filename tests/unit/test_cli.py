@@ -90,6 +90,7 @@ def test_welcome_separates_host_and_container_quick_commands(monkeypatch):
     assert "Host commands:" not in result.stdout
     assert "devbox info" not in result.stdout
     assert "dm info" in result.stdout
+    assert "dm tools search QUERY" in result.stdout
     assert "dm status" in result.stdout
     assert "dm doctor" in result.stdout
     assert "dm networks" in result.stdout
@@ -162,19 +163,6 @@ def test_network_manager_status_shows_explained_process_details(monkeypatch):
 
 
 
-def test_tools_list_shows_catalog_and_installation_status(monkeypatch):
-    from devbox_manager import cli
-
-    monkeypatch.setattr(cli.shutil, "which", lambda executable: f"/usr/bin/{executable}")
-    result = runner.invoke(app, ["tools", "list"])
-
-    assert result.exit_code == 0
-    assert "DevBox tools" in result.stdout
-    assert "Terraform" in result.stdout
-    assert "Installed" in result.stdout
-    assert "Pinned version" in result.stdout
-
-
 def test_tools_search_queries_external_alpine_packages(monkeypatch):
     from devbox_manager import cli
     from devbox_manager.alpine_packages import AlpinePackage
@@ -226,9 +214,16 @@ def test_tools_search_reports_network_errors(monkeypatch):
     assert "repository unavailable" in result.stdout
 
 
-def test_tools_help():
+def test_tools_help_lists_only_external_search():
     result = runner.invoke(app, ["tools", "--help"])
 
     assert result.exit_code == 0
-    assert "list" in result.stdout
     assert "search" in result.stdout
+    assert "list" not in result.stdout
+
+
+def test_tools_list_is_not_available():
+    result = runner.invoke(app, ["tools", "list"])
+
+    assert result.exit_code != 0
+    assert "No such command" in result.stdout
