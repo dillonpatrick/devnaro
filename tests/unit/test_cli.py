@@ -159,3 +159,43 @@ def test_network_manager_status_shows_explained_process_details(monkeypatch):
     assert "27" in result.stdout
     assert "00:12" in result.stdout
     assert "Process ID (PID)" in result.stdout
+
+
+
+def test_tools_list_shows_catalog_and_installation_status(monkeypatch):
+    from devbox_manager import cli
+
+    monkeypatch.setattr(cli.shutil, "which", lambda executable: f"/usr/bin/{executable}")
+    result = runner.invoke(app, ["tools", "list"])
+
+    assert result.exit_code == 0
+    assert "DevBox tools" in result.stdout
+    assert "Terraform" in result.stdout
+    assert "Installed" in result.stdout
+    assert "Pinned version" in result.stdout
+
+
+def test_tools_search_filters_catalog(monkeypatch):
+    from devbox_manager import cli
+
+    monkeypatch.setattr(cli.shutil, "which", lambda executable: None)
+    result = runner.invoke(app, ["tools", "search", "cloud"])
+
+    assert result.exit_code == 0
+    assert "Terraform" in result.stdout
+    assert "Python" not in result.stdout
+
+
+def test_tools_search_reports_no_matches():
+    result = runner.invoke(app, ["tools", "search", "no-such-tool"])
+
+    assert result.exit_code == 0
+    assert "No matching tools found" in result.stdout
+
+
+def test_tools_help():
+    result = runner.invoke(app, ["tools", "--help"])
+
+    assert result.exit_code == 0
+    assert "list" in result.stdout
+    assert "search" in result.stdout
