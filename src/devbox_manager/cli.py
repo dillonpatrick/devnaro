@@ -169,7 +169,7 @@ def tools_add(package: str = typer.Argument(..., help="Alpine package name to ad
             render_panel(
                 console,
                 "Package validation failed",
-                f"[error]Could not verify whether {normalized} exists in Alpine repositories:[/error]\\n{error}",
+                f"[error]Could not verify whether {normalized} exists in Alpine repositories:[/error]\n{error}",
                 border_style="error",
             )
             raise typer.Exit(code=1) from error
