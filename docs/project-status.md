@@ -15,7 +15,7 @@ The image build is stack-aware and uses Debian Slim for every build stage and ru
 
 ## Implemented
 
-- Debian Trixie Slim image and Python 3.12 runtime for the DevBox CLI.
+- Debian Trixie Slim image and Python 3.13 runtime for the DevBox CLI (the package supports Python 3.12+).
 - Non-root user, Zsh/Oh My Zsh, persistent home and mounted workspace.
 - Host CLI lifecycle: start, stop, restart, recreate, recreate-all and clean.
 - Container CLI (`dm`) built with Typer and Rich.
