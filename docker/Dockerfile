@@ -22,30 +22,33 @@ ARG OH_MY_ZSH_COMMIT=cca3bdfbef8c52ef8939ce7911ff68852b949daa
 ARG TARGETARCH
 
 # Start from the unmodified Alpine base and install the runtime/toolchain.
-RUN apk add --no-cache \
-    bash \
-    build-base \
-    ca-certificates \
-    curl \
-    docker-cli \
-    docker-cli-compose \
-    git \
-    gnupg \
-    libffi-dev \
-    linux-headers \
-    nano \
-    openssl-dev \
-    procps \
-    python3 \
-    python3-dev \
-    py3-pip \
-    py3-setuptools \
-    unzip \
-    wget \
-    zsh \
-    zsh-autosuggestions \
-    zsh-syntax-highlighting \
-    && python3 --version | grep -E '^Python 3\.12\.'
+RUN set -eux; \\
+    DEVBOX_DEFAULT_PACKAGES="\\
+    bash \\
+    build-base \\
+    ca-certificates \\
+    curl \\
+    docker-cli \\
+    docker-cli-compose \\
+    git \\
+    gnupg \\
+    libffi-dev \\
+    linux-headers \\
+    nano \\
+    openssl-dev \\
+    procps \\
+    python3 \\
+    python3-dev \\
+    py3-pip \\
+    py3-setuptools \\
+    unzip \\
+    wget \\
+    zsh \\
+    zsh-autosuggestions \\
+    zsh-syntax-highlighting"; \\
+    apk add --no-cache $DEVBOX_DEFAULT_PACKAGES; \\
+    printf '%s\\n' $DEVBOX_DEFAULT_PACKAGES > /etc/devbox-default-packages; \\
+    python3 --version | grep -E '^Python 3\\.12\\.'
 
 # Install the pinned Terraform release for the target architecture.
 RUN set -eux; \
