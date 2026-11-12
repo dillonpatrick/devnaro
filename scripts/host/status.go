@@ -54,7 +54,7 @@ func paint(s, style string, enabled bool) string {
 	return style + s + reset
 }
 
-func visibleLen(s string) int { return utf8.RuneCountInString(s) }
+var ansiPattern = regexp.MustCompile("\\x1b\\[[0-9;]*m")\n\nfunc visibleLen(s string) int { return utf8.RuneCountInString(ansiPattern.ReplaceAllString(s, "")) }
 
 func loadContainers(r io.Reader) ([]container, error) {
 	data, err := io.ReadAll(r)
