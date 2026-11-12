@@ -34,19 +34,21 @@ PR #22 consolidated host-side Compose invocation and shared UI helpers, fixed ma
 
 ## Partially implemented
 
+- Stack-aware image build is integrated on `feat/stack-definition-foundation`: a temporary Python resolver stage validates the selected stack, then the runtime image consumes normalized build artifacts. This implementation still needs a local Docker build and full test validation.
+
 - Tool inventory exists in `dm info`, but does not yet provide a complete normalized inventory with reliable versions, categories, origins and future stack associations.
 - Package management works, but the manifest is global (`docker/packages.txt`), not per environment.
 - Host CLI and Docker Compose operations assume one fixed DevBox instance.
 - Tool metadata and image-provided-tool knowledge are spread across the Dockerfile and Python CLI.
-- The Dockerfile still combines Core runtime setup with stack-specific tools such as Terraform and uv.
+- The Dockerfile now separates stack resolution from the runtime image build and installs Terraform/uv from the selected stack inputs.
 - Docker Compose still assumes a fixed service, container name, hostname and home volume.
 
 ## Not implemented
 
 - Multi-DevBox registry and named environments.
 - Default environment selection and environment identity in the prompt.
-- Stack resolver and build-input generation.
-- Generic stack-aware image build.
+- Multi-stack selection UX and host-side stack configuration.
+- Generic multi-instance orchestration.
 - Generic multi-instance orchestration.
 - Per-environment package manifests and customization.
 - Per-instance port allocation and isolation.
@@ -100,10 +102,9 @@ Initial implementation:
 Next steps:
 1. Implement stack definition parsing and strict validation in the Python CLI.
 2. Add tests for valid definitions, invalid fields, unsupported tools, invalid package names and directory/name mismatch.
-3. Generate normalized build inputs from the resolved stack.
-4. Refactor the Dockerfile to consume those inputs while preserving the current default image behavior.
-5. Make Compose build configuration generic without introducing multi-instance behavior yet.
-6. Run the full CI and compare the resulting default image behavior against the current environment.
+3. Run focused resolver tests and the full Python test suite.
+4. Build the default image locally and compare its tools, packages, environment and host bridge behavior with the existing image.
+5. Validate Compose and lifecycle commands, then open a PR for review.
 
 ## Architectural guardrails
 

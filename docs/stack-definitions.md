@@ -64,9 +64,10 @@ paths. Those concerns belong to later, explicitly designed features.
 preserve the currently available Terraform and uv versions while the image
 build is decoupled.
 
-The existing Dockerfile remains authoritative until the stack resolver and
-build integration are implemented and validated. Adding this definition alone
-does not change the built image.
+The Docker build runs the Python Stack Resolver in a dedicated temporary
+stage. The resolver validates the selected stack and emits normalized package,
+tool-version and environment artifacts consumed by the runtime image stage.
+The final image does not include the resolver stage or its PyYAML dependency.
 
 ## Explicit non-goals for schema version 1
 
