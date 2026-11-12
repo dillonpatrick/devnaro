@@ -346,12 +346,62 @@ def test_tools_add_does_not_add_already_installed_apk_package(monkeypatch, tmp_p
     assert manifest.read_text(encoding="utf-8") == ""
 
 
+def test_tools_add_rejects_package_missing_from_alpine(monkeypatch, tmp_path):
+    from devbox_manager import cli
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("# additional tools\\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+    monkeypatch.setattr(cli.shutil, "which", lambda command: None)
+
+    class NotInstalled:
+        returncode = 1
+
+    monkeypatch.setattr(cli.subprocess, "run", lambda *args, **kwargs: NotInstalled())
+    monkeypatch.setattr(cli, "available_alpine_packages", lambda packages: frozenset())
+
+    result = runner.invoke(app, ["tools", "add", "not-a-real-package"])
+
+    assert result.exit_code == 1
+    assert "Package not found" in result.stdout
+    assert "No manifest change was made" in result.stdout
+    assert manifest.read_text(encoding="utf-8") == "# additional tools\\n"
+
+
+def test_tools_add_fails_safely_when_alpine_lookup_fails(monkeypatch, tmp_path):
+    from devbox_manager import cli
+    from devbox_manager.alpine_packages import AlpinePackageSearchError
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+    monkeypatch.setattr(cli.shutil, "which", lambda command: None)
+
+    class NotInstalled:
+        returncode = 1
+
+    monkeypatch.setattr(cli.subprocess, "run", lambda *args, **kwargs: NotInstalled())
+
+    def fail_lookup(packages):
+        raise AlpinePackageSearchError("repository unavailable")
+
+    monkeypatch.setattr(cli, "available_alpine_packages", fail_lookup)
+
+    result = runner.invoke(app, ["tools", "add", "jq"])
+
+    assert result.exit_code == 1
+    assert "Package validation failed" in result.stdout
+    assert "repository unavailable" in result.stdout
+    assert manifest.read_text(encoding="utf-8") == ""
+
+
 def test_tools_add_updates_manifest_and_explains_recreate(monkeypatch, tmp_path):
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
     manifest.write_text("# additional tools\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+    monkeypatch.setattr(cli, "available_alpine_packages", lambda packages: frozenset({"jq"}))
 
     result = runner.invoke(app, ["tools", "add", "jq"])
 
