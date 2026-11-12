@@ -144,12 +144,6 @@ for subcommand_name in "${DEVBOX_HOST_SUBCOMMANDS_manager[@]}"; do
     subcommand_key="manager $subcommand_name"
     printf '  %-24s %s\n' "devbox $subcommand_key" "${DEVBOX_HOST_SUBCOMMAND_DESCRIPTIONS[$subcommand_key]}"
 done
-printf '  %-32s %s\n' 'dm status' 'Show DevBox container status'
-printf '  %-32s %s\n' 'dm doctor' 'Run environment health checks'
-printf '  %-32s %s\n' 'dm networks' 'List networks connected to DevBox'
-printf '  %-32s %s\n' 'dm tools search QUERY' 'Search official Alpine packages'
-printf '  %-32s %s\n' 'dm network-manager status' 'Show Network Manager status'
-printf '  %-32s %s\n' 'dm network-manager logs' 'Show Network Manager logs'
 printf '\n%bRepository tasks%b (run from the DevBox repository)\n' "${CYAN}${BOLD}" "$RESET"
 printf '  %-24s %s\n' 'make install' 'Install the host-side devbox command'
 printf '  %-24s %s\n' 'make uninstall' 'Remove DevBox from the host, preserving repository and workspace'
