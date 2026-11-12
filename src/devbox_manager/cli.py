@@ -597,6 +597,50 @@ def _registered_cli_commands(command=None, prefix: tuple[str, ...] = ()):
         yield usage, description
 
 
+def _completion_candidates(words: list[str]) -> list[str]:
+    """Return command names and options from the registered Typer command tree."""
+    command = get_command(app)
+    consumed: list[str] = []
+
+    while words:
+        current = words[0]
+        commands = getattr(command, "commands", None)
+        if not commands:
+            break
+
+        if current in commands:
+            consumed.append(current)
+            command = commands[current]
+            words = words[1:]
+            continue
+
+        return sorted(
+            name
+            for name in [*commands, "--help", "-h"]
+            if name.startswith(current)
+        )
+
+    if getattr(command, "commands", None):
+        return sorted([*command.commands, "--help", "-h"])
+
+    return sorted(
+        option
+        for parameter in command.params
+        for option in getattr(parameter, "opts", [])
+        if option.startswith(words[0] if words else "")
+    )
+
+
+@app.command("__complete", hidden=True, context_settings={
+    "allow_extra_args": True,
+    "ignore_unknown_options": True,
+})
+def _complete(ctx: typer.Context) -> None:
+    """Internal completion endpoint consumed by the Zsh integration."""
+    for candidate in _completion_candidates(list(ctx.args)):
+        typer.echo(candidate)
+
+
 @app.command()
 def welcome() -> None:
     """Display the DevBox welcome screen."""
