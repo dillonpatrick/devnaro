@@ -14,12 +14,13 @@ from devbox_manager.stack_resolver import (
 
 def valid_definition(**overrides):
     definition = {
-        "schema_version": 1,
+        "schema_version": 2,
         "name": "python-api",
         "description": "Python API development environment.",
-        "packages": {"alpine": ["git", "jq"]},
+        "base": {"distribution": "alpine", "version": "3.22"},
+        "packages": {"alpine": ["git", "jq"], "debian": ["git", "jq"]},
         "tools": {
-            "terraform": {"version": "1.17.1"},
+            "terraform": {"channel": "stable"},
             "uv": {"version": "0.13.7"},
         },
         "environment": {"APP_ENV": "development"},
@@ -31,35 +32,61 @@ def valid_definition(**overrides):
 def test_validate_stack_definition_returns_normalized_values():
     stack = validate_stack_definition(valid_definition())
     assert stack.name == "python-api"
-    assert stack.alpine_packages == ("git", "jq")
-    assert stack.tools == {"terraform": "1.17.1", "uv": "0.13.7"}
+    assert stack.distribution == "alpine"
+    assert stack.base_version == "3.22"
+    assert stack.base_image == "alpine:3.22"
+    assert stack.packages == {"alpine": ("git", "jq"), "debian": ("git", "jq")}
+    assert stack.tools == {
+        "terraform": {"channel": "stable"},
+        "uv": {"version": "0.13.7"},
+    }
     assert stack.environment == {"APP_ENV": "development"}
+
+
+def test_debian_base_uses_slim_variant():
+    definition = valid_definition(base={"distribution": "debian", "version": "trixie"})
+    stack = validate_stack_definition(definition)
+    assert stack.base_image == "debian:trixie-slim"
 
 
 def test_build_inputs_are_deterministic_and_plain_data():
     definition = valid_definition(
-        tools={"uv": {"version": "0.13.7"}, "terraform": {"version": "1.17.1"}},
+        tools={"uv": {"channel": "stable"}, "terraform": {"version": "1.17.1"}},
         environment={"Z_LAST": "last", "A_FIRST": "first"},
     )
     result = validate_stack_definition(definition).to_build_inputs()
     assert list(result["tools"]) == ["terraform", "uv"]
     assert list(result["environment"]) == ["A_FIRST", "Z_LAST"]
-    assert result["packages"] == {"alpine": ["git", "jq"]}
+    assert result["base"] == {
+        "distribution": "alpine",
+        "version": "3.22",
+        "image": "alpine:3.22",
+    }
+    assert result["packages"] == {
+        "alpine": ["git", "jq"],
+        "debian": ["git", "jq"],
+    }
 
 
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [
         ({"schema_version": True}, "schema_version"),
-        ({"schema_version": 2}, "Unsupported schema_version"),
+        ({"schema_version": 1}, "Unsupported schema_version"),
         ({"name": "Bad_Name"}, "name must contain"),
         ({"description": " "}, "description"),
+        ({"base": {"distribution": "ubuntu", "version": "24.04"}}, "Unsupported base distribution"),
+        ({"base": {"distribution": "alpine"}}, "base.distribution and base.version are required"),
+        ({"base": {"distribution": "alpine", "version": "../latest"}}, "Invalid base version"),
         ({"packages": {"alpine": "git"}}, "packages.alpine must be a list"),
         ({"packages": {"alpine": ["git", "../etc"]}}, "Invalid package name"),
-        ({"packages": {"alpine": ["git", "git"]}}, "Duplicate Alpine package"),
-        ({"tools": {"node": {"version": "22"}}}, "Unsupported tool"),
-        ({"tools": {"uv": {}}}, "version is required"),
+        ({"packages": {"alpine": ["git", "git"]}}, "Duplicate alpine package"),
+        ({"packages": {"apt": ["git"]}}, "Unknown field"),
+        ({"tools": {"node": {"channel": "lts"}}}, "Unsupported tool"),
+        ({"tools": {"uv": {}}}, "exactly one of version or channel"),
+        ({"tools": {"uv": {"version": "0.13.7", "channel": "stable"}}}, "exactly one of version or channel"),
         ({"tools": {"uv": {"version": "$LATEST"}}}, "Invalid version"),
+        ({"tools": {"uv": {"channel": "latest"}}}, "Unsupported channel"),
         ({"environment": {"lowercase": "value"}}, "Invalid environment variable"),
         ({"environment": {"APP_ENV": 1}}, "must be a string"),
         ({"environment": {"APP_ENV": "$HOME"}}, "unsupported expansion"),
@@ -89,14 +116,17 @@ def test_resolve_stack_loads_yaml_and_checks_directory_name(tmp_path):
     stack_dir.mkdir()
     stack_file = stack_dir / "stack.yaml"
     stack_file.write_text(
-        """schema_version: 1
+        """schema_version: 2
 name: python-api
 description: Python API development environment.
+base:
+  distribution: alpine
+  version: "3.22"
 packages:
   alpine: [git, jq]
 tools:
   uv:
-    version: "0.13.7"
+    channel: stable
 environment:
   APP_ENV: development
 """,
@@ -104,7 +134,8 @@ environment:
     )
     stack = resolve_stack(stack_file)
     assert stack.name == "python-api"
-    assert stack.alpine_packages == ("git", "jq")
+    assert stack.base_image == "alpine:3.22"
+    assert stack.packages["alpine"] == ("git", "jq")
 
 
 def test_resolve_stack_rejects_directory_name_mismatch(tmp_path):
@@ -112,9 +143,12 @@ def test_resolve_stack_rejects_directory_name_mismatch(tmp_path):
     stack_dir.mkdir()
     stack_file = stack_dir / "stack.yaml"
     stack_file.write_text(
-        """schema_version: 1
+        """schema_version: 2
 name: another-name
 description: Example.
+base:
+  distribution: alpine
+  version: "3.22"
 packages:
   alpine: []
 tools: {}
@@ -131,10 +165,13 @@ def test_resolve_stack_rejects_duplicate_yaml_keys(tmp_path):
     stack_dir.mkdir()
     stack_file = stack_dir / "stack.yaml"
     stack_file.write_text(
-        """schema_version: 1
+        """schema_version: 2
 name: duplicate
 name: overwritten
 description: Example.
+base:
+  distribution: alpine
+  version: "3.22"
 packages:
   alpine: []
 tools: {}
@@ -161,11 +198,15 @@ def test_write_build_inputs_creates_shell_safe_artifacts(tmp_path):
     )
     write_build_inputs(stack, tmp_path)
 
+    assert (tmp_path / "base-image").read_text() == "alpine:3.22\n"
     assert (tmp_path / "alpine-packages.txt").read_text() == "git\njq\n"
-    assert (tmp_path / "terraform-version").read_text() == "1.17.1\n"
+    assert (tmp_path / "debian-packages.txt").read_text() == "git\njq\n"
+    assert (tmp_path / "terraform-version").read_text() == "\n"
+    assert (tmp_path / "terraform-channel").read_text() == "stable\n"
     assert (tmp_path / "uv-version").read_text() == "0.13.7\n"
+    assert (tmp_path / "uv-channel").read_text() == "\n"
     assert (tmp_path / "stack-name").read_text() == "python-api\n"
     environment = (tmp_path / "environment.sh").read_text()
     assert "export APP_ENV='dev environment'" in environment
-    expected_label = shlex.quote("it\'s ready")
+    expected_label = shlex.quote("it\\'s ready")
     assert f"export APP_LABEL={expected_label}" in environment
