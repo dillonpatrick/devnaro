@@ -39,9 +39,13 @@ limitations before Multi-DevBox begins.
 
 - A `default` stack still exists and is currently selected implicitly.
 - Only `terraform` and `uv` are supported stack tools.
-- Stack package declarations support Alpine and Debian, but the Dockerfile
-  runtime build still installs only Alpine packages.
-- The runtime Dockerfile and Core package installation assume Alpine.
+- The Dockerfile now selects Alpine or Debian slim via `BASE_IMAGE` and has
+  distribution-specific Core package installation paths.
+- The selected `BASE_IMAGE` must currently be supplied explicitly and must
+  match the stack resolver's generated base-image value; automatic host-side
+  propagation from the stack definition is not implemented yet.
+- `dm tools search/add/list` still queries Alpine repositories and needs a
+  Debian-aware implementation before package-management parity is complete.
 - Tool versions are pinned manually; release-channel resolution is not implemented.
 - `docker/packages.txt` remains a global user package manifest.
 - Host CLI, Compose, Network Manager and VS Code bridge still assume one instance.
@@ -68,9 +72,10 @@ Status: completed and merged into `main`.
 
 ## Phase 2.5 — Curated development stacks
 
-Status: design agreed; schema v2 implemented on
-`feat/curated-development-stacks`. Multi-distribution Core installation and
-stack tool installers remain pending.
+Status: schema v2 and the first Alpine/Debian Core Dockerfile implementation
+are on `feat/curated-development-stacks`. Runtime builds still need local
+validation; package discovery remains Alpine-specific and stack tool
+installers remain pending.
 
 Agreed decisions:
 
@@ -100,8 +105,8 @@ Implementation sequence:
 
 1. [x] Revise stack schema for base distribution, distribution-specific
    packages and release channel declarations.
-2. Make Core installation work on Alpine and Debian without duplicating Core
-   behavior.
+2. [x] Add Alpine/Debian Core installation paths to the Dockerfile; local
+   build validation and package-search parity remain outstanding.
 3. Add supported installers and version resolvers for the curated toolsets.
 4. Add the four stack definitions and remove the implicit default selection.
 5. Update CLI/Compose startup to require an explicit stack selection.
