@@ -21,6 +21,13 @@ from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
 from devbox_manager.alpine_packages import AlpinePackageSearchError, search_alpine_packages
+from devbox_manager.packages_manifest import (
+    PackageManifestError,
+    PACKAGE_MANIFEST_PATH,
+    add_package,
+    read_manifest,
+    remove_package,
+)
 from typer.main import get_command
 
 configure_typer_help()
@@ -57,7 +64,7 @@ network_app = typer.Typer(
 )
 app.add_typer(network_app, name="network-manager")
 tools_app = typer.Typer(
-    help="Search official Alpine Linux package repositories.",
+    help="Search Alpine packages and manage additional image packages.",
     no_args_is_help=True,
     cls=DevBoxTyperGroup,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -99,6 +106,73 @@ def tools_search(query: str = typer.Argument(..., help="Text to search Alpine pa
         "Alpine package search",
         table if packages else "[muted]No matching Alpine packages found.[/muted]",
         subtitle=f"{len(packages)} package(s) · Official Alpine main + community repositories",
+    )
+
+
+def _render_manifest_updated(action: str, package: str) -> None:
+    """Explain that manifest changes require a host-side image recreation."""
+    render_panel(
+        console,
+        "Package manifest updated",
+        f"[success]{action} {package}.[/success]\\n\\n"
+        "[warning]Changes take effect only after running this command on the host:[/warning]\\n"
+        "[accent]devbox recreate[/accent]",
+    )
+
+
+@tools_app.command("add")
+def tools_add(package: str = typer.Argument(..., help="Alpine package name to add to the image.")) -> None:
+    """Add an Alpine package to the image manifest."""
+    try:
+        changed = add_package(package, PACKAGE_MANIFEST_PATH)
+    except PackageManifestError as error:
+        render_panel(console, "Package manifest update failed", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+
+    if changed:
+        _render_manifest_updated("Added", package)
+    else:
+        render_panel(console, "Package already declared", f"[muted]{package} is already in the manifest.[/muted]")
+
+
+@tools_app.command("remove")
+def tools_remove(package: str = typer.Argument(..., help="Alpine package name to remove from the image.")) -> None:
+    """Remove an Alpine package from the image manifest."""
+    try:
+        changed = remove_package(package, PACKAGE_MANIFEST_PATH)
+    except PackageManifestError as error:
+        render_panel(console, "Package manifest update failed", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+
+    if changed:
+        _render_manifest_updated("Removed", package)
+    else:
+        render_panel(
+            console,
+            "Package not declared",
+            f"[warning]{package} is not present in the manifest.[/warning]",
+        )
+        raise typer.Exit(code=1)
+
+
+@tools_app.command("list")
+def tools_list() -> None:
+    """List additional packages declared for the next image build."""
+    try:
+        packages = read_manifest(PACKAGE_MANIFEST_PATH)
+    except PackageManifestError as error:
+        render_panel(console, "Package manifest read failed", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+
+    if packages:
+        content = "\\n".join(f"[info]•[/info] {package}" for package in packages)
+    else:
+        content = "[muted]No additional packages declared.[/muted]"
+    render_panel(
+        console,
+        "Additional image packages",
+        content,
+        subtitle=f"{len(packages)} package(s) · Applied after devbox recreate",
     )
 
 
