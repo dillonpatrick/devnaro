@@ -140,9 +140,10 @@ printf '\n%bHost commands%b\n' "${CYAN}${BOLD}" "$RESET"
 for command_name in "${DEVBOX_HOST_COMMANDS[@]}"; do
     printf '  %-24s %s\n' "devbox $command_name" "${DEVBOX_HOST_COMMAND_DESCRIPTIONS[$command_name]}"
 done
-printf '  %-24s %s\n' 'devbox manager status' 'Show Network Manager process status'
-printf '  %-24s %s\n' 'devbox manager logs' 'Show Network Manager logs'
-printf '\n%bInside the container%b\n' "${CYAN}${BOLD}" "$RESET"
+for subcommand_name in "${DEVBOX_HOST_SUBCOMMANDS_manager[@]}"; do
+    subcommand_key="manager $subcommand_name"
+    printf '  %-24s %s\n' "devbox $subcommand_key" "${DEVBOX_HOST_SUBCOMMAND_DESCRIPTIONS[$subcommand_key]}"
+done
 printf '  %-32s %s\n' 'dm status' 'Show DevBox container status'
 printf '  %-32s %s\n' 'dm doctor' 'Run environment health checks'
 printf '  %-32s %s\n' 'dm networks' 'List networks connected to DevBox'
