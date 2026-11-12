@@ -16,7 +16,7 @@ from devbox_manager.packages_manifest import (
 )
 
 SCHEMA_VERSION = 2
-SUPPORTED_DISTRIBUTIONS = frozenset({"alpine", "debian"})
+SUPPORTED_DISTRIBUTIONS = frozenset({"debian"})
 SUPPORTED_TOOLS = frozenset({"terraform", "uv"})
 SUPPORTED_CHANNELS = frozenset({"lts", "stable"})
 STACK_FILENAME = "stack.yaml"
@@ -76,8 +76,6 @@ class StackDefinition:
     @property
     def base_image(self) -> str:
         """Return the minimal supported official base image reference."""
-        if self.distribution == "alpine":
-            return f"alpine:{self.base_version}"
         return f"debian:{self.base_version}-slim"
 
     def to_build_inputs(self) -> dict[str, Any]:
