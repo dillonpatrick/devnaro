@@ -37,7 +37,7 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     assert result.exit_code == 0
     assert "DevBox info" in result.stdout
     assert "Stack" in result.stdout
-    assert "Alpine Linux" in result.stdout
+    assert "Debian" in result.stdout
     assert "Terraform" in result.stdout
     assert "Docker Compose" in result.stdout
     assert "Path" in result.stdout
@@ -111,7 +111,7 @@ def test_welcome_commands_come_from_registered_typer_tree():
     assert "dm network-manager logs" in commands
     assert "dm tools search QUERY" in commands
     assert all("__complete" not in usage for usage in commands)
-    assert "Search official Alpine Linux repositories for available packages." in commands[
+    assert "Search official Debian repositories for available packages." in commands[
         "dm tools search QUERY"
     ]
 
@@ -195,51 +195,51 @@ def test_network_manager_status_shows_explained_process_details(monkeypatch):
 
 
 
-def test_tools_search_queries_external_alpine_packages(monkeypatch):
+def test_tools_search_queries_external_debian_packages(monkeypatch):
     from devbox_manager import cli
-    from devbox_manager.alpine_packages import AlpinePackage
+    from devbox_manager.debian_packages import DebianPackage
 
     monkeypatch.setattr(
         cli,
-        "search_alpine_packages",
+        "search_debian_packages",
         lambda query: (
-            AlpinePackage(
+            DebianPackage(
                 name="terraform",
                 version="1.9.8-r0",
                 description="Infrastructure as Code tool",
-                repository="community",
+                repository="Debian APT",
                 architecture="x86_64",
-                alpine_version="3.22",
+                repository="Debian APT",
             ),
         ),
     )
     result = runner.invoke(app, ["tools", "search", "terraform"])
 
     assert result.exit_code == 0
-    assert "Alpine package search" in result.stdout
+    assert "Debian package search" in result.stdout
     assert "terraform" in result.stdout
     assert "1.9.8-r0" in result.stdout
-    assert "community" in result.stdout
+    assert "Debian APT" in result.stdout
 
 
 def test_tools_search_reports_no_external_matches(monkeypatch):
     from devbox_manager import cli
 
-    monkeypatch.setattr(cli, "search_alpine_packages", lambda query: ())
+    monkeypatch.setattr(cli, "search_debian_packages", lambda query: ())
     result = runner.invoke(app, ["tools", "search", "no-such-tool"])
 
     assert result.exit_code == 0
-    assert "No matching Alpine packages found" in result.stdout
+    assert "No matching Debian packages found" in result.stdout
 
 
 def test_tools_search_reports_network_errors(monkeypatch):
     from devbox_manager import cli
-    from devbox_manager.alpine_packages import AlpinePackageSearchError
+    from devbox_manager.debian_packages import DebianPackageSearchError
 
     def fail_search(query):
-        raise AlpinePackageSearchError("repository unavailable")
+        raise DebianPackageSearchError("repository unavailable")
 
-    monkeypatch.setattr(cli, "search_alpine_packages", fail_search)
+    monkeypatch.setattr(cli, "search_debian_packages", fail_search)
     result = runner.invoke(app, ["tools", "search", "terraform"])
 
     assert result.exit_code == 1
@@ -256,7 +256,7 @@ def test_tools_help_lists_search_and_manifest_management():
     assert "list" in result.stdout
 
 
-def test_tools_list_shows_only_packages_available_in_alpine(monkeypatch, tmp_path):
+def test_tools_list_shows_only_packages_available_in_debian(monkeypatch, tmp_path):
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
@@ -267,7 +267,7 @@ def test_tools_list_shows_only_packages_available_in_alpine(monkeypatch, tmp_pat
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
     monkeypatch.setattr(
         cli,
-        "available_alpine_packages",
+        "available_debian_packages",
         lambda packages: frozenset({"nodejs", "opentofu"}),
     )
     monkeypatch.setattr(
@@ -301,16 +301,16 @@ def test_tools_list_shows_only_packages_available_in_alpine(monkeypatch, tmp_pat
 
 def test_tools_list_reports_repository_validation_errors(monkeypatch, tmp_path):
     from devbox_manager import cli
-    from devbox_manager.alpine_packages import AlpinePackageSearchError
+    from devbox_manager.debian_packages import DebianPackageSearchError
 
     manifest = tmp_path / "packages.txt"
     manifest.write_text("nodejs\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
 
     def fail_lookup(packages):
-        raise AlpinePackageSearchError("repository unavailable")
+        raise DebianPackageSearchError("repository unavailable")
 
-    monkeypatch.setattr(cli, "available_alpine_packages", fail_lookup)
+    monkeypatch.setattr(cli, "available_debian_packages", fail_lookup)
     rendered = {}
     monkeypatch.setattr(
         cli,
@@ -342,7 +342,7 @@ def test_tools_add_does_not_add_image_provided_uv(monkeypatch, tmp_path):
     assert manifest.read_text(encoding="utf-8") == "# additional tools\n"
 
 
-def test_tools_add_does_not_add_already_installed_apk_package(monkeypatch, tmp_path):
+def test_tools_add_does_not_add_already_installed_debian_package(monkeypatch, tmp_path):
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
@@ -362,7 +362,7 @@ def test_tools_add_does_not_add_already_installed_apk_package(monkeypatch, tmp_p
     assert manifest.read_text(encoding="utf-8") == ""
 
 
-def test_tools_add_rejects_package_missing_from_alpine(monkeypatch, tmp_path):
+def test_tools_add_rejects_package_missing_from_debian(monkeypatch, tmp_path):
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
@@ -374,7 +374,7 @@ def test_tools_add_rejects_package_missing_from_alpine(monkeypatch, tmp_path):
         returncode = 1
 
     monkeypatch.setattr(cli.subprocess, "run", lambda *args, **kwargs: NotInstalled())
-    monkeypatch.setattr(cli, "available_alpine_packages", lambda packages: frozenset())
+    monkeypatch.setattr(cli, "available_debian_packages", lambda packages: frozenset())
     rendered = {}
     monkeypatch.setattr(
         cli,
@@ -392,9 +392,9 @@ def test_tools_add_rejects_package_missing_from_alpine(monkeypatch, tmp_path):
     assert manifest.read_text(encoding="utf-8") == "# additional tools\n"
 
 
-def test_tools_add_fails_safely_when_alpine_lookup_fails(monkeypatch, tmp_path):
+def test_tools_add_fails_safely_when_debian_lookup_fails(monkeypatch, tmp_path):
     from devbox_manager import cli
-    from devbox_manager.alpine_packages import AlpinePackageSearchError
+    from devbox_manager.debian_packages import DebianPackageSearchError
 
     manifest = tmp_path / "packages.txt"
     manifest.write_text("", encoding="utf-8")
@@ -407,9 +407,9 @@ def test_tools_add_fails_safely_when_alpine_lookup_fails(monkeypatch, tmp_path):
     monkeypatch.setattr(cli.subprocess, "run", lambda *args, **kwargs: NotInstalled())
 
     def fail_lookup(packages):
-        raise AlpinePackageSearchError("repository unavailable")
+        raise DebianPackageSearchError("repository unavailable")
 
-    monkeypatch.setattr(cli, "available_alpine_packages", fail_lookup)
+    monkeypatch.setattr(cli, "available_debian_packages", fail_lookup)
     rendered = {}
     monkeypatch.setattr(
         cli,
@@ -433,7 +433,7 @@ def test_tools_add_updates_manifest_and_explains_recreate(monkeypatch, tmp_path)
     manifest = tmp_path / "packages.txt"
     manifest.write_text("# additional tools\n", encoding="utf-8")
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
-    monkeypatch.setattr(cli, "available_alpine_packages", lambda packages: frozenset({"jq"}))
+    monkeypatch.setattr(cli, "available_debian_packages", lambda packages: frozenset({"jq"}))
 
     result = runner.invoke(app, ["tools", "add", "jq"])
 
