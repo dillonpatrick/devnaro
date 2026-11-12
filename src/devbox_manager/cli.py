@@ -261,7 +261,7 @@ def info() -> None:
         ("Zsh", "zsh"),
         ("Bash", "bash"),
     ]
-    reported: set[str] = set()
+    reported: set[str] = {"devbox-manager"}
     discovered_tools: list[tuple[str, str, str]] = []
 
     for label, executable in known_tools:
@@ -582,6 +582,9 @@ def _registered_cli_commands(command=None, prefix: tuple[str, ...] = ()):
     command = command or get_command(app)
     for name, child in command.commands.items():
         path = (*prefix, name)
+        if getattr(child, "hidden", False):
+            continue
+
         nested_commands = getattr(child, "commands", None)
         if nested_commands:
             yield from _registered_cli_commands(child, path)
