@@ -124,10 +124,43 @@ def _render_manifest_updated(action: str, package: str) -> None:
     )
 
 
+def _is_image_provided_tool(package: str) -> bool:
+    """Return whether a package is already provided by the base DevBox image."""
+    image_managed_commands = {
+        "terraform": "terraform",
+        "uv": "uv",
+    }
+    command = image_managed_commands.get(package)
+    if command and shutil.which(command):
+        return True
+
+    try:
+        result = subprocess.run(
+            ["apk", "info", "-e", package],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+    return result.returncode == 0
+
+
 @tools_app.command("add")
 def tools_add(package: str = typer.Argument(..., help="Alpine package name to add to the image.")) -> None:
     """Add an Alpine package to the image manifest."""
     try:
+        normalized = package.strip()
+        if _is_image_provided_tool(normalized):
+            render_panel(
+                console,
+                "Package already provided",
+                f"[muted]{normalized} is already installed in the DevBox image. No manifest change was made.[/muted]",
+            )
+            return
+
         changed = add_package(package, PACKAGE_MANIFEST_PATH)
     except PackageManifestError as error:
         render_panel(console, "Package manifest update failed", f"[error]{error}[/error]", border_style="error")
@@ -137,7 +170,6 @@ def tools_add(package: str = typer.Argument(..., help="Alpine package name to ad
         _render_manifest_updated("Added", package)
     else:
         render_panel(console, "Package already declared", f"[muted]{package} is already in the manifest.[/muted]")
-
 
 @tools_app.command("remove")
 def tools_remove(package: str = typer.Argument(..., help="Alpine package name to remove from the image.")) -> None:
@@ -161,7 +193,7 @@ def tools_remove(package: str = typer.Argument(..., help="Alpine package name to
 
 @tools_app.command("list")
 def tools_list() -> None:
-    """List additional packages declared for the next image build."""
+    """List declared packages and their status in the DevBox image."""
     try:
         packages = read_manifest(PACKAGE_MANIFEST_PATH)
     except PackageManifestError as error:
@@ -179,13 +211,30 @@ def tools_list() -> None:
         )
         raise typer.Exit(code=1) from error
 
-    package_lines = (
-        [f"[info]•[/info] {package}" for package in packages if package in valid_packages]
-        if valid_packages
-        else ["[muted]No valid additional packages found.[/muted]"]
-    )
+    package_lines = []
+    installed_count = 0
+    available_count = 0
+    unavailable_count = 0
+
+    for package in packages:
+        if _is_image_provided_tool(package):
+            package_lines.append(f"[success]✓[/success] {package} [muted](Already installed)[/muted]")
+            installed_count += 1
+        elif package in valid_packages:
+            package_lines.append(f"[info]•[/info] {package} [muted](Available)[/muted]")
+            available_count += 1
+        else:
+            package_lines.append(f"[error]✗[/error] {package} [muted](Unavailable)[/muted]")
+            unavailable_count += 1
+
+    if not package_lines:
+        package_lines.append("[muted]No additional packages declared.[/muted]")
+
     package_lines.extend(
         [
+            "",
+            "[success]Already installed[/success] · "
+            "[info]Available[/info] · [error]Unavailable[/error]",
             "",
             "[warning]Run on the host to apply changes:[/warning]",
             "[accent]devbox recreate[/accent]",
@@ -195,7 +244,10 @@ def tools_list() -> None:
         console,
         "Additional image packages",
         "\n".join(package_lines),
-        subtitle=f"{len(valid_packages)} valid package(s)",
+        subtitle=(
+            f"{installed_count} installed · {available_count} available · "
+            f"{unavailable_count} unavailable"
+        ),
     )
 
 
