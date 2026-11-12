@@ -60,7 +60,7 @@ RUN set -eu; \
         else \
             warning="WARNING: Alpine package '$package' was not found; skipping."; \
             printf '%s\n' "$warning" >&2; \
-            printf '%s\\n' "$warning" >> /opt/devbox-config/package-warnings.txt; \
+            printf '%s\n' "$warning" >> /opt/devbox-config/package-warnings.txt; \
         fi; \
     done < /tmp/devbox-extra-packages; \
     if [ "$#" -gt 0 ]; then apk add --no-cache "$@"; fi; \
@@ -117,8 +117,8 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \
     && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc \
     && sed -i 's/^plugins=(git)$/plugins=(git docker terraform uv)/' /home/${USERNAME}/.zshrc \
-    && printf '\n# Zsh autosuggestions\\nsource /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\\n' >> /home/${USERNAME}/.zshrc \
-    && printf '\\n# Zsh syntax highlighting\\nsource /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh\\n' >> /home/${USERNAME}/.zshrc \
+    && printf '\n# Zsh autosuggestions\nsource /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\n' >> /home/${USERNAME}/.zshrc \
+    && printf '\n# Zsh syntax highlighting\nsource /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh\n' >> /home/${USERNAME}/.zshrc \
     && test "$(git -C /home/${USERNAME}/.oh-my-zsh rev-parse HEAD)" = "${OH_MY_ZSH_COMMIT}" \
     && if [ -x /opt/uv-venv/bin/uv ]; then /opt/uv-venv/bin/uv --version; fi
 
