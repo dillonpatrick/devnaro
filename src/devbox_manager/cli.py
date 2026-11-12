@@ -616,12 +616,12 @@ def _completion_candidates(words: list[str]) -> list[str]:
 
         return sorted(
             name
-            for name in [*commands, "--help", "-h"]
+            for name in commands
             if name.startswith(current)
         )
 
     if getattr(command, "commands", None):
-        return sorted([*command.commands, "--help", "-h"])
+        return sorted(command.commands)
 
     return sorted(
         option
