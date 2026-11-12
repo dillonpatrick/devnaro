@@ -12,7 +12,7 @@ func TestLoadContainersJSONArray(t *testing.T) {
 }
 
 func TestLoadContainersNewlineDelimited(t *testing.T) {
-	got, err := loadContainers(strings.NewReader("{\"Name\":\"one\"}\n{\"Name\":\"two\"}\n"))
+	got, err := loadContainers(strings.NewReader("{"Name":"one"}\n{"Name":"two"}\n"))
 	if err != nil { t.Fatal(err) }
 	if len(got) != 2 { t.Fatalf("expected 2 containers, got %d", len(got)) }
 }
