@@ -22,9 +22,7 @@ info "Stopping DevBox container..."
 DEVBOX_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
-docker compose --project-directory "$DEVBOX_DIR" \
-    -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-    -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" stop devbox
+bash "$DEVBOX_DIR/scripts/host/compose.sh" stop devbox
 
 echo
 success "DevBox container stopped."
