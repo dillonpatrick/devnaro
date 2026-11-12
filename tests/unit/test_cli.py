@@ -122,7 +122,7 @@ def test_completion_candidates_follow_registered_command_tree():
     assert "tools" in _completion_candidates([""])
     assert "__complete" not in _completion_candidates([""])
     assert _completion_candidates(["__"]) == []
-    assert _completion_candidates(["tools", ""]) == ["search"]
+    assert _completion_candidates(["tools", ""]) == ["add", "list", "remove", "search"]
     assert _completion_candidates(["network-manager", ""]) == ["logs", "status"]
 
 
@@ -130,7 +130,7 @@ def test_hidden_completion_command_returns_candidates():
     result = runner.invoke(app, ["__complete", "--", "tools", ""])
 
     assert result.exit_code == 0
-    assert result.stdout.splitlines() == ["search"]
+    assert result.stdout.splitlines() == ["add", "list", "remove", "search"]
 
 
 def test_cli_version():
