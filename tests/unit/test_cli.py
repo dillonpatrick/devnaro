@@ -208,8 +208,6 @@ def test_tools_search_queries_external_debian_packages(monkeypatch):
                 version="1.9.8-r0",
                 description="Infrastructure as Code tool",
                 repository="Debian APT",
-                architecture="x86_64",
-                repository="Debian APT",
             ),
         ),
     )
