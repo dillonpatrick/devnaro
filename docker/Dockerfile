@@ -54,7 +54,7 @@ RUN set -eu; \
     awk '
         /^[[:space:]]*($|#)/ { next }
         NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ {
-            printf "Invalid package entry at line %d: %s\\n", NR, $0 > "/dev/stderr";
+            printf "Invalid package entry at line %d: %s\n", NR, $0 > "/dev/stderr";
             exit 1;
         }
         { print $1 }
