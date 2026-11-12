@@ -51,14 +51,7 @@ RUN apk add --no-cache \
 
 # Install user-selected additional Alpine packages from the tracked manifest.
 RUN set -eu; \
-    awk '
-        /^[[:space:]]*($|#)/ { next }
-        NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ {
-            printf "Invalid package entry at line %d: %s\n", NR, $0 > "/dev/stderr";
-            exit 1;
-        }
-        { print $1 }
-    ' /tmp/devbox-packages.txt > /tmp/devbox-extra-packages; \
+    awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { printf "Invalid package entry at line %d: %s\\n", NR, $0 > "/dev/stderr"; exit 1 } { print $1 }' /tmp/devbox-packages.txt > /tmp/devbox-extra-packages; \
     if [ -s /tmp/devbox-extra-packages ]; then \
         xargs apk add --no-cache < /tmp/devbox-extra-packages; \
     fi; \
