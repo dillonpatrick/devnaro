@@ -36,7 +36,7 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
 
     assert result.exit_code == 0
     assert "DevBox info" in result.stdout
-    assert "APK PACKAGES" in result.stdout
+    assert "DEVBOX DEFAULT PACKAGES" in result.stdout
     assert "AVAILABLE EXECUTABLES" in result.stdout
     assert "Stack" in result.stdout
     assert "Alpine Linux" in result.stdout
