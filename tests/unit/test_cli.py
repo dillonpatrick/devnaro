@@ -53,6 +53,55 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     assert "Docker Engine" in result.stdout
     assert "VS Code bridge" in result.stdout
 
+
+def test_installed_apk_packages_returns_sorted_unique_entries(monkeypatch):
+    from types import SimpleNamespace
+    from devbox_manager import cli
+
+    monkeypatch.setattr(
+        cli.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=0,
+            stdout="zlib-1.3.1-r1\nbusybox-1.37.0-r12\nzlib-1.3.1-r1\n",
+            stderr="",
+        ),
+    )
+
+    assert cli._installed_apk_packages() == [
+        "busybox-1.37.0-r12",
+        "zlib-1.3.1-r1",
+    ]
+
+
+def test_installed_apk_packages_handles_missing_apk(monkeypatch):
+    from devbox_manager import cli
+
+    def raise_missing(*args, **kwargs):
+        raise FileNotFoundError
+
+    monkeypatch.setattr(cli.subprocess, "run", raise_missing)
+
+    assert cli._installed_apk_packages() == []
+
+
+def test_installed_apk_packages_handles_nonzero_exit(monkeypatch):
+    from types import SimpleNamespace
+    from devbox_manager import cli
+
+    monkeypatch.setattr(
+        cli.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=1,
+            stdout="",
+            stderr="apk database unavailable",
+        ),
+    )
+
+    assert cli._installed_apk_packages() == []
+
+
 def test_cli_help():
     result = runner.invoke(app, ["--help"])
 
