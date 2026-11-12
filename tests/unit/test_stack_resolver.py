@@ -1,5 +1,7 @@
 """Tests for declarative DevBox stack definitions."""
 
+import shlex
+
 import pytest
 
 from devbox_manager.stack_resolver import (
@@ -165,4 +167,4 @@ def test_write_build_inputs_creates_shell_safe_artifacts(tmp_path):
     assert (tmp_path / "stack-name").read_text() == "python-api\n"
     environment = (tmp_path / "environment.sh").read_text()
     assert "export APP_ENV='dev environment'" in environment
-    assert "export APP_LABEL='it'\\''s ready'" in environment
+    assert f"export APP_LABEL={shlex.quote("it's ready")}" in environment
