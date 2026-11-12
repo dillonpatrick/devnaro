@@ -5,7 +5,7 @@ description: Temporary compatibility stack during schema migration.
 
 base:
   distribution: debian
-  version: "3.22"
+  version: "trixie"
 
 packages:
   debian: []
