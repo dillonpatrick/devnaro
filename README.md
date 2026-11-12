@@ -188,6 +188,31 @@ Use `devbox clean` only when you intentionally want to remove DevBox's persisted
 
 ## Inside the container
 
+DevBox runs interactive sessions as an unprivileged user. The `sudo` command is not installed, and the default user cannot install Alpine packages with `apk add`. This is intentional: development tools and system dependencies should be part of the reproducible DevBox image rather than installed manually into a running container.
+
+### Add system packages or development tools
+
+To make an additional Alpine package available in DevBox, edit the package list in the `RUN apk add --no-cache` section of `docker/Dockerfile`. For example, add `jq` on its own line:
+
+```dockerfile
+RUN apk add --no-cache \\
+    bash \\
+    ca-certificates \\
+    curl \\
+    jq \\
+    # ...the remaining packages
+```
+
+Then recreate DevBox:
+
+```bash
+devbox recreate
+```
+
+This rebuilds the image and recreates the container while preserving the `devbox_home` volume and workspace. The new package will be available in the next container session. Do not install `sudo` just to work around the default user permissions; declare the tools you need in the Dockerfile instead.
+
+For tools that are not available as Alpine packages, add their installation steps to the Dockerfile as part of the image build. Keep build-time dependencies and temporary files out of the final image when they are not needed at runtime.
+
 After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 
 Every interactive Zsh prompt inside the container uses a compact two-line DevBox theme: a green `DEVBOX` identity, the current directory in cyan, the active Git branch, and a green prompt symbol. The host terminal prompt is not changed. The welcome panel and Python CLI use the same cyan/green visual language.
