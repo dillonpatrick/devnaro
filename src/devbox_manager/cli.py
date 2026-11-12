@@ -8,6 +8,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import click
 import typer
 from docker.errors import DockerException, NotFound
 from rich import box
@@ -21,6 +22,7 @@ from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
 from devbox_manager.alpine_packages import AlpinePackageSearchError, search_alpine_packages
+from typer.main import get_command
 
 configure_typer_help()
 
@@ -576,6 +578,26 @@ def network_manager_logs(
     )
 
 
+def _registered_cli_commands(command=None, prefix: tuple[str, ...] = ()):
+    """Yield command usage and help directly from the registered Typer command tree."""
+    command = command or get_command(app)
+    for name, child in command.commands.items():
+        path = (*prefix, name)
+        nested_commands = getattr(child, "commands", None)
+        if nested_commands:
+            yield from _registered_cli_commands(child, path)
+            continue
+
+        arguments = [
+            parameter.name.upper()
+            for parameter in child.params
+            if isinstance(parameter, click.Argument)
+        ]
+        usage = " ".join(("dm", *path, *arguments))
+        description = child.help or child.short_help or ""
+        yield usage, description
+
+
 @app.command()
 def welcome() -> None:
     """Display the DevBox welcome screen."""
@@ -601,13 +623,8 @@ def welcome() -> None:
     commands.add_column(style="accent", no_wrap=True)
     commands.add_column(style="muted")
     commands.add_row("code .", "Open current project in VS Code")
-    commands.add_row("dm info", "DevBox stack and installed tools")
-    commands.add_row("dm tools search QUERY", "Search official Alpine packages")
-    commands.add_row("dm status", "Container status")
-    commands.add_row("dm doctor", "Environment health checks")
-    commands.add_row("dm networks", "Docker networks")
-    commands.add_row("dm network-manager status", "Network Manager status")
-    commands.add_row("dm network-manager logs", "Network Manager logs")
+    for command_usage, description in _registered_cli_commands():
+        commands.add_row(command_usage, description)
     commands.add_row("docker ps", "Running containers")
     commands.add_row("docker compose up -d", "Start project services")
 
