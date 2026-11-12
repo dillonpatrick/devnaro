@@ -44,6 +44,8 @@ RUN mkdir -p /opt/devbox-config \
     && touch /opt/devbox-config/packages.txt /opt/devbox-config/package-warnings.txt
 
 COPY --from=stack-resolver /out/ /opt/devbox-config/stack/
+RUN test "$(cat /opt/devbox-config/stack/base-image)" = "$BASE_IMAGE" \\
+    || { echo "BASE_IMAGE does not match the selected stack definition." >&2; exit 1; }
 COPY docker/packages.txt /tmp/devbox-user-packages.txt
 
 # Install only runtime requirements for the DevBox Core.
@@ -52,7 +54,7 @@ RUN set -eux; \
     if [ -f /etc/alpine-release ]; then \
       apk add --no-cache \
         bash ca-certificates curl docker-cli docker-cli-compose git gnupg \
-        nano procps python3 py3-pip py3-setuptools unzip wget zsh \
+        nano procps python3 py3-pip py3-setuptools zsh \
         zsh-autosuggestions zsh-syntax-highlighting; \
       python3 --version | grep -E '^Python 3\\.12\\.'; \
     elif [ -f /etc/debian_version ]; then \
@@ -61,7 +63,7 @@ RUN set -eux; \
       apt-get update; \
       apt-get install -y --no-install-recommends \
         bash ca-certificates curl git gnupg nano procps python3 python3-pip \
-        python3-venv unzip wget zsh zsh-autosuggestions zsh-syntax-highlighting; \
+        python3-venv zsh zsh-autosuggestions zsh-syntax-highlighting; \
       install -m 0755 -d /etc/apt/keyrings; \
       curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
       chmod a+r /etc/apt/keyrings/docker.asc; \
@@ -105,9 +107,13 @@ RUN set -eux; \
     if [ -n "$TERRAFORM_VERSION" ]; then \
       case "$TARGETARCH" in amd64) TERRAFORM_ARCH=amd64 ;; arm64) TERRAFORM_ARCH=arm64 ;; *) echo "Unsupported Terraform architecture: $TARGETARCH" >&2; exit 1 ;; esac; \
       if command -v apk >/dev/null 2>&1; then TOOL_ARCH="$TERRAFORM_ARCH"; else TOOL_ARCH="$TERRAFORM_ARCH"; fi; \
+      if command -v apk >/dev/null 2>&1; then apk add --no-cache unzip wget; \
+      else apt-get update && apt-get install -y --no-install-recommends unzip wget; fi; \
       wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TOOL_ARCH}.zip" -O /tmp/terraform.zip; \
       unzip /tmp/terraform.zip -d /usr/local/bin; rm /tmp/terraform.zip; \
       terraform version | grep -F "Terraform v${TERRAFORM_VERSION}"; \
+      if command -v apk >/dev/null 2>&1; then apk del unzip wget; \
+      else apt-get purge -y unzip wget && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*; fi; \
     fi
 
 # Keep the bootstrap uv private to DevBox; install the stack's uv separately.
