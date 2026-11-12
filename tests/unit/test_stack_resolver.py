@@ -208,5 +208,5 @@ def test_write_build_inputs_creates_shell_safe_artifacts(tmp_path):
     assert (tmp_path / "stack-name").read_text() == "python-api\n"
     environment = (tmp_path / "environment.sh").read_text()
     assert "export APP_ENV='dev environment'" in environment
-    expected_label = shlex.quote("it\\'s ready")
+    expected_label = shlex.quote("it's ready")
     assert f"export APP_LABEL={expected_label}" in environment
