@@ -59,7 +59,7 @@ print_command() {
 }
 
 usage() {
-    printf "\\n%b╭%s╮%b\\n" "$CYAN" "$HELP_BORDER" "$RESET"
+    printf "\n%b╭%s╮%b\\n" "$CYAN" "$HELP_BORDER" "$RESET"
     print_box_line "DevBox - Docker development environment" \
         "${BOLD}${CYAN}DevBox${RESET} ${DIM}- Docker development environment${RESET}"
     printf "%b├%s┤%b\\n" "$CYAN" "$HELP_BORDER" "$RESET"
