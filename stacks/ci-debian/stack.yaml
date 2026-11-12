@@ -1,0 +1,20 @@
+schema_version: 2
+
+name: ci-debian
+description: Internal Debian base image fixture used by CI only.
+
+base:
+  distribution: debian
+  version: trixie
+
+packages:
+  debian:
+    - jq
+
+tools:
+  terraform:
+    version: "1.17.1"
+  uv:
+    version: "0.13.7"
+
+environment: {}
