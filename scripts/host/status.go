@@ -99,21 +99,77 @@ func statusColor(state string) string {
 }
 
 func ports(items []publisher) string {
-	if len(items) == 0 { return "None" }
-	values := make([]string, 0, len(items))
-	for _, p := range items {
-		proto := p.Protocol
-		if proto == "" { proto = "tcp" }
-		host := p.URL
-		if host == "" { host = "0.0.0.0" }
-		if p.PublishedPort > 0 {
-			values = append(values, fmt.Sprintf("%s:%d->%d/%s", host, p.PublishedPort, p.TargetPort, proto))
-		} else {
-			values = append(values, fmt.Sprintf("%d/%s", p.TargetPort, proto))
-		}
+	if len(items) == 0 {
+		return "None"
 	}
-	sort.Strings(values)
-	return strings.Join(values, ",  ")
+
+	// Sort by host/protocol and then by published/target port so only
+	// genuinely consecutive mappings are combined into ranges.
+	sorted := append([]publisher(nil), items...)
+	sort.Slice(sorted, func(i, j int) bool {
+		a, b := sorted[i], sorted[j]
+		if a.URL != b.URL { return a.URL < b.URL }
+		if a.Protocol != b.Protocol { return a.Protocol < b.Protocol }
+		if a.PublishedPort != b.PublishedPort { return a.PublishedPort < b.PublishedPort }
+		return a.TargetPort < b.TargetPort
+	})
+
+	type portRange struct {
+		host, protocol string
+		publishedStart, publishedEnd int
+		targetStart, targetEnd int
+		published bool
+	}
+	ranges := make([]portRange, 0, len(sorted))
+
+	for _, item := range sorted {
+		proto := item.Protocol
+		if proto == "" { proto = "tcp" }
+		host := item.URL
+		if host == "" { host = "0.0.0.0" }
+
+		current := portRange{
+			host: host,
+			protocol: proto,
+			publishedStart: item.PublishedPort,
+			publishedEnd: item.PublishedPort,
+			targetStart: item.TargetPort,
+			targetEnd: item.TargetPort,
+			published: item.PublishedPort > 0,
+		}
+
+		if len(ranges) > 0 {
+			last := &ranges[len(ranges)-1]
+			consecutive := current.published &&
+				last.published &&
+				current.host == last.host &&
+				current.protocol == last.protocol &&
+				current.publishedStart == last.publishedEnd+1 &&
+				current.targetStart == last.targetEnd+1
+			if consecutive {
+				last.publishedEnd = current.publishedEnd
+				last.targetEnd = current.targetEnd
+				continue
+			}
+		}
+		ranges = append(ranges, current)
+	}
+
+	formatted := make([]string, 0, len(ranges))
+	for _, item := range ranges {
+		var mapping string
+		if !item.published {
+			mapping = fmt.Sprintf("%d/%s", item.targetStart, item.protocol)
+		} else if item.publishedStart == item.publishedEnd {
+			mapping = fmt.Sprintf("%s:%d->%d/%s", item.host, item.publishedStart, item.targetStart, item.protocol)
+		} else {
+			mapping = fmt.Sprintf("%s:%d-%d->%d-%d/%s",
+				item.host, item.publishedStart, item.publishedEnd,
+				item.targetStart, item.targetEnd, item.protocol)
+		}
+		formatted = append(formatted, mapping)
+	}
+	return strings.Join(formatted, ",  ")
 }
 
 func render(items []container) string {
