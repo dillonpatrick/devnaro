@@ -41,21 +41,19 @@ if [ -d "/workspace" ] && [ ! -e "${HOME}/workspace" ] && [ ! -L "${HOME}/worksp
     ln -s /workspace "${HOME}/workspace"
 fi
 
-# Generate native Zsh completion from the Typer/Click command tree.
-# This keeps dm and devbox-manager synchronized with registered CLI commands.
+# Generate Zsh completion from the registered Typer command tree.
+# The hidden __complete command returns candidates; no Click shell-source
+# protocol or duplicated command list is needed.
 if [ -f "$ZSHRC" ]; then
     cat >> "$ZSHRC" <<'EOF'
 
 # BEGIN DEVBOX CLI COMPLETION
-autoload -Uz compinit
-if (( ! $+functions[compdef] )); then
-    compinit
-fi
-
-setopt LIST_PACKED
-
-eval "$(_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager)"
-compdef _devbox_manager_completion dm
+_devbox_completion() {
+    local -a suggestions
+    suggestions=("${(@f)$(devbox-manager __complete -- "${words[@]:2:$((CURRENT-1))}")}")
+    compadd -- "${suggestions[@]}"
+}
+compdef _devbox_completion dm
 # END DEVBOX CLI COMPLETION
 EOF
 fi
