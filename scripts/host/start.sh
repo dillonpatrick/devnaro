@@ -142,8 +142,17 @@ compose() {
 
 resolve_bridge_image() {
     local image_name
+    local build_log
 
-    compose build devbox >&2
+    build_log="$(mktemp)"
+    if ! compose build devbox 2>&1 | tee "$build_log" >&2; then
+        rm -f "$build_log"
+        return 1
+    fi
+
+    # Keep optional Alpine package warnings for the end-of-startup summary.
+    grep -F "WARNING: Alpine package '" "$build_log" >> "$PACKAGE_WARNINGS_FILE" || true
+    rm -f "$build_log"
 
     image_name="$(compose config --images | head -n 1)"
     if [[ -z "$image_name" ]]; then
@@ -210,7 +219,9 @@ CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
 CODE_BRIDGE_LOG="$RUNTIME_DIR/devbox-code-$USER_UID.log"
 CODE_BRIDGE_BINARY="$RUNTIME_DIR/devbox-host-bridge-$USER_UID"
 STATUS_BINARY="$RUNTIME_DIR/devbox-status-$USER_UID"
+PACKAGE_WARNINGS_FILE="$RUNTIME_DIR/devbox-package-warnings-$USER_UID"
 mkdir -p "$RUNTIME_DIR"
+: > "$PACKAGE_WARNINGS_FILE"
 
 detail "Location: ${WORKSPACE_PATH}"
 
@@ -453,6 +464,21 @@ line
 
 printf '\n'
 info "DevBox is ready. Use devbox shell to enter the container."
+
+if [[ -s "$PACKAGE_WARNINGS_FILE" ]]; then
+    printf '\n'
+    line
+    printf '%b\n' "${YELLOW}${BOLD}  Package installation warnings${RESET}"
+    line
+
+    while IFS= read -r package_warning; do
+        warning "${package_warning#WARNING: }"
+    done < "$PACKAGE_WARNINGS_FILE"
+
+    line
+fi
+
+rm -f "$PACKAGE_WARNINGS_FILE"
 printf '\n'
 
 trap - ERR
