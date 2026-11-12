@@ -127,6 +127,28 @@ def _read_version(command: list[str]) -> str:
     return output.splitlines()[0].strip()
 
 
+def _installed_apk_packages() -> list[str]:
+    """Return all packages registered as installed in Alpine's APK database."""
+    try:
+        result = subprocess.run(
+            ["apk", "info", "-v"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+
+    if result.returncode != 0:
+        return []
+
+    return sorted(
+        {line.strip() for line in result.stdout.splitlines() if line.strip()},
+        key=str.casefold,
+    )
+
+
 def _additional_path_tools(known_names: set[str]) -> list[tuple[str, str]]:
     """Discover extra executables in non-core PATH directories."""
     core_directories = {"/bin", "/sbin", "/usr/bin", "/usr/sbin"}
@@ -200,6 +222,15 @@ def info() -> None:
     summary.add_row("Stack", f"[value]DevBox[/value] v{__version__}")
     summary.add_row("Base", base_image)
 
+    packages = Table(box=box.ROUNDED, header_style="heading")
+    packages.add_column("Installed APK package", style="info")
+    installed_packages = _installed_apk_packages()
+    if installed_packages:
+        for package in installed_packages:
+            packages.add_row(package)
+    else:
+        packages.add_row("[muted]APK package database unavailable[/muted]")
+
     tools = Table(box=box.ROUNDED, header_style="heading")
     tools.add_column("Tool", style="info")
     tools.add_column("Path", overflow="fold")
@@ -265,12 +296,14 @@ def info() -> None:
         "DevBox info",
         Group(
             summary,
-            Text("INSTALLED TOOLS", style="heading"),
+            Text(f"APK PACKAGES · {len(installed_packages)} INSTALLED", style="heading"),
+            packages,
+            Text("AVAILABLE EXECUTABLES", style="heading"),
             tools,
             Text("HOST INTEGRATIONS", style="heading"),
             host_tools,
         ),
-        subtitle="Image = core system paths · User = installed in ~/.local/bin · Custom PATH = discovered in other PATH directories · Host = external integration",
+        subtitle="APK packages = installed Alpine packages · Executables = commands available in PATH · Image/User/Custom PATH = executable location · Host = external integration",
     )
 
 
