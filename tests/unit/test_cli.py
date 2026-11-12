@@ -56,52 +56,30 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     assert "VS Code bridge" in result.stdout
 
 
-def test_installed_apk_packages_returns_sorted_unique_entries(monkeypatch):
-    from types import SimpleNamespace
+def test_devbox_default_packages_reads_manifest(monkeypatch, tmp_path):
     from devbox_manager import cli
 
-    monkeypatch.setattr(
-        cli.subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(
-            returncode=0,
-            stdout="zlib-1.3.1-r1\nbusybox-1.37.0-r12\nzlib-1.3.1-r1\n",
-            stderr="",
-        ),
-    )
+    manifest = tmp_path / "devbox-default-packages"
+    manifest.write_text("bash\ncurl\ngo\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "Path", lambda value: manifest)
 
-    assert cli._installed_apk_packages() == [
-        "busybox-1.37.0-r12",
-        "zlib-1.3.1-r1",
-    ]
+    assert cli._devbox_default_packages() == ["bash", "curl", "go"]
 
 
-def test_installed_apk_packages_handles_missing_apk(monkeypatch):
+def test_devbox_default_packages_handles_missing_manifest(monkeypatch):
     from devbox_manager import cli
 
-    def raise_missing(*args, **kwargs):
-        raise FileNotFoundError
+    class MissingManifest:
+        def __init__(self, value):
+            pass
 
-    monkeypatch.setattr(cli.subprocess, "run", raise_missing)
+        def read_text(self, **kwargs):
+            raise FileNotFoundError
 
-    assert cli._installed_apk_packages() == []
+    monkeypatch.setattr(cli, "Path", MissingManifest)
 
+    assert cli._devbox_default_packages() == []
 
-def test_installed_apk_packages_handles_nonzero_exit(monkeypatch):
-    from types import SimpleNamespace
-    from devbox_manager import cli
-
-    monkeypatch.setattr(
-        cli.subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(
-            returncode=1,
-            stdout="",
-            stderr="apk database unavailable",
-        ),
-    )
-
-    assert cli._installed_apk_packages() == []
 
 
 def test_cli_help():
