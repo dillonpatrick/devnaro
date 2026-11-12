@@ -256,21 +256,51 @@ def test_tools_help_lists_search_and_manifest_management():
     assert "list" in result.stdout
 
 
-def test_tools_list_shows_declared_packages(monkeypatch, tmp_path):
+def test_tools_list_shows_only_packages_available_in_alpine(monkeypatch, tmp_path):
     from devbox_manager import cli
 
     manifest = tmp_path / "packages.txt"
-    manifest.write_text("# additional tools\njq\nripgrep\n", encoding="utf-8")
+    manifest.write_text(
+        "# additional tools\\nnodejs\\nopentofu\\nvenv\\npotato\\n",
+        encoding="utf-8",
+    )
     monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+    monkeypatch.setattr(
+        cli,
+        "available_alpine_packages",
+        lambda packages: frozenset({"nodejs", "opentofu"}),
+    )
 
     result = runner.invoke(app, ["tools", "list"])
 
     assert result.exit_code == 0
     assert "Additional image packages" in result.stdout
-    assert "jq" in result.stdout
-    assert "ripgrep" in result.stdout
+    assert "nodejs" in result.stdout
+    assert "opentofu" in result.stdout
+    assert "venv" not in result.stdout
+    assert "potato" not in result.stdout
+    assert "2 valid package(s)" in result.stdout
     assert "devbox recreate" in result.stdout
 
+
+def test_tools_list_reports_repository_validation_errors(monkeypatch, tmp_path):
+    from devbox_manager import cli
+    from devbox_manager.alpine_packages import AlpinePackageSearchError
+
+    manifest = tmp_path / "packages.txt"
+    manifest.write_text("nodejs\\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "PACKAGE_MANIFEST_PATH", manifest)
+
+    def fail_lookup(packages):
+        raise AlpinePackageSearchError("repository unavailable")
+
+    monkeypatch.setattr(cli, "available_alpine_packages", fail_lookup)
+
+    result = runner.invoke(app, ["tools", "list"])
+
+    assert result.exit_code == 1
+    assert "Package validation failed" in result.stdout
+    assert "repository unavailable" in result.stdout
 
 def test_tools_add_updates_manifest_and_explains_recreate(monkeypatch, tmp_path):
     from devbox_manager import cli
