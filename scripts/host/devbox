@@ -59,10 +59,10 @@ print_command() {
 }
 
 usage() {
-    printf "\n%b╭%s╮%b\\n" "$CYAN" "$HELP_BORDER" "$RESET"
+    printf "\n%b╭%s╮%b\n" "$CYAN" "$HELP_BORDER" "$RESET"
     print_box_line "DevBox - Docker development environment" \
         "${BOLD}${CYAN}DevBox${RESET} ${DIM}- Docker development environment${RESET}"
-    printf "%b├%s┤%b\\n" "$CYAN" "$HELP_BORDER" "$RESET"
+    printf "%b├%s┤%b\n" "$CYAN" "$HELP_BORDER" "$RESET"
     print_box_line "Usage:" "${BOLD}${CYAN}Usage:${RESET}"
     print_box_line "  devbox [command]" "  ${GREEN}devbox${RESET} [command]"
     print_box_line "  devbox config [show|get workspace|set workspace PATH]" \
@@ -86,7 +86,7 @@ usage() {
     print_box_line "  devbox config set workspace PATH" \
         "  ${GREEN}devbox config set workspace PATH${RESET}"
     print_box_line "  devbox manager logs" "  ${GREEN}devbox manager logs${RESET}"
-    printf "%b╰%s╯%b\\n\\n" "$CYAN" "$HELP_BORDER" "$RESET"
+    printf "%b╰%s╯%b\n\n" "$CYAN" "$HELP_BORDER" "$RESET"
 }
 
 compose() {
