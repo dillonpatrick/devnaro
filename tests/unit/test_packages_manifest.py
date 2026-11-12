@@ -1,4 +1,4 @@
-"""Tests for the additional Alpine package manifest."""
+"""Tests for the additional Debian package manifest."""
 
 import pytest
 
@@ -52,7 +52,7 @@ def test_validate_package_name_rejects_invalid_values(package):
 
 
 @pytest.mark.parametrize("package", ["jq", "nodejs22", "py3.12", "lib+compat", "foo_bar", "foo-bar"])
-def test_validate_package_name_accepts_alpine_safe_names(package):
+def test_validate_package_name_accepts_debian_safe_names(package):
     assert validate_package_name(package) == package
 
 
