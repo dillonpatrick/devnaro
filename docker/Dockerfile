@@ -12,6 +12,8 @@ RUN go test ./status.go ./status_test.go \
 
 FROM alpine:3.22
 
+RUN mkdir -p /opt/devbox-config && touch /opt/devbox-config/packages.txt
+
 ARG USERNAME=devuser
 ARG USER_UID=1000
 ARG USER_GID=1000
