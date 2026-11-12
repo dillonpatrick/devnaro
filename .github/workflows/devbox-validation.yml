@@ -111,7 +111,8 @@ jobs:
           docker exec devbox-ci devbox-manager --help
           docker exec devbox-ci devbox-manager info
           docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v terraform && command -v docker'
-          docker exec devbox-ci zsh -lic '(( $+functions[_devbox_manager_completion] )) && compdef -L dm | grep -F _devbox_manager_completion'
+          docker exec devbox-ci devbox-manager __complete -- tools '' | grep -Fx 'search'
+          docker exec devbox-ci zsh -fc 'source ~/.zshrc; (( $+functions[_devbox_completion] )) && compdef -L dm | grep -F _devbox_completion'
           docker exec devbox-ci sh -ec 'test -x /usr/local/bin/devbox-host-bridge && test -x /usr/local/bin/devbox-status && test -d /workspace'
           docker exec devbox-ci python3 --version | grep -E '^Python 3\.12\.'
 
