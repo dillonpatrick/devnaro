@@ -5,7 +5,9 @@ ARG TARGETARCH
 WORKDIR /src
 COPY scripts/host/code_bridge.go ./code_bridge.go
 COPY scripts/host/status.go ./status.go
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-host-bridge ./code_bridge.go \
+COPY scripts/host/status_test.go ./status_test.go
+RUN go test ./status.go ./status_test.go \\
+    && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-host-bridge ./code_bridge.go \
     && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-status ./status.go
 
 FROM alpine:3.22
