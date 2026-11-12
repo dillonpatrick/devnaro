@@ -7,30 +7,27 @@
 
 ## Current state
 
-DevBox currently has a single Alpine-based development container with a host
+DevBox currently has a single Debian-based development container with a host
 CLI, container CLI (`dm`), persistent home, mounted workspace, Docker
 integration, Network Manager and VS Code host bridge.
 
-The image build is stack-aware, but the current implementation still has one
-`default` stack, supports only Terraform and uv as stack tools, and assumes
-Alpine in the runtime Dockerfile. The curated-stacks work will remove those
-limitations before Multi-DevBox begins.
+The image build is stack-aware and uses Debian Slim for every build stage and runtime stack. The curated-stacks work is continuing to add tool installers and explicit stack selection before Multi-DevBox begins.
 
 ## Implemented
 
-- Alpine 3.22 image and Python 3.12 runtime for the DevBox CLI.
+- Debian Trixie Slim image and Python 3.12 runtime for the DevBox CLI.
 - Non-root user, Zsh/Oh My Zsh, persistent home and mounted workspace.
 - Host CLI lifecycle: start, stop, restart, recreate, recreate-all and clean.
 - Container CLI (`dm`) built with Typer and Rich.
 - Docker CLI/Compose integration and Network Manager.
 - VS Code host bridge and terminal integration.
 - Configurable port override file and shell completions.
-- Alpine package search and package manifest operations: `dm tools search/add/remove/list`.
-- Build-time validation and warning-and-skip behavior for unavailable optional Alpine packages.
+- Debian package search and package manifest operations: `dm tools search/add/remove/list`.
+- Build-time validation and warning-and-skip behavior for unavailable optional Debian packages.
 - Shared host Compose wrapper and terminal helpers.
 - Stack Definition schema v2 and Python Stack Resolver with safe YAML loading,
   duplicate-key rejection, strict validation and normalized build artifacts.
-- Stack-controlled Alpine/Debian packages, base image selection, tool versions
+- Stack-controlled Debian-only packages, base image selection, tool versions
   or release channels, and environment.
 - Separate DevBox bootstrap uv and stack-provided uv installations.
 - Unit tests and CI validation for Python, repository checks and Docker build.
@@ -39,13 +36,12 @@ limitations before Multi-DevBox begins.
 
 - A `default` stack still exists and is currently selected implicitly.
 - Only `terraform` and `uv` are supported stack tools.
-- The Dockerfile now selects Alpine or Debian slim via `BASE_IMAGE` and has
+- The Dockerfile now selects Debian or Debian slim via `BASE_IMAGE` and has
   distribution-specific Core package installation paths.
 - The selected `BASE_IMAGE` must currently be supplied explicitly and must
   match the stack resolver's generated base-image value; automatic host-side
   propagation from the stack definition is not implemented yet.
-- `dm tools search/add/list` still queries Alpine repositories and needs a
-  Debian-aware implementation before package-management parity is complete.
+- `dm tools search/add/list` queries the Debian APT indexes included in the image.
 - Tool versions are pinned manually; release-channel resolution is not implemented.
 - `docker/packages.txt` remains a global user package manifest.
 - Host CLI, Compose, Network Manager and VS Code bridge still assume one instance.
@@ -57,7 +53,7 @@ Status: completed and merged into `main` (PR #22).
 - Consolidated host-side Compose arguments and terminal helpers.
 - Fixed workflow branch filtering and package lookup output.
 - Corrected README package-manifest documentation.
-- Consolidated Alpine repository package-index loading.
+- Consolidated Debian repository package-index loading.
 - Expanded package manifest validation tests.
 
 ## Phase 2 — Stack-aware image architecture
@@ -72,10 +68,7 @@ Status: completed and merged into `main`.
 
 ## Phase 2.5 — Curated development stacks
 
-Status: schema v2 and the first Alpine/Debian Core Dockerfile implementation
-are on `feat/curated-development-stacks`. Runtime builds still need local
-validation; package discovery remains Alpine-specific and stack tool
-installers remain pending.
+Status: Debian-only base migration is implemented on `feat/curated-development-stacks`; full repository and CI validation are in progress. Stack tool installers remain pending.
 
 Agreed decisions:
 
@@ -83,10 +76,9 @@ Agreed decisions:
 - Initial stacks: Python, Node.js, DevOps and Go.
 - Keep all existing Core dependencies.
 - Remove Terraform from Core/default installation; Terraform belongs to DevOps.
-- Allow each stack to select Alpine or Debian while retaining the same Core
-  capabilities.
+- Use Debian Slim for every stack while retaining the same Core capabilities.
 - Use Debian for DevOps to improve compatibility with official cloud CLIs that
-  may not support Alpine/musl equivalently. Keep Alpine for Python, Node.js and
+  may not support Debian/musl equivalently. Keep Debian for Python, Node.js and
   Go where practical.
 - Prefer official LTS channels. Where no LTS exists, use the newest stable,
   upstream-supported release.
@@ -105,8 +97,7 @@ Implementation sequence:
 
 1. [x] Revise stack schema for base distribution, distribution-specific
    packages and release channel declarations.
-2. [x] Add Alpine/Debian Core installation paths to the Dockerfile; local
-   build validation and package-search parity remain outstanding.
+2. [x] Standardize all Docker build stages and runtime images on Debian Slim, and use APT for package management.
 3. Add supported installers and version resolvers for the curated toolsets.
 4. Add the four stack definitions and remove the implicit default selection.
 5. Update CLI/Compose startup to require an explicit stack selection.
