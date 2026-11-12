@@ -4,11 +4,11 @@ name: default
 description: Temporary compatibility stack during schema migration.
 
 base:
-  distribution: alpine
+  distribution: debian
   version: "3.22"
 
 packages:
-  alpine: []
+  debian: []
 
 tools:
   terraform:
