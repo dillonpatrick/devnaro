@@ -6,7 +6,7 @@ WORKDIR /src
 COPY scripts/host/code_bridge.go ./code_bridge.go
 COPY scripts/host/status.go ./status.go
 COPY scripts/host/status_test.go ./status_test.go
-RUN go test ./status.go ./status_test.go \\
+RUN go test ./status.go ./status_test.go \
     && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-host-bridge ./code_bridge.go \
     && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-status ./status.go
 
@@ -104,7 +104,8 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
 COPY network_manager/ /opt/network-manager/
 COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint
 COPY scripts/container/code /usr/local/bin/code
-COPY --from=bridge-builder /devbox-host-bridge /usr/local/bin/devbox-host-bridge\nCOPY --from=bridge-builder /devbox-status /usr/local/bin/devbox-status
+COPY --from=bridge-builder /devbox-host-bridge /usr/local/bin/devbox-host-bridge
+COPY --from=bridge-builder /devbox-status /usr/local/bin/devbox-status
 
 USER root
 RUN mkdir -p /run/devbox-host \
