@@ -215,6 +215,12 @@ case "$command" in
             -f "$DEVBOX_DIR/docker/docker-compose.yml" \
             -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager info
         ;;
+    tools)
+        require_running
+        exec docker compose --project-directory "$DEVBOX_DIR" \
+            -f "$DEVBOX_DIR/docker/docker-compose.yml" \
+            -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager tools "${@:2}"
+        ;;
     logs)
         compose logs devbox
         ;;
