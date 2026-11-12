@@ -31,9 +31,7 @@ CODE_BRIDGE_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/devbox/vscode-workspaces"
 bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
 # Remove only resources belonging to the DevBox Compose project.
-docker compose --project-directory "$DEVBOX_DIR" \
-    -f "$DEVBOX_DIR/docker/docker-compose.yml" \
-    -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" down --volumes --remove-orphans --rmi local
+bash "$DEVBOX_DIR/scripts/host/compose.sh" down --volumes --remove-orphans --rmi local
 
 if [[ -f "$CODE_BRIDGE_PID" ]]; then
     kill "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null || true
