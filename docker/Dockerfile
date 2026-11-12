@@ -57,10 +57,11 @@ RUN set -eu; \
     awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { print "Invalid package entry at line " NR ": " $0 > "/dev/stderr"; exit 1 } { print $1 }' /tmp/devbox-packages.txt > /tmp/devbox-extra-packages; \
     set --; \
     while IFS= read -r package; do \
-        if apk search -e "$package" >/dev/null 2>&1; then \
+        matches="$(apk search -e "$package" 2>/dev/null || true)"; \
+        if [ -n "$matches" ]; then \
             set -- "$@" "$package"; \
         else \
-            printf "WARNING: Alpine package '%s' was not found; skipping.\n" "$package" >&2; \
+            printf "WARNING: Alpine package '%s' was not found; skipping.\\n" "$package" >&2; \
         fi; \
     done < /tmp/devbox-extra-packages; \
     if [ "$#" -gt 0 ]; then \
