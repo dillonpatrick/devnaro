@@ -142,17 +142,8 @@ compose() {
 
 resolve_bridge_image() {
     local image_name
-    local build_log
 
-    build_log="$(mktemp)"
-    if ! compose build devbox 2>&1 | tee "$build_log" >&2; then
-        rm -f "$build_log"
-        return 1
-    fi
-
-    # Keep optional Alpine package warnings for the end-of-startup summary.
-    grep -F "WARNING: Alpine package '" "$build_log" >> "$PACKAGE_WARNINGS_FILE" || true
-    rm -f "$build_log"
+    compose build devbox >&2
 
     image_name="$(compose config --images | head -n 1)"
     if [[ -z "$image_name" ]]; then
@@ -276,6 +267,11 @@ extract_host_binaries() {
         docker rm "$container_id" >/dev/null
         rm -f "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
         return 1
+    fi
+
+    # Read the image's warning report so it is available even when BuildKit reuses cache.
+    if ! docker cp "$container_id:/opt/devbox-config/package-warnings.txt" "$PACKAGE_WARNINGS_FILE" >/dev/null 2>&1; then
+        : > "$PACKAGE_WARNINGS_FILE"
     fi
 
     docker rm "$container_id" >/dev/null
