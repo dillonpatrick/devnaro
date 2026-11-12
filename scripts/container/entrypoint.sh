@@ -41,7 +41,8 @@ if [ -d "/workspace" ] && [ ! -e "${HOME}/workspace" ] && [ ! -L "${HOME}/worksp
     ln -s /workspace "${HOME}/workspace"
 fi
 
-# Install native Zsh completion for the DevBox CLI.
+# Generate native Zsh completion from the Typer/Click command tree.
+# This keeps dm and devbox-manager synchronized with registered CLI commands.
 if [ -f "$ZSHRC" ]; then
     cat >> "$ZSHRC" <<'EOF'
 
@@ -51,35 +52,9 @@ if (( ! $+functions[compdef] )); then
     compinit
 fi
 
-# Use compact, variable-width columns for completion suggestions.
 setopt LIST_PACKED
 
-_devbox_manager_completion() {
-    local -a commands help_options
-    commands=(info status networks doctor network-manager welcome)
-    help_options=(--help -h)
-
-    if (( CURRENT == 2 )); then
-        compadd -- $help_options --version -v $commands
-    elif (( CURRENT == 3 )); then
-        case "${words[2]}" in
-            network-manager)
-                compadd -- $help_options status logs
-                ;;
-            info|status|networks|doctor|welcome)
-                compadd -- $help_options
-                ;;
-        esac
-    elif (( CURRENT == 4 )) && [[ "${words[2]}" == "network-manager" ]]; then
-        if [[ "${words[3]}" == "logs" ]]; then
-            compadd -- $help_options --lines -n
-        else
-            compadd -- $help_options
-        fi
-    fi
-}
-
-compdef _devbox_manager_completion devbox-manager
+eval "$(_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager)"
 compdef _devbox_manager_completion dm
 # END DEVBOX CLI COMPLETION
 EOF
