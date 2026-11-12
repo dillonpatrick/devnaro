@@ -28,10 +28,10 @@ limitations before Multi-DevBox begins.
 - Alpine package search and package manifest operations: `dm tools search/add/remove/list`.
 - Build-time validation and warning-and-skip behavior for unavailable optional Alpine packages.
 - Shared host Compose wrapper and terminal helpers.
-- Stack Definition schema v1 and Python Stack Resolver with safe YAML loading,
+- Stack Definition schema v2 and Python Stack Resolver with safe YAML loading,
   duplicate-key rejection, strict validation and normalized build artifacts.
-- Generic Dockerfile build flow consuming resolver output.
-- Stack-controlled Alpine packages, Terraform/uv versions and environment.
+- Stack-controlled Alpine/Debian packages, base image selection, tool versions
+  or release channels, and environment.
 - Separate DevBox bootstrap uv and stack-provided uv installations.
 - Unit tests and CI validation for Python, repository checks and Docker build.
 
@@ -39,7 +39,8 @@ limitations before Multi-DevBox begins.
 
 - A `default` stack still exists and is currently selected implicitly.
 - Only `terraform` and `uv` are supported stack tools.
-- Stack package declarations are Alpine-only.
+- Stack package declarations support Alpine and Debian, but the Dockerfile
+  runtime build still installs only Alpine packages.
 - The runtime Dockerfile and Core package installation assume Alpine.
 - Tool versions are pinned manually; release-channel resolution is not implemented.
 - `docker/packages.txt` remains a global user package manifest.
@@ -67,8 +68,9 @@ Status: completed and merged into `main`.
 
 ## Phase 2.5 — Curated development stacks
 
-Status: design agreed; implementation in progress on
-`feat/curated-development-stacks`.
+Status: design agreed; schema v2 implemented on
+`feat/curated-development-stacks`. Multi-distribution Core installation and
+stack tool installers remain pending.
 
 Agreed decisions:
 
@@ -96,8 +98,8 @@ Planned initial toolsets:
 
 Implementation sequence:
 
-1. Revise stack schema for base distribution, package manager and release
-   channel declarations.
+1. [x] Revise stack schema for base distribution, distribution-specific
+   packages and release channel declarations.
 2. Make Core installation work on Alpine and Debian without duplicating Core
    behavior.
 3. Add supported installers and version resolvers for the curated toolsets.
