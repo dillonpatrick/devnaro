@@ -6,7 +6,7 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 
 ## Features
 
-- Containerized development tools based on Alpine Linux 3.22.
+- Containerized development tools based on Debian Trixie Slim.
 - Persistent workspace stored outside the DevBox container.
 - Host Docker integration through the mounted Docker socket.
 - Open the current workspace path in the host VS Code with `code .` from inside DevBox.
@@ -14,7 +14,7 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 - Persistent home directory across normal container stops and restarts.
 - Separate stop and clean lifecycle operations.
 - Host CLI for lifecycle operations and container-side CLI for diagnostics.
-- Zsh, Oh My Zsh (pinned commit), Terraform 1.17.1, Docker CLI, Python 3.12 installed from Alpine packages, uv 0.13.7, Typer, and Rich.
+- Zsh, Oh My Zsh (pinned commit), Terraform 1.17.1, Docker CLI, Python 3.12 installed from Debian packages, uv 0.13.7, Typer, and Rich.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ Host
 |   +-- .devcontainer/
 |   +-- .github/
 |   +-- docker/
-|   |   +-- packages.txt (additional Alpine packages)
+|   |   +-- packages.txt (additional Debian packages)
 |   |   +-- Dockerfile
 |   |   +-- docker-compose.yml
 |   |   +-- docker-compose.ports.example.yml
@@ -90,7 +90,7 @@ The default host-side bindings are loopback-only and are not exposed to other ma
 - Access to `/var/run/docker.sock`.
 - VS Code CLI (`code`) on the host if you want to use `code .` from inside DevBox.
 
-The container image is based on Alpine Linux 3.22. The host may use another Linux distribution if the requirements above are available. Python and Go are not required on the host: Python runs inside DevBox, and the small Go VS Code bridge is compiled during the Docker image build and extracted for host-side execution.
+All DevBox build stages and runtime environments use Debian-based images. The host may use another Linux distribution if the requirements above are available. Python and Go are not required on the host: Python runs inside DevBox, and the small Go VS Code bridge is compiled during the Docker image build and extracted for host-side execution.
 
 ## Installation
 
@@ -173,13 +173,13 @@ Use `devbox clean` only when you intentionally want to remove DevBox's persisted
 
 ## Inside the container
 
-DevBox runs interactive sessions as an unprivileged user. The `sudo` command is not installed, and the default user cannot install Alpine packages with `apk add`. This is intentional: development tools and system dependencies should be part of the reproducible DevBox image rather than installed manually into a running container.
+DevBox runs interactive sessions as an unprivileged user. The `sudo` command is not installed, and the default user cannot install Debian packages with `apt-get install`. This is intentional: development tools and system dependencies should be part of the reproducible DevBox image rather than installed manually into a running container.
 
 ### Add system packages or development tools
 
-Additional Alpine packages are declared in `docker/packages.txt`, one package name per line. DevBox mounts this file into the container so you can manage it through the `dm` CLI without leaving your shell. This is the user-customizable manifest for tools beyond DevBox's core runtime dependencies, which remain in `docker/Dockerfile`.
+Additional Debian packages are declared in `docker/packages.txt`, one package name per line. DevBox mounts this file into the container so you can manage it through the `dm` CLI without leaving your shell. This is the user-customizable manifest for tools beyond DevBox's core runtime dependencies, which remain in `docker/Dockerfile`.
 
-Search the official Alpine repositories to find a package name, then add it to the manifest:
+Search the Debian APT package indexes to find a package name, then add it to the manifest:
 
 ```bash
 dm tools search ripgrep
@@ -199,9 +199,9 @@ The add/remove commands update the host-backed `docker/packages.txt` file. They 
 devbox recreate
 ```
 
-The recreate operation rebuilds the image and creates a new container, applying the complete manifest. The Docker build validates manifest entries and installs the listed packages from the configured Alpine repositories. Blank lines and full-line comments are ignored. Invalid entries fail the image build instead of being silently skipped. Because the manifest is part of the repository, the same additional packages are installed whenever the image is built on another machine.
+The recreate operation rebuilds the image and creates a new container, applying the complete manifest. The Docker build validates manifest entries and installs the listed packages from Debian APT repositories. Blank lines and full-line comments are ignored. Invalid entries fail the image build instead of being silently skipped. Because the manifest is part of the repository, the same additional packages are installed whenever the image is built on another machine.
 
-Do not install packages manually into a running container; declare them in this manifest so the environment remains reproducible. Keep core DevBox dependencies in the Dockerfile. For tools that are not available as Alpine packages, add their installation steps to the Dockerfile as part of the image build.
+Do not install packages manually into a running container; declare them in this manifest so the environment remains reproducible. Keep core DevBox dependencies in the Dockerfile. For tools that are not available as Debian packages, add their installation steps to the Dockerfile as part of the image build.
 
 After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 
@@ -227,9 +227,9 @@ The host-side bridge is compiled as a static Go binary during the DevBox image b
 | Command | Description |
 |---|---|
 | `dm info` | Show the DevBox stack, base image, installed tools, and host integrations |
-| `dm tools search QUERY` | Search official Alpine Linux `main` and `community` package repositories |
-| `dm tools add PACKAGE` | Add an Alpine package to `docker/packages.txt` |
-| `dm tools remove PACKAGE` | Remove an Alpine package from `docker/packages.txt` |
+| `dm tools search QUERY` | Search official Debian Linux `main` and `community` package repositories |
+| `dm tools add PACKAGE` | Add an Debian package to `docker/packages.txt` |
+| `dm tools remove PACKAGE` | Remove an Debian package from `docker/packages.txt` |
 | `dm tools list` | List additional packages declared for the next image build |
 | `dm status` | Show DevBox container status |
 | `dm doctor` | Run environment health checks |
@@ -265,7 +265,7 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 
 The project requires Python 3.12 or newer. The `devbox-manager` Python CLI is installed inside the container in an isolated virtual environment at `/opt/devbox-venv`. The `dm` shortcut invokes the same CLI.
 
-Available commands include `info` (stack, base image, installed tools, and host integrations), `tools search/add/remove/list`, status, health checks, network listing, and Network Manager status/logs. Package search and manifest management are available only inside the container. Search queries the official Alpine Linux `main` and `community` repositories for the container's Alpine release and CPU architecture. The add/remove commands update the host-backed manifest but do not modify the running image; run `devbox recreate` on the host to apply changes. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
+Available commands include `info` (stack, base image, installed tools, and host integrations), `tools search/add/remove/list`, status, health checks, network listing, and Network Manager status/logs. Package search and manifest management are available only inside the container. Search queries the official Debian Linux `main` and `community` repositories for the container's Debian release and CPU architecture. The add/remove commands update the host-backed manifest but do not modify the running image; run `devbox recreate` on the host to apply changes. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
 
 ## Network Manager
 
