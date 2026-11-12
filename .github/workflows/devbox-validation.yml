@@ -8,6 +8,7 @@ on:
       - feat/stop-clean-lifecycle
       - feat/alpine-linux-experiment
       - feat/stack-definition-foundation
+      - feat/curated-development-stacks
   pull_request:
     branches:
       - main
@@ -71,6 +72,10 @@ jobs:
 
   docker-image-build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        base-image: [alpine:3.22, debian:trixie-slim]
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -94,6 +99,7 @@ jobs:
             USER_UID=1000
             USER_GID=1000
             DOCKER_GID=966
+            BASE_IMAGE=${{ matrix.base-image }}
 
       - name: Start DevBox container
         run: |
