@@ -212,7 +212,7 @@ case "$command" in
             -f "$DEVBOX_DIR/docker/docker-compose.ports.yml" exec devbox devbox-manager info
         ;;
     tools)
-        printf '%s\\n' "The tools command is available only inside the container. Run 'devbox shell', then 'dm tools search QUERY'." >&2
+        printf '%s\n' "The tools command is available only inside the container. Run 'devbox shell', then 'dm tools search QUERY'." >&2
         exit 2
         ;;
     logs)
