@@ -6,7 +6,6 @@ source "$DEVBOX_DIR/scripts/host/ui.sh"
 
 devbox_info "Stopping DevBox container..."
 
-DEVBOX_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
 bash "$DEVBOX_DIR/scripts/host/compose.sh" stop devbox
