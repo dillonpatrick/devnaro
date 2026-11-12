@@ -311,12 +311,20 @@ def test_tools_list_reports_repository_validation_errors(monkeypatch, tmp_path):
         raise AlpinePackageSearchError("repository unavailable")
 
     monkeypatch.setattr(cli, "available_alpine_packages", fail_lookup)
+    rendered = {}
+    monkeypatch.setattr(
+        cli,
+        "render_panel",
+        lambda console, title, content, **kwargs: rendered.update(
+            title=title, content=content
+        ),
+    )
 
     result = runner.invoke(app, ["tools", "list"])
 
     assert result.exit_code == 1
-    assert "Package validation failed" in result.stdout
-    assert "repository unavailable" in result.stdout
+    assert rendered["title"] == "Package validation failed"
+    assert "repository unavailable" in rendered["content"]
 
 def test_tools_add_does_not_add_image_provided_uv(monkeypatch, tmp_path):
     from devbox_manager import cli
@@ -367,12 +375,20 @@ def test_tools_add_rejects_package_missing_from_alpine(monkeypatch, tmp_path):
 
     monkeypatch.setattr(cli.subprocess, "run", lambda *args, **kwargs: NotInstalled())
     monkeypatch.setattr(cli, "available_alpine_packages", lambda packages: frozenset())
+    rendered = {}
+    monkeypatch.setattr(
+        cli,
+        "render_panel",
+        lambda console, title, content, **kwargs: rendered.update(
+            title=title, content=content
+        ),
+    )
 
     result = runner.invoke(app, ["tools", "add", "not-a-real-package"])
 
     assert result.exit_code == 1
-    assert "Package not found" in result.stdout
-    assert "No manifest change was made" in result.stdout
+    assert rendered["title"] == "Package not found"
+    assert "No manifest change was made" in rendered["content"]
     assert manifest.read_text(encoding="utf-8") == "# additional tools\n"
 
 
@@ -394,12 +410,20 @@ def test_tools_add_fails_safely_when_alpine_lookup_fails(monkeypatch, tmp_path):
         raise AlpinePackageSearchError("repository unavailable")
 
     monkeypatch.setattr(cli, "available_alpine_packages", fail_lookup)
+    rendered = {}
+    monkeypatch.setattr(
+        cli,
+        "render_panel",
+        lambda console, title, content, **kwargs: rendered.update(
+            title=title, content=content
+        ),
+    )
 
     result = runner.invoke(app, ["tools", "add", "jq"])
 
     assert result.exit_code == 1
-    assert "Package validation failed" in result.stdout
-    assert "repository unavailable" in result.stdout
+    assert rendered["title"] == "Package validation failed"
+    assert "repository unavailable" in rendered["content"]
     assert manifest.read_text(encoding="utf-8") == ""
 
 
