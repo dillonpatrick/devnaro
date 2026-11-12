@@ -22,6 +22,8 @@ ARG OH_MY_ZSH_COMMIT=cca3bdfbef8c52ef8939ce7911ff68852b949daa
 ARG TARGETARCH
 
 # Start from the unmodified Alpine base and install the runtime/toolchain.
+COPY docker/packages.txt /tmp/devbox-packages.txt
+
 RUN apk add --no-cache \
     bash \
     build-base \
@@ -46,6 +48,14 @@ RUN apk add --no-cache \
     zsh-autosuggestions \
     zsh-syntax-highlighting \
     && python3 --version | grep -E '^Python 3\.12\.'
+
+# Install user-selected additional Alpine packages from the tracked manifest.
+RUN set -eu; \\
+    awk '\n        /^[[:space:]]*($|#)/ { next }\n        NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ {\n            printf "Invalid package entry at line %d: %s\\n", NR, $0 > "/dev/stderr";\n            exit 1;\n        }\n        { print $1 }\n    ' /tmp/devbox-packages.txt > /tmp/devbox-extra-packages; \\
+    if [ -s /tmp/devbox-extra-packages ]; then \\
+        xargs apk add --no-cache < /tmp/devbox-extra-packages; \\
+    fi; \\
+    rm -f /tmp/devbox-packages.txt /tmp/devbox-extra-packages
 
 # Install the pinned Terraform release for the target architecture.
 RUN set -eux; \
