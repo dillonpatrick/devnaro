@@ -14,6 +14,10 @@ if [ -f "$ZSHRC" ]; then
     sed -i '/^# BEGIN DEVBOX CLI COMPLETION$/,$d' "$ZSHRC"
     sed -i '/^# DevBox CLI completion$/d; /_DEVBOX_MANAGER_COMPLETE=zsh_source devbox-manager/d' "$ZSHRC"
 
+    # Remove obsolete plugin paths from persistent homes created by older
+    # Alpine-based images. The Debian paths are re-added below.
+    sed -i '\|zsh-autosuggestions\.zsh|d; \|zsh-syntax-highlighting\.zsh|d' "$ZSHRC"
+
     cat >> "$ZSHRC" <<'EOF'
 
 # BEGIN DEVBOX PROMPT THEME
@@ -33,6 +37,11 @@ devbox_update_prompt
 
 # Ensure DevBox-managed tools remain available after user Zsh configuration.
 export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
+
+# BEGIN DEVBOX ZSH PLUGINS
+[[ -r /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+[[ -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# END DEVBOX ZSH PLUGINS
 EOF
 fi
 
