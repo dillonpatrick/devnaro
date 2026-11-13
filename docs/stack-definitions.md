@@ -61,8 +61,6 @@ Examples:
   security and end-of-life phases rather than an LTS channel.
 - Go: latest stable supported release; Go support follows its release policy,
   not an LTS designation.
-- Terraform and cloud CLIs: latest stable supported release according to each
-  vendor's release/support policy.
 
 Stack definitions may declare either an exact version or a supported channel.
 The schema accepts `lts` and `stable`; whether a particular tool supports a
@@ -143,8 +141,7 @@ The existing Core dependencies and integrations remain available in every
 stack. This includes the DevBox CLI runtime, shell, Docker CLI integration,
 Network Manager and host bridge behavior.
 
-Terraform is not a Core dependency; it belongs only to the DevOps stack. The
-DevBox bootstrap uv remains an internal Core dependency; a user-facing uv
+The DevBox bootstrap uv remains an internal Core dependency; a user-facing uv
 installation belongs only to the Python stack.
 
 ## Reproducibility
