@@ -2,36 +2,38 @@
 
 ## Purpose
 
-A stack describes the development tools and environment-specific configuration
-that DevBox includes in an image. It does not define Docker build steps,
-container orchestration, arbitrary shell commands or host integration.
+A stack describes the development environment inputs that DevBox uses when
+building its image. It does not define Docker build steps, container
+orchestration, arbitrary shell commands or host integration.
 
-DevBox validates each YAML definition before building the runtime image.
+DevBox validates the selected YAML definition before building the runtime
+image.
 
-## Available stacks
+## Current stack
 
-There is no default development stack in the curated-stack design. Users will
-select one of the available stacks when creating an environment.
+The current implementation provides one stack:
 
-Initial curated stacks:
-
-| Stack | Base image | Main tools |
+| Stack | Base image | Stack-managed tools |
 | --- | --- | --- |
-| `python` | Debian Trixie Slim | Python, uv, pytest, Ruff, mypy |
-| `nodejs` | Debian Trixie Slim | Node.js LTS, npm, Yarn, TypeScript, ESLint, Prettier |
-| `devops` | Debian Trixie Slim | AWS CLI, Azure CLI, Google Cloud CLI, Ansible, kubectl, Helm |
-| `go` | Debian Trixie Slim | Go, golangci-lint, Delve, Air |
+| `default` | Debian Trixie Slim | uv 0.13.7 |
 
-The exact package and tool declarations are maintained in each stack's
-`stack.yaml`. This table is the curated baseline, not a substitute for those
-definitions.
+The `default` stack is selected implicitly by the current host Compose
+configuration and Docker build argument. Explicit selection among multiple
+stacks is not part of the current implementation.
+
+The stack definition is stored at:
+
+```text
+stacks/<stack-name>/stack.yaml
+```
+
+The directory name and the `name` field must match.
 
 ## Base image policy
 
 **Debian Slim is the only supported distribution throughout the project.**
-All Docker build stages and all runtime stacks use Debian-based images. Runtime
-stacks use the official Debian Slim variant (for example,
-`debian:trixie-slim`).
+All Docker build stages and the runtime image use Debian-based images. The
+current runtime uses `debian:trixie-slim`.
 
 Use APT for system packages. Do not add compilers, headers or convenience tools
 to DevBox Core unless they are required by its runtime functionality. Build-only
@@ -48,41 +50,16 @@ changes take effect after `devbox recreate`, not in the running container.
 
 ## Version policy
 
-Stack tools should stay on the newest supported release channel:
+The current stack-managed tool installer supports **uv** only. The current
+stack pins uv to an exact version (`0.13.7`).
 
-- Use the official LTS channel when the upstream project provides one.
-- If there is no LTS channel, use the newest stable release that is still
-  supported upstream. Do not label a release LTS when the project does not.
-- Avoid alpha, beta, release-candidate and other prerelease versions.
+The schema accepts `version` or `channel` declarations, but channel values
+are only syntactically validated today. Channel-to-version resolution and
+tool-specific installers are not implemented. Use exact versions for the
+currently supported tool.
 
-Examples:
-- Node.js: latest official LTS line.
-- Python: latest stable supported release; Python uses feature, bugfix,
-  security and end-of-life phases rather than an LTS channel.
-- Go: latest stable supported release; Go support follows its release policy,
-  not an LTS designation.
-
-Stack definitions may declare either an exact version or a supported channel.
-The schema accepts `lts` and `stable`; whether a particular tool supports a
-channel is validated by its tool-specific resolver. During image build, the
-resolver/build tooling resolves a channel to an exact version, records that
-version in generated build metadata, and installs that exact version. The
-resulting image is immutable: new upstream releases are picked up on the next
-image rebuild, not silently inside an already-created container.
-
-Build logs and `dm info` should expose both the requested channel and the
-resolved version. Resolution must fail clearly if an upstream version cannot
-be determined; it must not silently install an arbitrary version.
-
-## Stack definition location
-
-Each stack is stored at:
-
-```text
-stacks/<stack-name>/stack.yaml
-```
-
-The directory name and the `name` field must match.
+The DevBox bootstrap uv is a separate internal Core dependency. It is used to
+prepare the DevBox CLI environment and is not the stack-managed uv installation.
 
 ## Definition schema
 
@@ -97,65 +74,65 @@ Schema version 2 supports the following fields:
 | `base.version` | Explicit Debian release codename/version. |
 | `packages.debian` | Optional list of additional Debian APT packages. |
 | `tools.<name>.version` | Exact tool version; mutually exclusive with `channel`. |
-| `tools.<name>.channel` | Release channel: `lts` or `stable`; mutually exclusive with `version`. |
+| `tools.<name>.channel` | Syntactically accepted release channel (`lts` or `stable`); resolution is not implemented. |
 | `environment` | Environment variables available in the container. |
 
 The selected base is normalized to the official Debian Slim image:
 `debian:<version>-slim`. The Docker build accepts this exact reference through
 the `BASE_IMAGE` build argument and checks it against the stack resolver output.
-The host Compose configuration currently supplies the same Debian Trixie Slim
+The host Compose configuration currently supplies the Debian Trixie Slim
 default. Package lists are Debian-only; empty or omitted lists add no packages.
 
 The schema remains strict: unknown fields are rejected, tool installers are
 owned by DevBox, and stack files cannot execute arbitrary shell commands.
-A tool-specific resolver must reject channels that the upstream tool does not
-actually provide.
 
 ## Example
 
 ```yaml
 schema_version: 2
 
-name: python
-description: Python development environment.
+name: default
+description: DevBox default development environment.
 
 base:
   distribution: debian
   version: "trixie"
 
 packages:
-  debian:
-    - git
-    - jq
+  debian: []
 
 tools:
   uv:
-    channel: stable
+    version: "0.13.7"
 
 environment: {}
 ```
 
 ## Core and stack separation
 
-The existing Core dependencies and integrations remain available in every
-stack. This includes the DevBox CLI runtime, shell, Docker CLI integration,
-Network Manager and host bridge behavior.
+The existing Core dependencies and integrations remain available in the
+runtime image. This includes the DevBox CLI runtime, shell, Docker CLI
+integration, Network Manager and host bridge behavior.
 
-The DevBox bootstrap uv remains an internal Core dependency; a user-facing uv
-installation belongs only to the Python stack.
+The bootstrap uv remains an internal Core dependency. The stack-provided uv is
+installed separately and is controlled by the selected stack definition.
+
+Terraform is not part of DevBox Core or the currently supported stack-managed
+tools.
 
 ## Reproducibility
 
-The selected stack is resolved during image build. Channel names such as
-`lts` and `stable` are resolved to exact tool versions and recorded in the
-image metadata. Rebuilding later may resolve newer versions, while an existing
-image remains unchanged.
+The selected stack is validated and normalized during image build. Exact tool
+versions are installed as declared. An existing image does not silently update
+its tools; rebuild the image to apply changes.
 
 ## Explicit non-goals
 
+- Multiple curated stacks or mandatory interactive stack selection.
 - Arbitrary shell commands or custom installer scripts in stack definitions.
 - Stack inheritance or composition.
 - Docker services, ports, volumes or networks in stack definitions.
 - Secrets and host-specific configuration in stack definitions.
 - Runtime installation of stack tools.
 - Silent in-place upgrades of tools inside an existing image.
+- Terraform installation or support.
