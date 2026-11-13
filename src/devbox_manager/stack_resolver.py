@@ -15,13 +15,16 @@ from devbox_manager.packages_manifest import (
     validate_package_name,
 )
 
-SCHEMA_VERSION = 1
-SUPPORTED_TOOLS = frozenset({"terraform", "uv"})
+SCHEMA_VERSION = 2
+SUPPORTED_DISTRIBUTIONS = frozenset({"debian"})
+SUPPORTED_TOOLS = frozenset({"uv"})
+SUPPORTED_CHANNELS = frozenset({"lts", "stable"})
 STACK_FILENAME = "stack.yaml"
 
 _NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 _TOOL_VERSION_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.+_-]*$")
 _ENVIRONMENT_KEY_PATTERN = re.compile(r"^[A-Z_][A-Z0-9_]*$")
+_BASE_VERSION_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
 class StackDefinitionError(ValueError):
@@ -64,19 +67,34 @@ class StackDefinition:
     schema_version: int
     name: str
     description: str
-    alpine_packages: tuple[str, ...]
-    tools: dict[str, str]
+    distribution: str
+    base_version: str
+    packages: dict[str, tuple[str, ...]]
+    tools: dict[str, dict[str, str]]
     environment: dict[str, str]
+
+    @property
+    def base_image(self) -> str:
+        """Return the minimal supported official base image reference."""
+        return f"debian:{self.base_version}-slim"
 
     def to_build_inputs(self) -> dict[str, Any]:
         """Return a plain, deterministic structure suitable for build generation."""
         return {
             "schema_version": self.schema_version,
             "name": self.name,
-            "packages": {"alpine": list(self.alpine_packages)},
+            "base": {
+                "distribution": self.distribution,
+                "version": self.base_version,
+                "image": self.base_image,
+            },
+            "packages": {
+                distribution: list(packages)
+                for distribution, packages in sorted(self.packages.items())
+            },
             "tools": {
-                name: {"version": version}
-                for name, version in sorted(self.tools.items())
+                name: dict(sorted(declaration.items()))
+                for name, declaration in sorted(self.tools.items())
             },
             "environment": dict(sorted(self.environment.items())),
         }
@@ -104,28 +122,54 @@ def _require_non_empty_string(value: Any, field: str) -> str:
     return value
 
 
-def _validate_packages(value: Any) -> tuple[str, ...]:
-    if not isinstance(value, list):
-        raise StackDefinitionError("packages.alpine must be a list.")
-    packages: list[str] = []
-    seen: set[str] = set()
-    for package in value:
-        if not isinstance(package, str):
-            raise StackDefinitionError("Every packages.alpine entry must be a string.")
-        try:
-            normalized = validate_package_name(package)
-        except PackageManifestError as error:
-            raise StackDefinitionError(str(error)) from error
-        if normalized in seen:
-            raise StackDefinitionError(f"Duplicate Alpine package in stack definition: {normalized}.")
-        seen.add(normalized)
-        packages.append(normalized)
-    return tuple(packages)
+def _validate_base(value: Any) -> tuple[str, str]:
+    base = _require_mapping(value, "base")
+    _reject_unknown_fields(base, {"distribution", "version"}, "base")
+    if set(base) != {"distribution", "version"}:
+        raise StackDefinitionError("base.distribution and base.version are required.")
+    distribution = _require_non_empty_string(base["distribution"], "base.distribution")
+    if distribution not in SUPPORTED_DISTRIBUTIONS:
+        supported = ", ".join(sorted(SUPPORTED_DISTRIBUTIONS))
+        raise StackDefinitionError(
+            f"Unsupported base distribution '{distribution}'. Supported: {supported}."
+        )
+    version = _require_non_empty_string(base["version"], "base.version")
+    if not _BASE_VERSION_PATTERN.fullmatch(version):
+        raise StackDefinitionError(f"Invalid base version: {version!r}.")
+    return distribution, version
 
 
-def _validate_tools(value: Any) -> dict[str, str]:
+def _validate_packages(value: Any) -> dict[str, tuple[str, ...]]:
+    packages = _require_mapping(value, "packages")
+    _reject_unknown_fields(packages, set(SUPPORTED_DISTRIBUTIONS), "packages")
+    validated: dict[str, tuple[str, ...]] = {}
+    for distribution, raw_packages in packages.items():
+        if not isinstance(raw_packages, list):
+            raise StackDefinitionError(f"packages.{distribution} must be a list.")
+        normalized_packages: list[str] = []
+        seen: set[str] = set()
+        for package in raw_packages:
+            if not isinstance(package, str):
+                raise StackDefinitionError(
+                    f"Every packages.{distribution} entry must be a string."
+                )
+            try:
+                normalized = validate_package_name(package)
+            except PackageManifestError as error:
+                raise StackDefinitionError(str(error)) from error
+            if normalized in seen:
+                raise StackDefinitionError(
+                    f"Duplicate {distribution} package in stack definition: {normalized}."
+                )
+            seen.add(normalized)
+            normalized_packages.append(normalized)
+        validated[distribution] = tuple(normalized_packages)
+    return validated
+
+
+def _validate_tools(value: Any) -> dict[str, dict[str, str]]:
     tools = _require_mapping(value, "tools")
-    validated: dict[str, str] = {}
+    validated: dict[str, dict[str, str]] = {}
     for tool_name, declaration in tools.items():
         if tool_name not in SUPPORTED_TOOLS:
             supported = ", ".join(sorted(SUPPORTED_TOOLS))
@@ -133,13 +177,31 @@ def _validate_tools(value: Any) -> dict[str, str]:
                 f"Unsupported tool '{tool_name}'. Supported tools: {supported}."
             )
         tool = _require_mapping(declaration, f"tools.{tool_name}")
-        _reject_unknown_fields(tool, {"version"}, f"tools.{tool_name}")
-        if "version" not in tool:
-            raise StackDefinitionError(f"tools.{tool_name}.version is required.")
-        version = _require_non_empty_string(tool["version"], f"tools.{tool_name}.version")
-        if not _TOOL_VERSION_PATTERN.fullmatch(version):
-            raise StackDefinitionError(f"Invalid version for tools.{tool_name}: {version!r}.")
-        validated[tool_name] = version
+        _reject_unknown_fields(tool, {"version", "channel"}, f"tools.{tool_name}")
+        if len(tool) != 1 or not ({"version", "channel"} & set(tool)):
+            raise StackDefinitionError(
+                f"tools.{tool_name} must declare exactly one of version or channel."
+            )
+        if "version" in tool:
+            version = _require_non_empty_string(
+                tool["version"], f"tools.{tool_name}.version"
+            )
+            if not _TOOL_VERSION_PATTERN.fullmatch(version):
+                raise StackDefinitionError(
+                    f"Invalid version for tools.{tool_name}: {version!r}."
+                )
+            validated[tool_name] = {"version": version}
+        else:
+            channel = _require_non_empty_string(
+                tool["channel"], f"tools.{tool_name}.channel"
+            )
+            if channel not in SUPPORTED_CHANNELS:
+                supported = ", ".join(sorted(SUPPORTED_CHANNELS))
+                raise StackDefinitionError(
+                    f"Unsupported channel '{channel}' for tools.{tool_name}. "
+                    f"Supported channels: {supported}."
+                )
+            validated[tool_name] = {"channel": channel}
     return validated
 
 
@@ -159,15 +221,20 @@ def _validate_environment(value: Any) -> dict[str, str]:
     return validated
 
 
-def validate_stack_definition(data: Any, *, expected_name: str | None = None) -> StackDefinition:
+def validate_stack_definition(
+    data: Any, *, expected_name: str | None = None
+) -> StackDefinition:
     """Validate parsed YAML data and return a normalized stack definition."""
     definition = _require_mapping(data, "Stack definition")
     _reject_unknown_fields(
         definition,
-        {"schema_version", "name", "description", "packages", "tools", "environment"},
+        {"schema_version", "name", "description", "base", "packages", "tools", "environment"},
         "stack definition",
     )
-    required = {"schema_version", "name", "description", "packages", "tools", "environment"}
+    required = {
+        "schema_version", "name", "description", "base",
+        "packages", "tools", "environment",
+    }
     missing = sorted(required - set(definition))
     if missing:
         raise StackDefinitionError(f"Missing required field(s): {', '.join(missing)}.")
@@ -186,18 +253,18 @@ def validate_stack_definition(data: Any, *, expected_name: str | None = None) ->
             f"Stack name '{name}' does not match directory name '{expected_name}'."
         )
     description = _require_non_empty_string(definition["description"], "description")
-
-    packages = _require_mapping(definition["packages"], "packages")
-    _reject_unknown_fields(packages, {"alpine"}, "packages")
-    if "alpine" not in packages:
-        raise StackDefinitionError("packages.alpine is required.")
+    distribution, base_version = _validate_base(definition["base"])
+    packages = _validate_packages(definition["packages"])
+    tools = _validate_tools(definition["tools"])
 
     return StackDefinition(
         schema_version=schema_version,
         name=name,
         description=description,
-        alpine_packages=_validate_packages(packages["alpine"]),
-        tools=_validate_tools(definition["tools"]),
+        distribution=distribution,
+        base_version=base_version,
+        packages=packages,
+        tools=tools,
         environment=_validate_environment(definition["environment"]),
     )
 
@@ -225,13 +292,21 @@ def resolve_stack(stack_file: Path) -> StackDefinition:
 def write_build_inputs(stack: StackDefinition, output_dir: Path) -> None:
     """Write normalized, shell-safe files consumed by the runtime image build."""
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "alpine-packages.txt").write_text(
-        "".join(f"{package}\n" for package in stack.alpine_packages),
-        encoding="utf-8",
-    )
-    for tool in SUPPORTED_TOOLS:
-        version = stack.tools.get(tool, "")
-        (output_dir / f"{tool}-version").write_text(version + "\n", encoding="utf-8")
+    (output_dir / "base-image").write_text(stack.base_image + "\n", encoding="utf-8")
+    for distribution in sorted(SUPPORTED_DISTRIBUTIONS):
+        packages = stack.packages.get(distribution, ())
+        (output_dir / f"{distribution}-packages.txt").write_text(
+            "".join(f"{package}\n" for package in packages),
+            encoding="utf-8",
+        )
+    for tool in sorted(SUPPORTED_TOOLS):
+        declaration = stack.tools.get(tool, {})
+        (output_dir / f"{tool}-version").write_text(
+            declaration.get("version", "") + "\n", encoding="utf-8"
+        )
+        (output_dir / f"{tool}-channel").write_text(
+            declaration.get("channel", "") + "\n", encoding="utf-8"
+        )
     environment_lines = [
         f"export {key}={shlex.quote(value)}"
         for key, value in sorted(stack.environment.items())

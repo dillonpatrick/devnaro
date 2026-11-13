@@ -2,16 +2,26 @@
 
 ## Purpose
 
-A stack describes the development tools and environment-specific configuration
-that DevBox should include in an image. It does not define Docker build steps,
-container orchestration, arbitrary shell commands or host integration.
+A stack describes the development environment inputs that DevBox uses when
+building its image. It does not define Docker build steps, container
+orchestration, arbitrary shell commands or host integration.
 
-The contract is intentionally small and versioned. DevBox resolves and
-validates the YAML before the runtime image is built.
+DevBox validates the selected YAML definition before building the runtime
+image.
 
-## File location
+## Current stack
 
-Each stack is stored at:
+The current implementation provides one stack:
+
+| Stack | Base image | Stack-managed tools |
+| --- | --- | --- |
+| `default` | Debian Trixie Slim | uv 0.13.7 |
+
+The `default` stack is selected implicitly by the current host Compose
+configuration and Docker build argument. Explicit selection among multiple
+stacks is not part of the current implementation.
+
+The stack definition is stored at:
 
 ```text
 stacks/<stack-name>/stack.yaml
@@ -19,95 +29,110 @@ stacks/<stack-name>/stack.yaml
 
 The directory name and the `name` field must match.
 
-## Schema version 1
+## Base image policy
 
-| Field | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `schema_version` | integer | yes | Definition format version; currently `1`. |
-| `name` | string | yes | Stable stack identifier. |
-| `description` | string | yes | Human-readable summary. |
-| `packages.alpine` | list of strings | yes | Additional Alpine packages installed with `apk`. |
-| `tools` | mapping | yes | Supported tool identifiers and pinned versions. |
-| `environment` | mapping of strings to strings | yes | Environment variables available in the container. |
+**Debian Slim is the only supported distribution throughout the project.**
+All Docker build stages and the runtime image use Debian-based images. The
+current runtime uses `debian:trixie-slim`.
 
-All top-level fields are required. Unknown fields are rejected.
+Use APT for system packages. Do not add compilers, headers or convenience tools
+to DevBox Core unless they are required by its runtime functionality. Build-only
+dependencies must be removed in the same image layer or kept in a separate
+build stage.
 
-### Tool declarations
+The Dockerfile installs Docker CLI and Compose from Docker's official APT
+repository. The non-root developer account, Docker socket group, Zsh and its
+plugins are configured using Debian tooling and package paths.
 
-Tools are declared by identifier and version. DevBox owns the installer for
-each supported tool. A stack cannot provide an installer command or arbitrary
-build instructions.
+The `dm tools search/add/remove/list` commands use the Debian APT package
+indexes included in the image. The package manifest remains host-backed:
+changes take effect after `devbox recreate`, not in the running container.
 
-The supported tool identifiers are:
+## Version policy
 
-- `terraform`
-- `uv`
+The current stack-managed tool installer supports **uv** only. The current
+stack pins uv to an exact version (`0.13.7`).
 
-A tool is installed only when it is declared in the selected stack. New tool
-identifiers require an implementation and tests in DevBox before they can be
-referenced by a stack.
+The schema accepts `version` or `channel` declarations, but channel values
+are only syntactically validated today. Channel-to-version resolution and
+tool-specific installers are not implemented. Use exact versions for the
+currently supported tool.
 
-The DevBox CLI has its own Python runtime and bootstrap uv installation.
-These are Core implementation dependencies, not stack-provided development
-tools. The stack's `uv`, when declared, is installed separately for user
-workloads.
+The DevBox bootstrap uv is a separate internal Core dependency. It is used to
+prepare the DevBox CLI environment and is not the stack-managed uv installation.
 
-### Package declarations
+## Definition schema
 
-Only additional packages belong in `packages.alpine`. Packages that are part
-of the DevBox Core runtime must not be repeated in a stack definition.
+Schema version 2 supports the following fields:
 
-Package names use the same validation rules as the existing package manifest.
-Unavailable optional packages retain the warning-and-skip behavior;
-repository/network failures remain fatal.
+| Field | Meaning |
+| --- | --- |
+| `schema_version` | Must be `2`. |
+| `name` | Stack identifier; must match its directory. |
+| `description` | Short human-readable description. |
+| `base.distribution` | Must be `debian`. |
+| `base.version` | Explicit Debian release codename/version. |
+| `packages.debian` | Optional list of additional Debian APT packages. |
+| `tools.<name>.version` | Exact tool version; mutually exclusive with `channel`. |
+| `tools.<name>.channel` | Syntactically accepted release channel (`lts` or `stable`); resolution is not implemented. |
+| `environment` | Environment variables available in the container. |
 
-Stack packages are combined with the user-managed entries in
-`docker/packages.txt` during image build. Duplicate package names are
-installed only once.
+The selected base is normalized to the official Debian Slim image:
+`debian:<version>-slim`. The Docker build accepts this exact reference through
+the `BASE_IMAGE` build argument and checks it against the stack resolver output.
+The host Compose configuration currently supplies the Debian Trixie Slim
+default. Package lists are Debian-only; empty or omitted lists add no packages.
 
-### Environment declarations
+The schema remains strict: unknown fields are rejected, tool installers are
+owned by DevBox, and stack files cannot execute arbitrary shell commands.
 
-Environment values must be strings, and variable names must use uppercase
-letters, digits and underscores, beginning with a letter or underscore.
+## Example
 
-Values are written to a shell-safe environment file and loaded for Zsh login
-sessions in the container. The initial contract does not support secret
-values, variable interpolation, shell expansion or host-specific paths.
+```yaml
+schema_version: 2
 
-## Resolution and image build
+name: default
+description: DevBox default development environment.
 
-The Docker build uses a dedicated temporary `stack-resolver` stage based on
-Python 3.12 Alpine. It installs PyYAML in that stage, loads the selected
-`stacks/<name>/stack.yaml`, validates it and writes normalized build inputs.
+base:
+  distribution: debian
+  version: "trixie"
 
-The runtime image consumes those generated files to install the selected
-Alpine packages and supported tools and to configure the stack environment.
-The resolver stage and its PyYAML dependency are not copied into the final
-image. The host does not need Python or PyYAML to resolve a stack.
+packages:
+  debian: []
 
-The selected stack is passed to the build through the `STACK_NAME` build
-argument, which defaults to `default`. Changing stack tools or packages
-requires rebuilding the image; this is intentional for reproducibility.
+tools:
+  uv:
+    version: "0.13.7"
 
-Generated build inputs include:
+environment: {}
+```
 
-- `alpine-packages.txt`
-- `terraform-version`
-- `uv-version`
-- `environment.sh`
-- `stack-name`
+## Core and stack separation
 
-## Default stack
+The existing Core dependencies and integrations remain available in the
+runtime image. This includes the DevBox CLI runtime, shell, Docker CLI
+integration, Network Manager and host bridge behavior.
 
-`stacks/default/stack.yaml` preserves the existing default development
-toolset. It currently declares Terraform and uv versions and no additional
-Alpine packages or environment variables.
+The bootstrap uv remains an internal Core dependency. The stack-provided uv is
+installed separately and is controlled by the selected stack definition.
 
-## Explicit non-goals for schema version 1
+Terraform is not part of DevBox Core or the currently supported stack-managed
+tools.
 
-- Arbitrary shell commands or custom installer scripts.
+## Reproducibility
+
+The selected stack is validated and normalized during image build. Exact tool
+versions are installed as declared. An existing image does not silently update
+its tools; rebuild the image to apply changes.
+
+## Explicit non-goals
+
+- Multiple curated stacks or mandatory interactive stack selection.
+- Arbitrary shell commands or custom installer scripts in stack definitions.
 - Stack inheritance or composition.
-- Docker services, ports, volumes or networks.
-- Secrets and host-specific configuration.
-- Runtime package installation.
-- Per-environment package manifests or multi-instance orchestration.
+- Docker services, ports, volumes or networks in stack definitions.
+- Secrets and host-specific configuration in stack definitions.
+- Runtime installation of stack tools.
+- Silent in-place upgrades of tools inside an existing image.
+- Terraform installation or support.

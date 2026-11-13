@@ -20,10 +20,10 @@ from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
 from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
-from devbox_manager.alpine_packages import (
-    AlpinePackageSearchError,
-    available_alpine_packages,
-    search_alpine_packages,
+from devbox_manager.debian_packages import (
+    DebianPackageSearchError,
+    available_debian_packages,
+    search_debian_packages,
 )
 from devbox_manager.packages_manifest import (
     PackageManifestError,
@@ -69,7 +69,7 @@ network_app = typer.Typer(
 )
 app.add_typer(network_app, name="network-manager")
 tools_app = typer.Typer(
-    help="Search Alpine packages and manage additional image packages.",
+    help="Search Debian packages and manage additional image packages.",
     no_args_is_help=True,
     cls=DevBoxTyperGroup,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -79,14 +79,14 @@ app.add_typer(tools_app, name="tools")
 
 
 @tools_app.command("search")
-def tools_search(query: str = typer.Argument(..., help="Text to search Alpine package names and descriptions.")) -> None:
-    """Search official Alpine Linux repositories for available packages."""
+def tools_search(query: str = typer.Argument(..., help="Text to search Debian package names and descriptions.")) -> None:
+    """Search official Debian APT package indexes for available packages."""
     try:
-        packages = search_alpine_packages(query)
-    except AlpinePackageSearchError as error:
+        packages = search_debian_packages(query)
+    except DebianPackageSearchError as error:
         render_panel(
             console,
-            "Alpine package search failed",
+            "Debian package search failed",
             f"[error]{error}[/error]",
             border_style="error",
         )
@@ -108,9 +108,9 @@ def tools_search(query: str = typer.Argument(..., help="Text to search Alpine pa
 
     render_panel(
         console,
-        "Alpine package search",
-        table if packages else "[muted]No matching Alpine packages found.[/muted]",
-        subtitle=f"{len(packages)} package(s) · Official Alpine main + community repositories",
+        "Debian package search",
+        table if packages else "[muted]No matching Debian packages found.[/muted]",
+        subtitle=f"{len(packages)} package(s) · Official Debian APT package indexes",
     )
 
 
@@ -128,7 +128,6 @@ def _render_manifest_updated(action: str, package: str) -> None:
 def _is_image_provided_tool(package: str) -> bool:
     """Return whether a package is already provided by the base DevBox image."""
     image_managed_commands = {
-        "terraform": "terraform",
         "uv": "uv",
     }
     command = image_managed_commands.get(package)
@@ -137,7 +136,7 @@ def _is_image_provided_tool(package: str) -> bool:
 
     try:
         result = subprocess.run(
-            ["apk", "info", "-e", package],
+            ["dpkg-query", "-W", "-f=${Status}", package],
             capture_output=True,
             text=True,
             check=False,
@@ -146,12 +145,12 @@ def _is_image_provided_tool(package: str) -> bool:
     except (OSError, subprocess.TimeoutExpired):
         return False
 
-    return result.returncode == 0
+    return result.returncode == 0 and result.stdout.strip() == "install ok installed"
 
 
 @tools_app.command("add")
-def tools_add(package: str = typer.Argument(..., help="Alpine package name to add to the image.")) -> None:
-    """Add an available Alpine package to the image manifest."""
+def tools_add(package: str = typer.Argument(..., help="Debian package name to add to the image.")) -> None:
+    """Add an available Debian package to the image manifest."""
     try:
         normalized = validate_package_name(package)
 
@@ -164,12 +163,12 @@ def tools_add(package: str = typer.Argument(..., help="Alpine package name to ad
             return
 
         try:
-            available = available_alpine_packages((normalized,))
-        except AlpinePackageSearchError as error:
+            available = available_debian_packages((normalized,))
+        except DebianPackageSearchError as error:
             render_panel(
                 console,
                 "Package validation failed",
-                f"[error]Could not verify whether {normalized} exists in Alpine repositories:[/error]\n{error}",
+                f"[error]Could not verify whether {normalized} exists in Debian repositories:[/error]\n{error}",
                 border_style="error",
             )
             raise typer.Exit(code=1) from error
@@ -178,7 +177,7 @@ def tools_add(package: str = typer.Argument(..., help="Alpine package name to ad
             render_panel(
                 console,
                 "Package not found",
-                f"[error]{normalized} does not exist in the configured Alpine repositories. No manifest change was made.[/error]\n"
+                f"[error]{normalized} does not exist in the configured Debian repositories. No manifest change was made.[/error]\n"
                 "[muted]Use dm tools search to find an available package.[/muted]",
                 border_style="error",
             )
@@ -195,8 +194,8 @@ def tools_add(package: str = typer.Argument(..., help="Alpine package name to ad
         render_panel(console, "Package already declared", f"[muted]{normalized} is already in the manifest.[/muted]")
 
 @tools_app.command("remove")
-def tools_remove(package: str = typer.Argument(..., help="Alpine package name to remove from the image.")) -> None:
-    """Remove an Alpine package from the image manifest."""
+def tools_remove(package: str = typer.Argument(..., help="Debian package name to remove from the image.")) -> None:
+    """Remove an Debian package from the image manifest."""
     try:
         changed = remove_package(package, PACKAGE_MANIFEST_PATH)
     except PackageManifestError as error:
@@ -224,12 +223,12 @@ def tools_list() -> None:
         raise typer.Exit(code=1) from error
 
     try:
-        valid_packages = available_alpine_packages(packages)
-    except AlpinePackageSearchError as error:
+        valid_packages = available_debian_packages(packages)
+    except DebianPackageSearchError as error:
         render_panel(
             console,
             "Package validation failed",
-            f"[error]Could not verify Alpine packages:[/error]\n{error}",
+            f"[error]Could not verify Debian packages:[/error]\n{error}",
             border_style="error",
         )
         raise typer.Exit(code=1) from error
@@ -407,8 +406,12 @@ def _tool_source(executable: str) -> str:
 def info() -> None:
     """Show the DevBox stack, base image, and installed development tools."""
     try:
-        alpine_version = Path("/etc/alpine-release").read_text(encoding="utf-8").strip()
-        base_image = f"Alpine Linux {alpine_version}"
+        os_release = {}
+        for line in Path("/etc/os-release").read_text(encoding="utf-8").splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                os_release[key] = value.strip('"')
+        base_image = os_release.get("PRETTY_NAME", "Debian")
     except OSError:
         base_image = "Unknown"
 
@@ -424,7 +427,6 @@ def info() -> None:
     tools.add_column("Source", style="muted")
 
     known_tools = [
-        ("Terraform", "terraform"),
         ("Docker CLI", "docker"),
         ("Docker Compose", "docker"),
         ("Python", "python3"),
@@ -827,16 +829,20 @@ def welcome() -> None:
     """Display the DevBox welcome screen."""
     manager_running, _ = process_status()
     try:
-        alpine_version = Path("/etc/alpine-release").read_text(encoding="utf-8").strip()
-        alpine_version = ".".join(alpine_version.split(".")[:2])
+        os_release = {}
+        for line in Path("/etc/os-release").read_text(encoding="utf-8").splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                os_release[key] = value.strip('"')
+        base_release = os_release.get("PRETTY_NAME", "Debian")
     except OSError:
-        alpine_version = "unknown"
+        base_release = "unknown"
 
     details = Table.grid(padding=(0, 2))
     details.add_column(style="muted", width=18, no_wrap=True)
     details.add_column()
     details.add_row("DevBox version", f"[value]{__version__}[/value]")
-    details.add_row("Base image", f"Alpine Linux {alpine_version}")
+    details.add_row("Base image", base_release)
     details.add_row("User", getpass.getuser())
     details.add_row("Workspace", str(Path.cwd()))
     details.add_row("Home", str(Path.home()))

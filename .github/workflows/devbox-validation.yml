@@ -6,8 +6,8 @@ on:
       - main
       - feat/python-cli-foundation
       - feat/stop-clean-lifecycle
-      - feat/alpine-linux-experiment
       - feat/stack-definition-foundation
+      - feat/curated-development-stacks
   pull_request:
     branches:
       - main
@@ -71,6 +71,12 @@ jobs:
 
   docker-image-build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - base-image: debian:trixie-slim
+            stack-name: default
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -94,6 +100,8 @@ jobs:
             USER_UID=1000
             USER_GID=1000
             DOCKER_GID=966
+            BASE_IMAGE=${{ matrix.base-image }}
+            STACK_NAME=${{ matrix.stack-name }}
 
       - name: Start DevBox container
         run: |
@@ -117,11 +125,16 @@ jobs:
           docker exec devbox-ci devbox-manager --version
           docker exec devbox-ci devbox-manager --help
           docker exec devbox-ci devbox-manager info
-          docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v terraform && command -v docker && command -v jq'
+          docker exec devbox-ci devbox-manager tools search jq | grep -F jq
+          docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v docker && command -v jq && ! command -v terraform'
           docker exec devbox-ci devbox-manager __complete -- tools '' | grep -Fx 'search'
           docker exec devbox-ci zsh -fc 'source ~/.zshrc; (( $+functions[_devbox_completion] )) && [[ ${_comps[dm]} == _devbox_completion ]]'
+          docker exec devbox-ci sh -ec "printf '%s\\n' 'source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh' 'source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' >> /home/devuser/.zshrc"
+          docker restart devbox-ci
+          docker exec devbox-ci sh -ec '! grep -Fq /usr/share/zsh/plugins "$HOME/.zshrc" && grep -Fq /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh "$HOME/.zshrc" && grep -Fq /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh "$HOME/.zshrc"'
+          docker exec devbox-ci zsh -lic 'true'
           docker exec devbox-ci sh -ec 'test -x /usr/local/bin/devbox-host-bridge && test -x /usr/local/bin/devbox-status && test -d /workspace'
-          docker exec devbox-ci python3 --version | grep -E '^Python 3\.12\.'
+          docker exec devbox-ci python3 -c 'import sys; assert sys.version_info >= (3, 12), sys.version'
 
       - name: Remove smoke-test container
         if: always()

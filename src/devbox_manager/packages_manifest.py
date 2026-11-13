@@ -1,4 +1,4 @@
-"""Read and update the host-backed additional Alpine package manifest."""
+"""Read and update the host-backed additional Debian package manifest."""
 
 from pathlib import Path
 import re
@@ -12,11 +12,11 @@ class PackageManifestError(ValueError):
 
 
 def validate_package_name(package: str) -> str:
-    """Validate and normalize one Alpine package name."""
+    """Validate and normalize one Debian package name."""
     normalized = package.strip()
     if not normalized or not PACKAGE_NAME_PATTERN.fullmatch(normalized):
         raise PackageManifestError(
-            f"Invalid package name: {package!r}. Use one Alpine package name."
+            f"Invalid package name: {package!r}. Use one package name."
         )
     return normalized
 
