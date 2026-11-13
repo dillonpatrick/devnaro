@@ -21,7 +21,6 @@ def valid_definition(**overrides):
         "base": {"distribution": "debian", "version": "trixie"},
         "packages": {"debian": ["git", "jq"]},
         "tools": {
-            "terraform": {"channel": "stable"},
             "uv": {"version": "0.13.7"},
         },
         "environment": {"APP_ENV": "development"},
@@ -38,7 +37,6 @@ def test_validate_stack_definition_returns_normalized_values():
     assert stack.base_image == "debian:trixie-slim"
     assert stack.packages == {"debian": ("git", "jq")}
     assert stack.tools == {
-        "terraform": {"channel": "stable"},
         "uv": {"version": "0.13.7"},
     }
     assert stack.environment == {"APP_ENV": "development"}
@@ -52,11 +50,11 @@ def test_debian_base_uses_slim_variant():
 
 def test_build_inputs_are_deterministic_and_plain_data():
     definition = valid_definition(
-        tools={"uv": {"channel": "stable"}, "terraform": {"version": "1.17.1"}},
+        tools={"uv": {"channel": "stable"}}, 
         environment={"Z_LAST": "last", "A_FIRST": "first"},
     )
     result = validate_stack_definition(definition).to_build_inputs()
-    assert list(result["tools"]) == ["terraform", "uv"]
+    assert list(result["tools"]) == ["uv"]
     assert list(result["environment"]) == ["A_FIRST", "Z_LAST"]
     assert result["base"] == {
         "distribution": "debian",
@@ -201,8 +199,6 @@ def test_write_build_inputs_creates_shell_safe_artifacts(tmp_path):
     assert (tmp_path / "base-image").read_text() == "debian:trixie-slim\n"
     assert not (tmp_path / "alpine-packages.txt").exists()
     assert (tmp_path / "debian-packages.txt").read_text() == "git\njq\n"
-    assert (tmp_path / "terraform-version").read_text() == "\n"
-    assert (tmp_path / "terraform-channel").read_text() == "stable\n"
     assert (tmp_path / "uv-version").read_text() == "0.13.7\n"
     assert (tmp_path / "uv-channel").read_text() == "\n"
     assert (tmp_path / "stack-name").read_text() == "python-api\n"
@@ -212,9 +208,8 @@ def test_write_build_inputs_creates_shell_safe_artifacts(tmp_path):
     assert f"export APP_LABEL={expected_label}" in environment
 
 
-def test_default_stack_does_not_include_terraform():
+def test_default_stack_only_declares_uv():
     stack_file = Path(__file__).resolve().parents[2] / "stacks" / "default" / "stack.yaml"
     stack = resolve_stack(stack_file)
 
-    assert "terraform" not in stack.tools
     assert stack.tools == {"uv": {"version": "0.13.7"}}
