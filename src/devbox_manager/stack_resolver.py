@@ -17,7 +17,7 @@ from devbox_manager.packages_manifest import (
 
 SCHEMA_VERSION = 2
 SUPPORTED_DISTRIBUTIONS = frozenset({"debian"})
-SUPPORTED_TOOLS = frozenset({"terraform", "uv"})
+SUPPORTED_TOOLS = frozenset({"uv"})
 SUPPORTED_CHANNELS = frozenset({"lts", "stable"})
 STACK_FILENAME = "stack.yaml"
 
