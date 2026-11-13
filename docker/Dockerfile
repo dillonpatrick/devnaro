@@ -63,7 +63,9 @@ RUN set -eux; \
     printf 'Types: deb\nURIs: https://download.docker.com/linux/debian\nSuites: %s\nComponents: stable\nArchitectures: %s\nSigned-By: /etc/apt/keyrings/docker.asc\n' "$VERSION_CODENAME" "$(dpkg --print-architecture)" \
       > /etc/apt/sources.list.d/docker.sources; \
     apt-get update; \
-    apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin
+    apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin; \
+    test -r /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh; \
+    test -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Install stack and user-managed packages from Debian repositories.
 RUN set -eu; \
