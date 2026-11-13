@@ -427,7 +427,6 @@ def info() -> None:
     tools.add_column("Source", style="muted")
 
     known_tools = [
-        ("Terraform", "terraform"),
         ("Docker CLI", "docker"),
         ("Docker Compose", "docker"),
         ("Python", "python3"),
