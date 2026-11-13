@@ -1,6 +1,7 @@
 """Tests for declarative DevBox stack definitions."""
 
 import shlex
+from pathlib import Path
 
 import pytest
 
@@ -209,3 +210,11 @@ def test_write_build_inputs_creates_shell_safe_artifacts(tmp_path):
     assert "export APP_ENV='dev environment'" in environment
     expected_label = shlex.quote("it's ready")
     assert f"export APP_LABEL={expected_label}" in environment
+
+
+def test_default_stack_does_not_include_terraform():
+    stack_file = Path(__file__).resolve().parents[2] / "stacks" / "default" / "stack.yaml"
+    stack = resolve_stack(stack_file)
+
+    assert "terraform" not in stack.tools
+    assert stack.tools == {"uv": {"version": "0.13.7"}}
