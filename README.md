@@ -16,44 +16,6 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 - Host CLI for lifecycle operations and container-side CLI for diagnostics.
 - Zsh, Oh My Zsh (pinned commit), Docker CLI, Python 3.13 from Debian Trixie packages, uv 0.13.7, Typer, and Rich.
 
-## Architecture
-
-```text
-Host
-|
-+-- devbox/
-|   +-- .devcontainer/
-|   +-- .github/
-|   +-- docker/
-|   |   +-- packages.txt (additional Debian packages)
-|   |   +-- Dockerfile
-|   |   +-- docker-compose.yml
-|   |   +-- docker-compose.ports.example.yml
-|   |   +-- docker-compose.ports.yml (generated locally, ignored by Git)
-|   +-- network_manager/
-|   |   +-- manager.py
-|   +-- scripts/
-|   |   +-- host/
-|   |   |   +-- devbox
-|   |   |   +-- install.sh
-|   |   |   +-- start.sh
-|   |   |   +-- stop.sh
-|   |   |   +-- clean.sh
-|   |   +-- compose.sh (shared Docker Compose entry point)
-|   |   +-- ui.sh (shared lifecycle terminal helpers)
-|   |   +-- container/
-|   |       +-- entrypoint.sh
-|   +-- src/devbox_manager/
-|   +-- tests/unit/
-|   +-- Makefile
-|   +-- pyproject.toml
-|   +-- README.md
-|
-+-- workspace/
-    +-- project-1/
-    +-- project-2/
-```
-
 The workspace is mounted in the container at `/workspace`. Project Compose files remain in their own directories and do not need to be changed by DevBox.
 
 ### Development port forwarding
