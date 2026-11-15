@@ -52,9 +52,21 @@ func (b bridge) handle(conn net.Conn) {
 	_ = json.NewEncoder(conn).Encode(result)
 }
 
-func remoteFolderURI(containerName, folderPath string) string {
-	authority := hex.EncodeToString([]byte(containerName))
+func remoteFolderURI(containerID, folderPath string) string {
+	authority := hex.EncodeToString([]byte(containerID))
 	return fmt.Sprintf("vscode-remote://attached-container+%s%s", authority, folderPath)
+}
+
+func resolveContainerID(containerName string) (string, error) {
+	output, err := exec.Command("docker", "inspect", "--format", "{{.Id}}", containerName).Output()
+	if err != nil {
+		return "", fmt.Errorf("Unable to inspect DevBox container %q: %w", containerName, err)
+	}
+	containerID := strings.TrimSpace(string(output))
+	if len(containerID) != 64 {
+		return "", fmt.Errorf("Docker returned an invalid container ID for %q", containerName)
+	}
+	return containerID, nil
 }
 
 func (b bridge) open(containerPath string) error {
@@ -84,6 +96,10 @@ func (b bridge) open(containerPath string) error {
 		return err
 	}
 	containerFolder := filepath.ToSlash(filepath.Join("/workspace", folderRel))
+	containerID, err := resolveContainerID(b.containerName)
+	if err != nil {
+		return err
+	}
 	vscode, err := exec.LookPath("code")
 	if err != nil {
 		return errors.New("VS Code CLI 'code' was not found on the host PATH. Install VS Code and make its 'code' command available.")
@@ -110,7 +126,7 @@ func (b bridge) open(containerPath string) error {
 	sum := sha256.Sum256([]byte(b.containerName + ":" + folder))
 	workspaceFile := filepath.Join(cacheRoot, hex.EncodeToString(sum[:])[:16]+".code-workspace")
 	config := map[string]any{
-		"folders": []map[string]string{{"uri": remoteFolderURI(b.containerName, containerFolder)}},
+		"folders": []map[string]string{{"uri": remoteFolderURI(containerID, containerFolder)}},
 		"settings": map[string]any{
 			"terminal.integrated.defaultProfile.linux": "zsh",
 			"python.defaultInterpreterPath": filepath.ToSlash(filepath.Join(containerFolder, ".venv", "bin", "python")),
