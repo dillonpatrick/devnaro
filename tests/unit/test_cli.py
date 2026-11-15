@@ -202,18 +202,18 @@ def test_tools_search_queries_external_debian_packages(monkeypatch):
         "search_debian_packages",
         lambda query: (
             DebianPackage(
-                name="terraform",
+                name="jq",
                 version="1.9.8-1",
-                description="Infrastructure as Code tool",
+                description="Command-line JSON processor",
                 repository="Debian APT",
             ),
         ),
     )
-    result = runner.invoke(app, ["tools", "search", "terraform"])
+    result = runner.invoke(app, ["tools", "search", "jq"])
 
     assert result.exit_code == 0
     assert "Debian package search" in result.stdout
-    assert "terraform" in result.stdout
+    assert "jq" in result.stdout
     assert "1.9.8-1" in result.stdout
     assert "Debian APT" in result.stdout
 
