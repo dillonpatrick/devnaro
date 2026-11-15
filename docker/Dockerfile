@@ -3,7 +3,6 @@ ARG BASE_IMAGE=debian:trixie-slim
 FROM --platform=$BUILDPLATFORM golang:1.24.3-bookworm AS bridge-builder
 
 ARG TARGETOS
-ARG TARGETARCH
 WORKDIR /src
 COPY scripts/host/code_bridge.go ./code_bridge.go
 COPY scripts/host/status.go ./status.go
@@ -92,18 +91,6 @@ RUN set -eu; \
     fi; \
     rm -f /tmp/devbox-user-packages.txt /tmp/devbox-extra-packages
 
-# Install Terraform only when the selected stack declares it.
-RUN set -eux; \
-    TERRAFORM_VERSION="$(cat /opt/devbox-config/stack/terraform-version)"; \
-    if [ -n "$TERRAFORM_VERSION" ]; then \
-      case "$TARGETARCH" in amd64) TERRAFORM_ARCH=amd64 ;; arm64) TERRAFORM_ARCH=arm64 ;; *) echo "Unsupported Terraform architecture: $TARGETARCH" >&2; exit 1 ;; esac; \
-      TOOL_ARCH="$TERRAFORM_ARCH"; \
-      apt-get update && apt-get install -y --no-install-recommends unzip wget; \
-      wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TOOL_ARCH}.zip" -O /tmp/terraform.zip; \
-      unzip /tmp/terraform.zip -d /usr/local/bin; rm /tmp/terraform.zip; \
-      terraform version | grep -F "Terraform v${TERRAFORM_VERSION}"; \
-      apt-get purge -y unzip wget && apt-get autoremove -y; \
-    fi
 
 # Keep the bootstrap uv/ private to DevBox; install the stack's uv separately.
 RUN python3 -m venv /opt/devbox-bootstrap-uv \
@@ -146,7 +133,7 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && git -C /home/${USERNAME}/.oh-my-zsh checkout --detach FETCH_HEAD \
     && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \
     && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc \
-    && sed -i 's/^plugins=(git)$/plugins=(git docker terraform uv)/' /home/${USERNAME}/.zshrc \
+    && sed -i 's/^plugins=(git)$/plugins=(git docker uv)/' /home/${USERNAME}/.zshrc \
     && AUTOSUGGESTIONS=/usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
     && SYNTAX_HIGHLIGHTING=/usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
     && printf '\\n# Zsh autosuggestions\\nsource %s\\n' "$AUTOSUGGESTIONS" >> /home/${USERNAME}/.zshrc \
