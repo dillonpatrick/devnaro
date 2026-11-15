@@ -15,19 +15,15 @@ install: ## Install the host-side devbox command
 	@bash ./scripts/host/install.sh
 
 build: ## Build DevBox image
-	@bash ./scripts/host/ensure-ports-config.sh
 	@bash ./scripts/host/compose.sh build
 
 rebuild: ## Rebuild DevBox image without cache
-	@bash ./scripts/host/ensure-ports-config.sh
 	@bash ./scripts/host/compose.sh build --no-cache
 
 test: ## Run Python unit tests (DevBox must be running)
-	@bash ./scripts/host/ensure-ports-config.sh
 	@bash ./scripts/host/compose.sh exec devbox pytest /opt/devbox-cli/tests/unit
 
 config: ## Validate Docker Compose configuration
-	@bash ./scripts/host/ensure-ports-config.sh
 	@bash ./scripts/host/compose.sh config --quiet
 	@echo "Docker Compose configuration is valid."
 
