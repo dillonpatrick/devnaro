@@ -133,6 +133,7 @@ section 1 "Environment configuration"
 
 
 cd "$SCRIPT_DIR"
+rm -f "$SCRIPT_DIR/docker/docker-compose.ports.yml"
 compose() {
     bash "$SCRIPT_DIR/scripts/host/compose.sh" "$@"
 }
