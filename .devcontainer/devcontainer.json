@@ -1,11 +1,7 @@
 
 {
   "name": "DevBox Debian Trixie Slim",
-  "dockerComposeFile": [
-    "../docker/docker-compose.yml",
-    "../docker/docker-compose.ports.yml"
-  ],
-  "initializeCommand": "bash ${localWorkspaceFolder}/scripts/host/ensure-ports-config.sh",
+  "dockerComposeFile": "../docker/docker-compose.yml",
   "service": "devbox",
   "workspaceFolder": "/workspace",
 
