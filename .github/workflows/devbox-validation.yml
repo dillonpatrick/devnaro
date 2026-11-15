@@ -128,6 +128,7 @@ jobs:
           docker exec devbox-ci devbox-manager info
           docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v docker'
           docker exec devbox-ci zsh -fc 'source ~/.zshrc; (( $+functions[_devbox_completion] )) && [[ ${_comps[dm]} == _devbox_completion ]]'
+          docker exec devbox-ci bash -ic 'type dm >/dev/null && [[ "$PS1" == *DEVBOX* ]] && command -v devbox-manager >/dev/null'
           docker exec devbox-ci sh -ec 'test -x /usr/local/bin/devbox-host-bridge && test -x /usr/local/bin/devbox-status && test -d /workspace'
           docker exec devbox-ci python3 -c 'import sys; assert sys.version_info >= (3, 12), sys.version'
 
