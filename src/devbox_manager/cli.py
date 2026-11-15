@@ -75,7 +75,12 @@ tools_app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 app.add_typer(tools_app, name="tools")
-ports_app = typer.Typer(\n    help="Manage localhost TCP forwards to services in project Docker networks.",\n    no_args_is_help=True,\n)\napp.add_typer(ports_app, name="ports")\n
+ports_app = typer.Typer(
+    help="Manage localhost TCP forwards to services in project Docker networks.",
+    no_args_is_help=True,
+)
+app.add_typer(ports_app, name="ports")
+
 
 
 @tools_app.command("search")
