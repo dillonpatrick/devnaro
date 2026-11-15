@@ -8,7 +8,7 @@
   "shutdownAction": "none",
   "overrideCommand": false,
 
-  "remoteUser": "devuser",
+  "remoteUser": "root",
 
   "customizations": {
     "vscode": {
