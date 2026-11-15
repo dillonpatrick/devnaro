@@ -19,7 +19,6 @@ if [[ "$command" == "__complete" ]]; then
     exit 0
 fi
 
-bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
 if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
     RESET='\033[0m'
