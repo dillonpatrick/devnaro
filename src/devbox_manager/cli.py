@@ -19,7 +19,7 @@ from devbox_manager import __version__
 from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
-from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
+from devbox_manager.port_forwarding import (\n    CONFIG_FILE as PORT_FORWARD_CONFIG,\n    PortForward,\n    add_forward,\n    load_forwards,\n    remove_forward,\n)\nfrom devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
 from devbox_manager.debian_packages import (
     DebianPackageSearchError,
     available_debian_packages,
@@ -75,7 +75,7 @@ tools_app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 app.add_typer(tools_app, name="tools")
-
+ports_app = typer.Typer(\n    help="Manage localhost TCP forwards to services in project Docker networks.",\n    no_args_is_help=True,\n)\napp.add_typer(ports_app, name="ports")\n
 
 
 @tools_app.command("search")
@@ -494,6 +494,64 @@ def info() -> None:
         ),
         subtitle="Image = core system paths · User = installed in ~/.local/bin · Custom PATH = discovered in other PATH directories · Host = external integration",
     )
+
+
+
+@ports_app.command("add")
+def ports_add(
+    local_port: int = typer.Argument(..., help="Port to listen on inside DevBox localhost."),
+    target_host: str = typer.Argument(..., help="Docker service or container name."),
+    target_port: int = typer.Argument(..., help="Port exposed by the target service."),
+) -> None:
+    """Forward a DevBox localhost port to a project service."""
+    try:
+        add_forward(local_port, target_host, target_port)
+    except (OSError, ValueError) as error:
+        render_panel(console, "Port forward not added", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+    render_panel(
+        console,
+        "Port forward added",
+        f"[success]localhost:{local_port} → {target_host}:{target_port}[/success]\n"
+        "The Port Forwarding Manager applies this change automatically.",
+    )
+
+
+@ports_app.command("list")
+def ports_list() -> None:
+    """List configured localhost TCP forwards."""
+    try:
+        forwards = load_forwards()
+    except ValueError as error:
+        render_panel(console, "Port forwarding configuration error", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+    table = Table(box=box.ROUNDED, header_style="heading")
+    table.add_column("Local address", style="info")
+    table.add_column("Target")
+    for item in forwards:
+        table.add_row(f"127.0.0.1:{item.local_port}", f"{item.target_host}:{item.target_port}")
+    render_panel(
+        console,
+        "Configured port forwards",
+        table if forwards else "[muted]No port forwards configured.[/muted]",
+        subtitle=str(PORT_FORWARD_CONFIG),
+    )
+
+
+@ports_app.command("remove")
+def ports_remove(
+    local_port: int = typer.Argument(..., help="Local port to stop forwarding."),
+) -> None:
+    """Remove a localhost TCP forward."""
+    try:
+        removed = remove_forward(local_port)
+    except (OSError, ValueError) as error:
+        render_panel(console, "Port forward not removed", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+    if not removed:
+        render_panel(console, "Port forward not found", f"[warning]No forward uses local port {local_port}.[/warning]")
+        raise typer.Exit(code=1)
+    render_panel(console, "Port forward removed", f"[success]localhost:{local_port} will no longer be forwarded.[/success]")
 
 
 @app.command()
