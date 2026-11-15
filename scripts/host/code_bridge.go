@@ -113,7 +113,7 @@ func (b bridge) open(containerPath string) error {
 		"folders": []map[string]string{{"uri": remoteFolderURI(b.containerName, containerFolder)}},
 		"settings": map[string]any{
 			"terminal.integrated.defaultProfile.linux": "zsh",
-			"python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+			"python.defaultInterpreterPath": filepath.ToSlash(filepath.Join(containerFolder, ".venv", "bin", "python")),
 			"python.terminal.activateEnvironment": true,
 			"[python]": map[string]any{
 				"editor.defaultFormatter": "charliermarsh.ruff",
