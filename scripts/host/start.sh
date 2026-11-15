@@ -421,6 +421,20 @@ else
 fi
 
 # ==========================================
+# Port Forwarding Manager
+# ==========================================
+
+info "Checking Port Forwarding Manager process..."
+
+if compose exec -T devbox sh -c 'pgrep -f "[/]opt/port-forwarding/manager.py" >/dev/null 2>&1'; then
+    success "Port Forwarding Manager is already running."
+else
+    compose exec -T devbox sh -c ': > /tmp/port-forward-manager.log'
+    compose exec -d -T devbox sh -c 'exec python3 -u /opt/port-forwarding/manager.py >> /tmp/port-forward-manager.log 2>&1'
+    success "Port Forwarding Manager started."
+fi
+
+# ==========================================
 # 8. Finalization
 # ==========================================
 
