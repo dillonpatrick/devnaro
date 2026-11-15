@@ -208,9 +208,7 @@ CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
 CODE_BRIDGE_LOG="$RUNTIME_DIR/devbox-code-$USER_UID.log"
 CODE_BRIDGE_BINARY="$RUNTIME_DIR/devbox-host-bridge-$USER_UID"
 STATUS_BINARY="$RUNTIME_DIR/devbox-status-$USER_UID"
-PACKAGE_WARNINGS_FILE="$RUNTIME_DIR/devbox-package-warnings-$USER_UID"
 mkdir -p "$RUNTIME_DIR"
-: > "$PACKAGE_WARNINGS_FILE"
 
 detail "Location: ${WORKSPACE_PATH}"
 
@@ -265,11 +263,6 @@ extract_host_binaries() {
         docker rm "$container_id" >/dev/null
         rm -f "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
         return 1
-    fi
-
-    # Read the image's warning report so it is available even when BuildKit reuses cache.
-    if ! docker cp "$container_id:/opt/devbox-config/package-warnings.txt" "$PACKAGE_WARNINGS_FILE" >/dev/null 2>&1; then
-        : > "$PACKAGE_WARNINGS_FILE"
     fi
 
     docker rm "$container_id" >/dev/null
@@ -445,7 +438,7 @@ printf '%b\n' "${WHITE}${BOLD}  Quick commands${RESET}"
 printf '\n'
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox shell" "${RESET}" "Enter DevBox"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox status" "${RESET}" "Container status"
-printf '  %b%-22s%b %s\n' "${GREEN}" "devbox info" "${RESET}" "DevBox environment and installed tools"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox info" "${RESET}" "DevBox container and host integrations"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox manager logs" "${RESET}" "Network Manager logs"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox networks" "${RESET}" "Docker networks"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Stop DevBox container"
@@ -459,20 +452,6 @@ line
 printf '\n'
 info "DevBox is ready. Use devbox shell to enter the container."
 
-if [[ -s "$PACKAGE_WARNINGS_FILE" ]]; then
-    printf '\n'
-    line
-    printf '%b\n' "${YELLOW}${BOLD}  Package installation warnings${RESET}"
-    line
-
-    while IFS= read -r package_warning; do
-        warning "${package_warning#WARNING: }"
-    done < "$PACKAGE_WARNINGS_FILE"
-
-    line
-fi
-
-rm -f "$PACKAGE_WARNINGS_FILE"
 printf '\n'
 
 trap - ERR
