@@ -119,7 +119,7 @@ RUN set -eux; \
     USER_GROUP="$(getent group "$USER_GID" | cut -d: -f1)"; \
     useradd --uid "$USER_UID" --gid "$USER_GROUP" --create-home --home-dir "/home/$USERNAME" --shell /bin/zsh "$USERNAME"; \
     usermod -aG "$DOCKER_GROUP" "$USERNAME"; \
-    printf '%s ALL=(root) NOPASSWD: /usr/bin/apt, /usr/bin/apt-get, /usr/bin/dpkg\\n' "$USERNAME" > /etc/sudoers.d/devbox-package-management; \
+    printf '%s ALL=(root) NOPASSWD: /usr/bin/apt, /usr/bin/apt-get, /usr/bin/dpkg\n' "$USERNAME" > /etc/sudoers.d/devbox-package-management; \
     chmod 0440 /etc/sudoers.d/devbox-package-management; \
     visudo -cf /etc/sudoers.d/devbox-package-management; \
     mkdir -p "/home/$USERNAME"; \
