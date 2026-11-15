@@ -133,7 +133,7 @@ section 1 "Environment configuration"
 
 
 cd "$SCRIPT_DIR"
-bash "$SCRIPT_DIR/scripts/host/ensure-ports-config.sh"
+rm -f "$SCRIPT_DIR/docker/docker-compose.ports.yml"
 compose() {
     bash "$SCRIPT_DIR/scripts/host/compose.sh" "$@"
 }
@@ -208,9 +208,7 @@ CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
 CODE_BRIDGE_LOG="$RUNTIME_DIR/devbox-code-$USER_UID.log"
 CODE_BRIDGE_BINARY="$RUNTIME_DIR/devbox-host-bridge-$USER_UID"
 STATUS_BINARY="$RUNTIME_DIR/devbox-status-$USER_UID"
-PACKAGE_WARNINGS_FILE="$RUNTIME_DIR/devbox-package-warnings-$USER_UID"
 mkdir -p "$RUNTIME_DIR"
-: > "$PACKAGE_WARNINGS_FILE"
 
 detail "Location: ${WORKSPACE_PATH}"
 
@@ -267,11 +265,6 @@ extract_host_binaries() {
         return 1
     fi
 
-    # Read the image's warning report so it is available even when BuildKit reuses cache.
-    if ! docker cp "$container_id:/opt/devbox-config/package-warnings.txt" "$PACKAGE_WARNINGS_FILE" >/dev/null 2>&1; then
-        : > "$PACKAGE_WARNINGS_FILE"
-    fi
-
     docker rm "$container_id" >/dev/null
     chmod 700 "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
 }
@@ -291,7 +284,7 @@ if [[ ! -S "$CODE_SOCKET_PATH" ]] || [[ ! -f "$CODE_BRIDGE_PID" ]] || ! kill -0 
     nohup "$CODE_BRIDGE_BINARY" \
         --socket "$CODE_SOCKET_PATH" \
         --workspace "$WORKSPACE_PATH" \
-        --terminal-script "$SCRIPT_DIR/scripts/host/vscode-terminal.sh" \
+        --container "devbox" \
         >"$CODE_BRIDGE_LOG" 2>&1 &
     echo "$!" > "$CODE_BRIDGE_PID"
 
@@ -445,7 +438,7 @@ printf '%b\n' "${WHITE}${BOLD}  Quick commands${RESET}"
 printf '\n'
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox shell" "${RESET}" "Enter DevBox"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox status" "${RESET}" "Container status"
-printf '  %b%-22s%b %s\n' "${GREEN}" "devbox info" "${RESET}" "DevBox environment and installed tools"
+printf '  %b%-22s%b %s\n' "${GREEN}" "devbox info" "${RESET}" "DevBox container and host integrations"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox manager logs" "${RESET}" "Network Manager logs"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox networks" "${RESET}" "Docker networks"
 printf '  %b%-22s%b %s\n' "${GREEN}" "devbox stop" "${RESET}" "Stop DevBox container"
@@ -459,20 +452,6 @@ line
 printf '\n'
 info "DevBox is ready. Use devbox shell to enter the container."
 
-if [[ -s "$PACKAGE_WARNINGS_FILE" ]]; then
-    printf '\n'
-    line
-    printf '%b\n' "${YELLOW}${BOLD}  Package installation warnings${RESET}"
-    line
-
-    while IFS= read -r package_warning; do
-        warning "${package_warning#WARNING: }"
-    done < "$PACKAGE_WARNINGS_FILE"
-
-    line
-fi
-
-rm -f "$PACKAGE_WARNINGS_FILE"
 printf '\n'
 
 trap - ERR

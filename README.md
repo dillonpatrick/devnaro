@@ -14,7 +14,7 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 - Persistent home directory across normal container stops and restarts.
 - Separate stop and clean lifecycle operations.
 - Host CLI for lifecycle operations and container-side CLI for diagnostics.
-- Zsh, Oh My Zsh (pinned commit), Terraform 1.17.1, Docker CLI, Python 3.13 from Debian Trixie packages, uv 0.13.7, Typer, and Rich.
+- Zsh, Oh My Zsh (pinned commit), Docker CLI, Python 3.13 from Debian Trixie packages, uv 0.13.7, Typer, and Rich.
 
 ## Architecture
 
@@ -25,11 +25,8 @@ Host
 |   +-- .devcontainer/
 |   +-- .github/
 |   +-- docker/
-|   |   +-- packages.txt (additional Debian packages)
 |   |   +-- Dockerfile
 |   |   +-- docker-compose.yml
-|   |   +-- docker-compose.ports.example.yml
-|   |   +-- docker-compose.ports.yml (generated locally, ignored by Git)
 |   +-- network_manager/
 |   |   +-- manager.py
 |   +-- scripts/
@@ -56,31 +53,12 @@ Host
 
 The workspace is mounted in the container at `/workspace`. Project Compose files remain in their own directories and do not need to be changed by DevBox.
 
-### Development port forwarding
+### Host port publishing
 
-DevBox publishes common development ports from the container to the host, bound **only to `127.0.0.1`**. This lets the host browser open links printed by tools such as Uvicorn, Vite, and other local development servers without changing a project's Compose file.
+DevBox does not publish development ports from its own container to the host by default. This avoids reserving broad port ranges and prevents unnecessary host-side listeners.
 
-The default host/container ports are `3000–3010`, `4173`, `5000–5010`, `5173`, `8000–8010`, `8080–8090`, and `9000–9010`. The host and container use the same port number. For example, an API listening on container port `8000` is reachable on the host at `http://127.0.0.1:8000`.
+When a project needs to be reachable from the host browser, publish the required port in that project's own Docker Compose configuration, or use a project-specific forwarding solution. DevBox's `dm ports` feature serves a different purpose: it exposes a service from another Docker container on DevBox's own loopback interface so tools running inside DevBox can continue using `localhost`.
 
-Port publishing is kept separate from the main Compose definition. On first use, DevBox copies `docker/docker-compose.ports.example.yml` to the local, Git-ignored `docker/docker-compose.ports.yml`. Edit that local file to add, remove, or change published ports. The generated file is not overwritten on subsequent starts, so your choices survive updates to the DevBox repository.
-
-To disable host port publishing entirely, replace the local file contents with:
-
-```yaml
-services:
-  devbox:
-    ports: []
-```
-
-To publish only selected ports, keep only the desired entries under `services.devbox.ports`. Keep the host binding on `127.0.0.1` unless you intentionally want to expose a development service on another network interface. For example, an entry such as `127.0.0.1:9000:8000` maps host port `9000` to container port `8000`.
-
-Applications started directly inside DevBox must bind to `0.0.0.0`, not `127.0.0.1`, so Docker can forward traffic to them. For example:
-
-```bash
-uvicorn your_module:app --reload --host 0.0.0.0 --port 8000
-```
-
-The default host-side bindings are loopback-only and are not exposed to other machines on the network. If a published host port is already occupied, Docker may refuse to start DevBox; remove or change that entry in `docker/docker-compose.ports.yml`. After changing port mappings, run `devbox recreate` to apply them to the container.
 
 ## Requirements
 
@@ -173,35 +151,7 @@ Use `devbox clean` only when you intentionally want to remove DevBox's persisted
 
 ## Inside the container
 
-DevBox runs interactive sessions as an unprivileged user. The `sudo` command is not installed, and the default user cannot install Debian packages with `apt-get install`. This is intentional: development tools and system dependencies should be part of the reproducible DevBox image rather than installed manually into a running container.
-
-### Add system packages or development tools
-
-Additional Debian packages are declared in `docker/packages.txt`, one package name per line. DevBox mounts this file into the container so you can manage it through the `dm` CLI without leaving your shell. This is the user-customizable manifest for tools beyond DevBox's core runtime dependencies, which remain in `docker/Dockerfile`.
-
-Search the Debian APT package indexes to find a package name, then add it to the manifest:
-
-```bash
-dm tools search ripgrep
-dm tools add ripgrep
-dm tools list
-```
-
-To remove an additional package:
-
-```bash
-dm tools remove ripgrep
-```
-
-The add/remove commands update the host-backed `docker/packages.txt` file. They do not install or uninstall anything in the running container. After changing the manifest, DevBox displays a reminder to run this command in a **host terminal**:
-
-```bash
-devbox recreate
-```
-
-The recreate operation rebuilds the image and creates a new container, applying the complete manifest. The Docker build validates manifest entries and installs the listed packages from Debian APT repositories. Blank lines and full-line comments are ignored. Invalid entries fail the image build instead of being silently skipped. Because the manifest is part of the repository, the same additional packages are installed whenever the image is built on another machine.
-
-Do not install packages manually into a running container; declare them in this manifest so the environment remains reproducible. Keep core DevBox dependencies in the Dockerfile. For tools that are not available as Debian packages, add their installation steps to the Dockerfile as part of the image build.
+DevBox runs interactive sessions as an unprivileged user. To install Debian packages inside the container, use `sudo apt-get update` and `sudo apt-get install PACKAGE`. The DevBox user can run APT and dpkg with sudo without a password. These manual installations are not preserved when the container is recreated; add packages to the Dockerfile or the selected stack definition for reproducible images.
 
 After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 
@@ -211,9 +161,9 @@ The `dm` command is a Zsh function available **inside the container only**. It i
 
 ### Open VS Code on the host
 
-The `code` command inside DevBox forwards the current directory to the VS Code CLI installed on the Linux host. It opens the project as a temporary VS Code workspace (stored under the host cache, not inside the project) and configures **DevBox** as that workspace's default integrated terminal profile. Open the terminal with <kbd>Ctrl</kbd> + <kbd>Backtick</kbd> or **Terminal → New Terminal**; it starts a Zsh session inside the running DevBox container at the matching `/workspace/...` directory. Additional terminals in that workspace use the same profile.
+The `code` command inside DevBox forwards the current directory to the VS Code CLI installed on the Linux host and opens it through the **Dev Containers: Attach to Running Container** remote connection. The editor, integrated terminals, Python interpreter, debugger, and remote-capable extensions then run against the DevBox container instead of the host filesystem.
 
-If DevBox is stopped, the terminal displays an instruction to run `devbox start` from a host terminal; it does not start or recreate the container automatically. The host must have Docker Compose access and the VS Code `code` command available.
+Install the **Dev Containers** extension (`ms-vscode-remote.remote-containers`) in host VS Code before using this command. DevBox checks for it and displays an actionable error if it is missing. The first connection installs the VS Code Server in the container; later connections reuse it.
 
 From any project directory, run:
 
@@ -224,27 +174,7 @@ code .
 
 The host-side bridge is compiled as a static Go binary during the DevBox image build, then extracted to the host runtime directory by `devbox start`; no host Python or Go installation is needed. The bridge is removed by `devbox clean`. The host must have the VS Code `code` command available on its `PATH`. The bridge only opens paths inside the configured workspace.
 
-| Command | Description |
-|---|---|
-| `dm info` | Show the DevBox stack, base image, installed tools, and host integrations |
-| `dm tools search QUERY` | Search official Debian Linux `main` and `community` package repositories |
-| `dm tools add PACKAGE` | Add an Debian package to `docker/packages.txt` |
-| `dm tools remove PACKAGE` | Remove an Debian package from `docker/packages.txt` |
-| `dm tools list` | List additional packages declared for the next image build |
-| `dm status` | Show DevBox container status |
-| `dm doctor` | Run environment health checks |
-| `dm networks` | List networks connected to DevBox |
-| `dm network-manager status` | Check Network Manager process |
-| `dm network-manager logs` | Show recent log lines |
-| `docker ps` | List running containers |
-| `docker compose up -d` | Start services in the current project directory |
-
-Run project-specific Docker Compose commands from that project's directory, for example:
-
-```bash
-cd /workspace/project-1
-docker compose up -d
-```
+The DevBox workspace opens with Zsh as its integrated terminal and uses the project's `.venv/bin/python` as the default Python interpreter when present. Install Python tooling extensions such as Python, Pylance, and Ruff in the **DevBox remote window** (the Extensions view distinguishes local and remote installations). Ruff is the configured Python formatter; this avoids requiring a separate Black Formatter process.
 
 ## Makefile tasks
 
@@ -258,6 +188,7 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 | `make build` | Build the DevBox image |
 | `make rebuild` | Rebuild the image without cache |
 | `make test` | Run Python unit tests (DevBox must be running) |
+| `devbox ci` | Run the GitHub Actions workflow locally using act |
 | `make config` | Validate Docker Compose configuration |
 | `make clean` | Remove DevBox containers, networks, volumes, and local images |
 
@@ -265,7 +196,28 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 
 The project requires Python 3.12 or newer. The `devbox-manager` Python CLI is installed inside the container in an isolated virtual environment at `/opt/devbox-venv`. The `dm` shortcut invokes the same CLI.
 
-Available commands include `info` (stack, base image, installed tools, and host integrations), `tools search/add/remove/list`, status, health checks, network listing, and Network Manager status/logs. Package search and manifest management are available only inside the container. Search queries the official Debian Linux `main` and `community` repositories for the container's Debian release and CPU architecture. The add/remove commands update the host-backed manifest but do not modify the running image; run `devbox recreate` on the host to apply changes. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
+Available commands include `info` (container environment and host integrations), status, health checks, network listing, port forwarding, and Network Manager status/logs. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
+
+## Local service port forwarding
+
+DevBox can expose a project service on its own loopback interface without changing the project's connection string. The Port Forwarding Manager reads persistent mappings from `~/.config/devbox/port-forwards.json` and starts a TCP listener bound only to `127.0.0.1` inside DevBox. It forwards traffic to the target service or container name on a Docker network connected to DevBox.
+
+Configure a mapping from inside the container:
+
+```bash
+dm ports add 5432 warranty-manager-db 5432
+dm ports list
+```
+
+The example makes PostgreSQL available to processes running inside DevBox at `localhost:5432`. Use the Compose service name (for example, `db`) or a container name as the target. The target must be reachable on a Docker network connected to DevBox.
+
+Remove a mapping with:
+
+```bash
+dm ports remove 5432
+```
+
+Local ports must be unique. The listener binds to DevBox loopback, not to the host or external network interfaces. The mapping survives container recreation because it is stored in the persistent DevBox home volume. The manager starts automatically with the container and retries a stopped forwarding process.
 
 ## Network Manager
 
@@ -291,7 +243,7 @@ View logs from the host with `devbox manager logs`, or from inside the container
 
 ## Configuration
 
-The startup script generates a local `.env` file and, on first use, a local `docker/docker-compose.ports.yml` file. Both are ignored by Git. The port override is copied from the tracked `docker/docker-compose.ports.example.yml` only when it does not already exist; editing the local file is the supported way to customize published ports.
+The startup script generates a local `.env` file, which is ignored by Git.
 
 | Variable | Description |
 |---|---|
@@ -306,7 +258,6 @@ The following build arguments can be set in the local `.env` file to update pinn
 
 | Variable | Default | Description |
 |---|---|---|
-| `TERRAFORM_VERSION` | `1.17.1` | Terraform version installed in the image |
 | `UV_VERSION` | `0.13.7` | uv version installed in the image |
 | `OH_MY_ZSH_COMMIT` | `cca3bdfbef8c52ef8939ce7911ff68852b949daa` | Exact Oh My Zsh commit |
 
@@ -324,9 +275,11 @@ The Network Manager also supports:
 
 The mounted Docker socket grants extensive control over the host Docker Engine. Treat DevBox as a privileged development environment and only run trusted project code.
 
+## Local GitHub Actions
+
+Run the repository validation workflow on the host with `devbox ci`. The command installs a pinned, checksum-verified `act` binary into `~/.local/bin` on first use, then runs the workflow against the host Docker Engine. Docker must be running. Use `devbox ci --list` to list jobs or `devbox ci -j python-tests` to run one job. The workflow runs in containers, so the first execution downloads the runner image. Local execution is a close approximation, not a guarantee of identical behavior to GitHub-hosted runners.
+
 ## Development
 
 The Python CLI source is in `src/devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`. Unit tests are in `tests/unit/`.
 
-
-The `dm info` installed-tools table shows each executable's resolved path instead of attempting to standardize version output across different tools. Additional executables are detected without running them, avoiding unintended side effects. Rows are sorted by source first, then tool name.

@@ -19,7 +19,6 @@ if [[ "$command" == "__complete" ]]; then
     exit 0
 fi
 
-bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
 if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
     RESET='\033[0m'
@@ -89,6 +88,7 @@ usage() {
     print_box_line "  devbox config set workspace PATH" \
         "  ${GREEN}devbox config set workspace PATH${RESET}"
     print_box_line "  devbox manager logs" "  ${GREEN}devbox manager logs${RESET}"
+    print_box_line "  devbox ci" "  ${GREEN}devbox ci${RESET}"
     printf "%b╰%s╯%b\n\n" "$CYAN" "$HELP_BORDER" "$RESET"
 }
 
@@ -205,10 +205,6 @@ case "$command" in
         require_running
         exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager info
         ;;
-    tools)
-        printf '%s\n' "The tools command is available only inside the container. Run 'devbox shell', then 'dm tools search QUERY'." >&2
-        exit 2
-        ;;
     logs)
         compose logs devbox
         ;;
@@ -255,6 +251,10 @@ case "$command" in
                 exit 2
                 ;;
         esac
+        ;;
+    ci)
+        shift
+        exec bash "$DEVBOX_DIR/scripts/host/ci.sh" "$@"
         ;;
     doctor)
         require_running

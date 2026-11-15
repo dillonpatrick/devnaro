@@ -3,12 +3,13 @@ ARG BASE_IMAGE=debian:trixie-slim
 FROM --platform=$BUILDPLATFORM golang:1.24.3-bookworm AS bridge-builder
 
 ARG TARGETOS
-ARG TARGETARCH
 WORKDIR /src
 COPY scripts/host/code_bridge.go ./code_bridge.go
 COPY scripts/host/status.go ./status.go
 COPY scripts/host/status_test.go ./status_test.go
+COPY scripts/host/code_bridge_test.go ./code_bridge_test.go
 RUN go test ./status.go ./status_test.go \
+    && go test ./code_bridge.go ./code_bridge_test.go \
     && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-host-bridge ./code_bridge.go \
     && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /devbox-status ./status.go
 
@@ -19,7 +20,6 @@ ARG STACK_NAME=default
 WORKDIR /resolver
 RUN mkdir -p /resolver/devbox_manager \
     && pip install --no-cache-dir "PyYAML==6.0.3"
-COPY src/devbox_manager/packages_manifest.py ./devbox_manager/packages_manifest.py
 COPY src/devbox_manager/stack_resolver.py ./devbox_manager/stack_resolver.py
 COPY stacks/ ./stacks/
 RUN mkdir -p /out \
@@ -37,16 +37,13 @@ ARG USER_GID=1000
 ARG DOCKER_GID=966
 ARG DEVBOX_BOOTSTRAP_UV_VERSION=0.13.7
 ARG OH_MY_ZSH_COMMIT=cca3bdfbef8c52ef8939ce7911ff68852b949daa
-ARG TARGETARCH
 ARG BASE_IMAGE
 
-RUN mkdir -p /opt/devbox-config \
-    && touch /opt/devbox-config/packages.txt /opt/devbox-config/package-warnings.txt
+RUN mkdir -p /opt/devbox-config
 
 COPY --from=stack-resolver /out/ /opt/devbox-config/stack/
 RUN test "$(cat /opt/devbox-config/stack/base-image)" = "$BASE_IMAGE" \
     || { echo "BASE_IMAGE does not match the selected stack definition." >&2; exit 1; }
-COPY docker/packages.txt /tmp/devbox-user-packages.txt
 
 # Install only runtime requirements for the DevBox Core.
 # Compiler toolchains and development headers are intentionally not part of the final image.
@@ -55,8 +52,8 @@ RUN set -eux; \
     test "$ID" = debian; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      bash ca-certificates curl git gnupg nano procps python3 python3-pip \
-      python3-venv passwd zsh zsh-autosuggestions zsh-syntax-highlighting; \
+      bash ca-certificates curl git gnupg nano procps python3 python3-pip socat \
+      python3-venv passwd sudo zsh zsh-autosuggestions zsh-syntax-highlighting; \
     install -m 0755 -d /etc/apt/keyrings; \
     curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
     chmod a+r /etc/apt/keyrings/docker.asc; \
@@ -65,9 +62,9 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin
 
-# Install stack and user-managed packages from Debian repositories.
+# Install packages declared by the selected stack.
 RUN set -eu; \
-    cat /opt/devbox-config/stack/debian-packages.txt /tmp/devbox-user-packages.txt \
+    cat /opt/devbox-config/stack/debian-packages.txt \
       | awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { print "Invalid package entry at line " NR ": " $0 > "/dev/stderr"; exit 1 } { if (!seen[$1]++) print $1 }' \
       > /tmp/devbox-extra-packages; \
     if [ -s /tmp/devbox-extra-packages ]; then \
@@ -80,7 +77,6 @@ RUN set -eu; \
         else \
           warning="WARNING: Debian package '$package' was not found; skipping."; \
           printf '%s\n' "$warning" >&2; \
-          printf '%s\n' "$warning" >> /opt/devbox-config/package-warnings.txt; \
         fi; \
       done < /tmp/devbox-extra-packages; \
       if [ -s /tmp/devbox-install-packages ]; then \
@@ -88,20 +84,8 @@ RUN set -eu; \
       fi; \
       rm -f /tmp/devbox-install-packages; \
     fi; \
-    rm -f /tmp/devbox-user-packages.txt /tmp/devbox-extra-packages
+    rm -f /tmp/devbox-extra-packages
 
-# Install Terraform only when the selected stack declares it.
-RUN set -eux; \
-    TERRAFORM_VERSION="$(cat /opt/devbox-config/stack/terraform-version)"; \
-    if [ -n "$TERRAFORM_VERSION" ]; then \
-      case "$TARGETARCH" in amd64) TERRAFORM_ARCH=amd64 ;; arm64) TERRAFORM_ARCH=arm64 ;; *) echo "Unsupported Terraform architecture: $TARGETARCH" >&2; exit 1 ;; esac; \
-      TOOL_ARCH="$TERRAFORM_ARCH"; \
-      apt-get update && apt-get install -y --no-install-recommends unzip wget; \
-      wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TOOL_ARCH}.zip" -O /tmp/terraform.zip; \
-      unzip /tmp/terraform.zip -d /usr/local/bin; rm /tmp/terraform.zip; \
-      terraform version | grep -F "Terraform v${TERRAFORM_VERSION}"; \
-      apt-get purge -y unzip wget && apt-get autoremove -y; \
-    fi
 
 # Keep the bootstrap uv/ private to DevBox; install the stack's uv separately.
 RUN python3 -m venv /opt/devbox-bootstrap-uv \
@@ -131,6 +115,9 @@ RUN set -eux; \
     USER_GROUP="$(getent group "$USER_GID" | cut -d: -f1)"; \
     useradd --uid "$USER_UID" --gid "$USER_GROUP" --create-home --home-dir "/home/$USERNAME" --shell /bin/zsh "$USERNAME"; \
     usermod -aG "$DOCKER_GROUP" "$USERNAME"; \
+    printf '%s ALL=(root) NOPASSWD: /usr/bin/apt, /usr/bin/apt-get, /usr/bin/dpkg\n' "$USERNAME" > /etc/sudoers.d/devbox-package-management; \
+    chmod 0440 /etc/sudoers.d/devbox-package-management; \
+    visudo -cf /etc/sudoers.d/devbox-package-management; \
     mkdir -p "/home/$USERNAME"; \
     chown -R "$USER_UID":"$USER_GID" "/home/$USERNAME"
 
@@ -144,7 +131,7 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && git -C /home/${USERNAME}/.oh-my-zsh checkout --detach FETCH_HEAD \
     && cp /home/${USERNAME}/.oh-my-zsh/templates/zshrc.zsh-template /home/${USERNAME}/.zshrc \
     && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="robbyrussell"/' /home/${USERNAME}/.zshrc \
-    && sed -i 's/^plugins=(git)$/plugins=(git docker terraform uv)/' /home/${USERNAME}/.zshrc \
+    && sed -i 's/^plugins=(git)$/plugins=(git docker uv)/' /home/${USERNAME}/.zshrc \
     && AUTOSUGGESTIONS=/usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
     && SYNTAX_HIGHLIGHTING=/usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
     && printf '\\n# Zsh autosuggestions\\nsource %s\\n' "$AUTOSUGGESTIONS" >> /home/${USERNAME}/.zshrc \
@@ -153,6 +140,7 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && if [ -x /opt/uv-venv/bin/uv ]; then /opt/uv-venv/bin/uv --version; fi
 
 COPY network_manager/ /opt/network-manager/
+COPY src/devbox_manager/port_forwarding.py /opt/port-forwarding/manager.py
 COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint
 COPY scripts/container/code /usr/local/bin/code
 COPY --from=bridge-builder /devbox-host-bridge /usr/local/bin/devbox-host-bridge

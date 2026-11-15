@@ -2,6 +2,7 @@
 set -euo pipefail
 
 DEVBOX_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+rm -f "$DEVBOX_DIR/docker/docker-compose.ports.yml"
 source "$DEVBOX_DIR/scripts/host/ui.sh"
 
 devbox_info "Cleaning DevBox resources..."
@@ -14,7 +15,6 @@ CODE_BRIDGE_LOG="$RUNTIME_DIR/devbox-code-$USER_UID.log"
 CODE_BRIDGE_BINARY="$RUNTIME_DIR/devbox-host-bridge-$USER_UID"
 STATUS_BINARY="$RUNTIME_DIR/devbox-status-$USER_UID"
 CODE_BRIDGE_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/devbox/vscode-workspaces"
-bash "$DEVBOX_DIR/scripts/host/ensure-ports-config.sh"
 
 # Remove only resources belonging to the DevBox Compose project.
 bash "$DEVBOX_DIR/scripts/host/compose.sh" down --volumes --remove-orphans --rmi local

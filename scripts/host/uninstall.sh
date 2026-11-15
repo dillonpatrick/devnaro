@@ -78,7 +78,7 @@ for SHELL_CONFIG in "$HOME/.bashrc" "$HOME/.zshrc"; do
 done
 
 rm -rf -- "$CONFIG_DIR"
-rm -f -- "$SCRIPT_DIR/.env" "$SCRIPT_DIR/docker/docker-compose.ports.yml"
+rm -f -- "$SCRIPT_DIR/.env"
 
 printf '\nDevBox was completely uninstalled.\n'
 printf 'DevBox repository preserved at: %s\n' "$SCRIPT_DIR"

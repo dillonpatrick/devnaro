@@ -5,7 +5,7 @@
 DEVBOX_HOST_ALIASES=(enter)
 
 DEVBOX_HOST_COMMANDS=(
-    start shell stop clean restart recreate recreate-all status info logs networks doctor config manager help
+    start shell stop clean restart recreate recreate-all status info logs networks doctor ci config manager help
 )
 
 declare -A DEVBOX_HOST_COMMAND_DESCRIPTIONS=(
@@ -17,10 +17,11 @@ declare -A DEVBOX_HOST_COMMAND_DESCRIPTIONS=(
     [recreate]="Recreate the container and network, preserving its home volume"
     [recreate-all]="Rebuild all DevBox resources, including the home volume"
     [status]="Show container status"
-    [info]="Show DevBox stack, base image, and installed tools"
+    [info]="Show container environment and host integrations"
     [logs]="Show container logs"
     [networks]="List networks connected to DevBox"
     [doctor]="Run health checks inside the container"
+    [ci]="Run GitHub Actions locally with act"
     [config]="Show or change machine-specific configuration"
     [manager]="Manage the Network Manager"
     [help]="Show this help message"

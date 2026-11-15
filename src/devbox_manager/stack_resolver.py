@@ -10,14 +10,23 @@ from typing import Any
 
 import yaml
 
-from devbox_manager.packages_manifest import (
-    PackageManifestError,
-    validate_package_name,
-)
+
+PACKAGE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9+_.-]+$")
+
+class PackageManifestError(ValueError):
+    """Invalid Debian package name in a stack definition."""
+
+
+def validate_package_name(package: str) -> str:
+    normalized = package.strip()
+    if not normalized or not PACKAGE_NAME_PATTERN.fullmatch(normalized):
+        raise PackageManifestError(f"Invalid package name: {package!r}. Use one package name.")
+    return normalized
+
 
 SCHEMA_VERSION = 2
 SUPPORTED_DISTRIBUTIONS = frozenset({"debian"})
-SUPPORTED_TOOLS = frozenset({"terraform", "uv"})
+SUPPORTED_TOOLS = frozenset({"uv"})
 SUPPORTED_CHANNELS = frozenset({"lts", "stable"})
 STACK_FILENAME = "stack.yaml"
 

@@ -4,7 +4,6 @@ from datetime import datetime
 import getpass
 import os
 import re
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -19,20 +18,13 @@ from devbox_manager import __version__
 from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
+from devbox_manager.port_forwarding import (
+    CONFIG_FILE as PORT_FORWARD_CONFIG,
+    add_forward,
+    load_forwards,
+    remove_forward,
+)
 from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
-from devbox_manager.debian_packages import (
-    DebianPackageSearchError,
-    available_debian_packages,
-    search_debian_packages,
-)
-from devbox_manager.packages_manifest import (
-    PackageManifestError,
-    PACKAGE_MANIFEST_PATH,
-    add_package,
-    read_manifest,
-    remove_package,
-    validate_package_name,
-)
 from typer.main import get_command
 
 configure_typer_help()
@@ -68,210 +60,15 @@ network_app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 app.add_typer(network_app, name="network-manager")
-tools_app = typer.Typer(
-    help="Search Debian packages and manage additional image packages.",
+ports_app = typer.Typer(
+    help=(
+        "Manage localhost TCP forwards to services in project Docker networks.\n\n"
+        "Example: dm ports add 8080 my-service 80"
+    ),
     no_args_is_help=True,
-    cls=DevBoxTyperGroup,
-    context_settings={"help_option_names": ["-h", "--help"]},
 )
-app.add_typer(tools_app, name="tools")
+app.add_typer(ports_app, name="ports")
 
-
-
-@tools_app.command("search")
-def tools_search(query: str = typer.Argument(..., help="Text to search Debian package names and descriptions.")) -> None:
-    """Search official Debian APT package indexes for available packages."""
-    try:
-        packages = search_debian_packages(query)
-    except DebianPackageSearchError as error:
-        render_panel(
-            console,
-            "Debian package search failed",
-            f"[error]{error}[/error]",
-            border_style="error",
-        )
-        raise typer.Exit(code=1) from error
-
-    table = Table(box=box.ROUNDED, header_style="heading")
-    table.add_column("Package", style="info")
-    table.add_column("Version")
-    table.add_column("Repository")
-    table.add_column("Description", overflow="fold")
-
-    for package in packages:
-        table.add_row(
-            package.name,
-            package.version,
-            package.repository,
-            package.description,
-        )
-
-    render_panel(
-        console,
-        "Debian package search",
-        table if packages else "[muted]No matching Debian packages found.[/muted]",
-        subtitle=f"{len(packages)} package(s) · Official Debian APT package indexes",
-    )
-
-
-def _render_manifest_updated(action: str, package: str) -> None:
-    """Explain that manifest changes require a host-side image recreation."""
-    render_panel(
-        console,
-        "Package manifest updated",
-        f"[success]{action} {package}.[/success]\n\n"
-        "[warning]Changes take effect only after running this command on the host:[/warning]\n"
-        "[accent]devbox recreate[/accent]",
-    )
-
-
-def _is_image_provided_tool(package: str) -> bool:
-    """Return whether a package is already provided by the base DevBox image."""
-    image_managed_commands = {
-        "terraform": "terraform",
-        "uv": "uv",
-    }
-    command = image_managed_commands.get(package)
-    if command and shutil.which(command):
-        return True
-
-    try:
-        result = subprocess.run(
-            ["dpkg-query", "-W", "-f=${Status}", package],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return False
-
-    return result.returncode == 0 and result.stdout.strip() == "install ok installed"
-
-
-@tools_app.command("add")
-def tools_add(package: str = typer.Argument(..., help="Debian package name to add to the image.")) -> None:
-    """Add an available Debian package to the image manifest."""
-    try:
-        normalized = validate_package_name(package)
-
-        if _is_image_provided_tool(normalized):
-            render_panel(
-                console,
-                "Package already provided",
-                f"[muted]{normalized} is already installed in the DevBox image. No manifest change was made.[/muted]",
-            )
-            return
-
-        try:
-            available = available_debian_packages((normalized,))
-        except DebianPackageSearchError as error:
-            render_panel(
-                console,
-                "Package validation failed",
-                f"[error]Could not verify whether {normalized} exists in Debian repositories:[/error]\n{error}",
-                border_style="error",
-            )
-            raise typer.Exit(code=1) from error
-
-        if normalized not in available:
-            render_panel(
-                console,
-                "Package not found",
-                f"[error]{normalized} does not exist in the configured Debian repositories. No manifest change was made.[/error]\n"
-                "[muted]Use dm tools search to find an available package.[/muted]",
-                border_style="error",
-            )
-            raise typer.Exit(code=1)
-
-        changed = add_package(normalized, PACKAGE_MANIFEST_PATH)
-    except PackageManifestError as error:
-        render_panel(console, "Package manifest update failed", f"[error]{error}[/error]", border_style="error")
-        raise typer.Exit(code=1) from error
-
-    if changed:
-        _render_manifest_updated("Added", normalized)
-    else:
-        render_panel(console, "Package already declared", f"[muted]{normalized} is already in the manifest.[/muted]")
-
-@tools_app.command("remove")
-def tools_remove(package: str = typer.Argument(..., help="Debian package name to remove from the image.")) -> None:
-    """Remove an Debian package from the image manifest."""
-    try:
-        changed = remove_package(package, PACKAGE_MANIFEST_PATH)
-    except PackageManifestError as error:
-        render_panel(console, "Package manifest update failed", f"[error]{error}[/error]", border_style="error")
-        raise typer.Exit(code=1) from error
-
-    if changed:
-        _render_manifest_updated("Removed", package)
-    else:
-        render_panel(
-            console,
-            "Package not declared",
-            f"[warning]{package} is not present in the manifest.[/warning]",
-        )
-        raise typer.Exit(code=1)
-
-
-@tools_app.command("list")
-def tools_list() -> None:
-    """List declared packages and their status in the DevBox image."""
-    try:
-        packages = read_manifest(PACKAGE_MANIFEST_PATH)
-    except PackageManifestError as error:
-        render_panel(console, "Package manifest read failed", f"[error]{error}[/error]", border_style="error")
-        raise typer.Exit(code=1) from error
-
-    try:
-        valid_packages = available_debian_packages(packages)
-    except DebianPackageSearchError as error:
-        render_panel(
-            console,
-            "Package validation failed",
-            f"[error]Could not verify Debian packages:[/error]\n{error}",
-            border_style="error",
-        )
-        raise typer.Exit(code=1) from error
-
-    package_lines = []
-    installed_count = 0
-    available_count = 0
-    unavailable_count = 0
-
-    for package in packages:
-        if _is_image_provided_tool(package):
-            package_lines.append(f"[success]✓[/success] {package} [muted](Already installed)[/muted]")
-            installed_count += 1
-        elif package in valid_packages:
-            package_lines.append(f"[info]•[/info] {package} [muted](Available)[/muted]")
-            available_count += 1
-        else:
-            package_lines.append(f"[error]✗[/error] {package} [muted](Unavailable)[/muted]")
-            unavailable_count += 1
-
-    if not package_lines:
-        package_lines.append("[muted]No additional packages declared.[/muted]")
-
-    package_lines.extend(
-        [
-            "",
-            "[success]Already installed[/success] · "
-            "[info]Available[/info] · [error]Unavailable[/error]",
-            "",
-            "[warning]Run on the host to apply changes:[/warning]",
-            "[accent]devbox recreate[/accent]",
-        ]
-    )
-    render_panel(
-        console,
-        "Additional image packages",
-        "\n".join(package_lines),
-        subtitle=(
-            f"{installed_count} installed · {available_count} available · "
-            f"{unavailable_count} unavailable"
-        ),
-    )
 
 
 def _format_started_at(value: str) -> str:
@@ -345,67 +142,9 @@ def _read_version(command: list[str]) -> str:
     return output.splitlines()[0].strip()
 
 
-def _additional_path_tools(known_names: set[str]) -> list[tuple[str, str]]:
-    """Discover extra executables in non-core PATH directories."""
-    core_directories = {"/bin", "/sbin", "/usr/bin", "/usr/sbin"}
-    discovered: dict[str, str] = {}
-
-    for directory in os.environ.get("PATH", "").split(os.pathsep):
-        if not directory:
-            continue
-        resolved_directory = str(Path(directory).resolve())
-        if resolved_directory in core_directories:
-            continue
-
-        path = Path(resolved_directory)
-        if not path.is_dir():
-            continue
-
-        try:
-            entries = sorted(path.iterdir())
-        except OSError:
-            continue
-
-        for entry in entries:
-            try:
-                if entry.name in known_names or not entry.is_file():
-                    continue
-                if not os.access(entry, os.X_OK):
-                    continue
-                discovered.setdefault(entry.name, str(entry))
-            except OSError:
-                continue
-
-    return sorted(discovered.items())
-
-
-def _display_tool_path(executable: str) -> str:
-    """Prefer a home-relative path for tools installed under the user home."""
-    resolved = Path(executable).resolve()
-    try:
-        relative = resolved.relative_to(Path.home().resolve())
-        return f"~/{relative.as_posix()}"
-    except ValueError:
-        return str(resolved)
-
-
-def _tool_source(executable: str) -> str:
-    """Classify tools in the user's local bin directory separately."""
-    resolved = Path(executable).resolve()
-    user_bin = (Path.home() / ".local" / "bin").resolve()
-    try:
-        resolved.relative_to(user_bin)
-        return "User"
-    except ValueError:
-        core_directories = {Path("/bin"), Path("/sbin"), Path("/usr/bin"), Path("/usr/sbin")}
-        if resolved.parent in core_directories:
-            return "Image"
-        return "Custom PATH"
-
-
 @app.command()
 def info() -> None:
-    """Show the DevBox stack, base image, and installed development tools."""
+    """Show container identity and host integration status."""
     try:
         os_release = {}
         for line in Path("/etc/os-release").read_text(encoding="utf-8").splitlines():
@@ -421,49 +160,9 @@ def info() -> None:
     summary.add_column()
     summary.add_row("Stack", f"[value]DevBox[/value] v{__version__}")
     summary.add_row("Base", base_image)
-
-    tools = Table(box=box.ROUNDED, header_style="heading")
-    tools.add_column("Tool", style="info")
-    tools.add_column("Path", overflow="fold")
-    tools.add_column("Source", style="muted")
-
-    known_tools = [
-        ("Terraform", "terraform"),
-        ("Docker CLI", "docker"),
-        ("Docker Compose", "docker"),
-        ("Python", "python3"),
-        ("uv", "uv"),
-        ("Git", "git"),
-        ("Zsh", "zsh"),
-        ("Bash", "bash"),
-    ]
-    reported: set[str] = {"devbox-manager"}
-    discovered_tools: list[tuple[str, str, str]] = []
-
-    for label, executable in known_tools:
-        path = shutil.which(executable)
-        if not path:
-            discovered_tools.append(("-", label, "[warning]Not installed[/warning]"))
-            continue
-
-        discovered_tools.append((_tool_source(path), label, _display_tool_path(path)))
-        reported.add(Path(path).name)
-
-    oh_my_zsh = Path.home() / ".oh-my-zsh"
-    if (oh_my_zsh / ".git").exists():
-        discovered_tools.append(
-            ("Image", "Oh My Zsh", str(oh_my_zsh.resolve()))
-        )
-
-    for name, executable in _additional_path_tools(reported):
-        source = _tool_source(executable)
-        discovered_tools.append((source, name, _display_tool_path(executable)))
-
-    for source, name, path in sorted(
-        discovered_tools,
-        key=lambda item: (item[0].casefold(), item[1].casefold()),
-    ):
-        tools.add_row(name, path, source)
+    summary.add_row("User", getpass.getuser())
+    summary.add_row("Hostname", os.uname().nodename)
+    summary.add_row("Workspace", str(WORKSPACE_PATH))
 
     host_tools = Table(box=box.SIMPLE, show_header=False)
     host_tools.add_column("Integration", style="info")
@@ -487,13 +186,73 @@ def info() -> None:
         "DevBox info",
         Group(
             summary,
-            Text("INSTALLED TOOLS", style="heading"),
-            tools,
             Text("HOST INTEGRATIONS", style="heading"),
             host_tools,
         ),
-        subtitle="Image = core system paths · User = installed in ~/.local/bin · Custom PATH = discovered in other PATH directories · Host = external integration",
+        subtitle="Container environment and host integrations",
     )
+
+
+
+@ports_app.command("add")
+def ports_add(
+    local_port: int = typer.Argument(..., help="Port to listen on inside DevBox localhost."),
+    target_host: str = typer.Argument(..., help="Docker service or container name."),
+    target_port: int = typer.Argument(..., help="Port exposed by the target service."),
+) -> None:
+    """Forward a DevBox localhost port to a project service.
+
+    Example:
+        dm ports add 8080 my-service 80
+    """
+    try:
+        add_forward(local_port, target_host, target_port)
+    except (OSError, ValueError) as error:
+        render_panel(console, "Port forward not added", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+    render_panel(
+        console,
+        "Port forward added",
+        f"[success]localhost:{local_port} → {target_host}:{target_port}[/success]\n"
+        "The Port Forwarding Manager applies this change automatically.",
+    )
+
+
+@ports_app.command("list")
+def ports_list() -> None:
+    """List configured localhost TCP forwards."""
+    try:
+        forwards = load_forwards()
+    except ValueError as error:
+        render_panel(console, "Port forwarding configuration error", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+    table = Table(box=box.ROUNDED, header_style="heading")
+    table.add_column("Local address", style="info")
+    table.add_column("Target")
+    for item in forwards:
+        table.add_row(f"127.0.0.1:{item.local_port}", f"{item.target_host}:{item.target_port}")
+    render_panel(
+        console,
+        "Configured port forwards",
+        table if forwards else "[muted]No port forwards configured.[/muted]",
+        subtitle=str(PORT_FORWARD_CONFIG),
+    )
+
+
+@ports_app.command("remove")
+def ports_remove(
+    local_port: int = typer.Argument(..., help="Local port to stop forwarding."),
+) -> None:
+    """Remove a localhost TCP forward."""
+    try:
+        removed = remove_forward(local_port)
+    except (OSError, ValueError) as error:
+        render_panel(console, "Port forward not removed", f"[error]{error}[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+    if not removed:
+        render_panel(console, "Port forward not found", f"[warning]No forward uses local port {local_port}.[/warning]")
+        raise typer.Exit(code=1)
+    render_panel(console, "Port forward removed", f"[success]localhost:{local_port} will no longer be forwarded.[/success]")
 
 
 @app.command()

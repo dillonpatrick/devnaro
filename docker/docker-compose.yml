@@ -31,11 +31,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - devbox_home:/home/${USERNAME:-devuser}
       - type: bind
-        source: ${DEVBOX_PACKAGES_FILE:-./docker/packages.txt}
-        target: /opt/devbox-config/packages.txt
-        bind:
-          create_host_path: false
-      - type: bind
         source: ${CODE_SOCKET_PATH:-/tmp/devbox-code.sock}
         target: /run/devbox-host/code.sock
         bind:

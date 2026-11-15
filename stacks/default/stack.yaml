@@ -11,8 +11,6 @@ packages:
   debian: []
 
 tools:
-  terraform:
-    version: "1.17.1"
   uv:
     version: "0.13.7"
 
