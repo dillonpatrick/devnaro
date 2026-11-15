@@ -19,7 +19,7 @@ Initial curated stacks:
 | --- | --- | --- |
 | `python` | Debian Trixie Slim | Python, uv, pytest, Ruff, mypy |
 | `nodejs` | Debian Trixie Slim | Node.js LTS, npm, Yarn, TypeScript, ESLint, Prettier |
-| `devops` | Debian Trixie Slim | AWS CLI, Azure CLI, Google Cloud CLI, Terraform, Ansible, kubectl, Helm |
+| `devops` | Debian Trixie Slim | AWS CLI, Azure CLI, Google Cloud CLI, Ansible, kubectl, Helm |
 | `go` | Debian Trixie Slim | Go, golangci-lint, Delve, Air |
 
 The exact package and tool declarations are maintained in each stack's
