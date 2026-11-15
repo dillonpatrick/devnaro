@@ -19,7 +19,13 @@ from devbox_manager import __version__
 from devbox_manager.config import WORKSPACE_PATH
 from devbox_manager.docker_client import get_client, get_devbox_container
 from devbox_manager.network_manager import process_status, read_logs
-from devbox_manager.port_forwarding import (\n    CONFIG_FILE as PORT_FORWARD_CONFIG,\n    PortForward,\n    add_forward,\n    load_forwards,\n    remove_forward,\n)\nfrom devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
+from devbox_manager.port_forwarding import (
+    CONFIG_FILE as PORT_FORWARD_CONFIG,
+    add_forward,
+    load_forwards,
+    remove_forward,
+)
+from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
 from devbox_manager.debian_packages import (
     DebianPackageSearchError,
     available_debian_packages,
