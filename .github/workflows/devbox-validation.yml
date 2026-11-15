@@ -96,6 +96,7 @@ jobs:
           docker run --rm --volume devbox-home-ci:/home/devuser debian:trixie-slim \
             sh -ec 'mkdir -p /home/devuser/.oh-my-zsh/custom && chown -R 1000:1000 /home/devuser/.oh-my-zsh && chmod -R 0775 /home/devuser/.oh-my-zsh'
           docker run --detach --name devbox-ci \
+            --volume /var/run/docker.sock:/var/run/docker.sock \
             --volume "$RUNNER_TEMP/devbox-workspace:/workspace" \
             --volume devbox-home-ci:/home/devuser \
             devbox:ci
