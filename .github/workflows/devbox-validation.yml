@@ -130,7 +130,11 @@ jobs:
           echo "Smoke check: oh-my-zsh ownership and permissions"
           docker exec devbox-ci sh -ec 'test "$(stat -c %u /home/devuser/.oh-my-zsh)" = "0" && test "$(stat -c %u /home/devuser/.oh-my-zsh/custom)" = "0" && test -z "$(find /home/devuser/.oh-my-zsh -type d -perm /022 -print -quit)"'
           echo "Smoke check: zsh compaudit"
-          test -z "$(docker exec devbox-ci zsh -lic 'autoload -Uz compaudit; compaudit')"
+          compaudit_output="$(docker exec devbox-ci zsh -lic 'autoload -Uz compaudit; compaudit')"
+          if [[ -n "$compaudit_output" ]]; then
+            printf 'compaudit found insecure completion paths:\n%s\n' "$compaudit_output" >&2
+            exit 1
+          fi
           echo "Smoke check: DevBox Manager help"
           docker exec devbox-ci devbox-manager --help
           echo "Smoke check: ports help"
