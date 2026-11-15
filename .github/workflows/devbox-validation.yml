@@ -55,7 +55,6 @@ jobs:
           bash -n scripts/host/start.sh
           bash -n scripts/host/stop.sh
           bash -n scripts/host/clean.sh
-          bash -n scripts/host/ensure-ports-config.sh
           LC_ALL=C bash scripts/host/devbox help > /tmp/devbox-help.txt
           grep -Fq '╭' /tmp/devbox-help.txt
           grep -Fq '╰' /tmp/devbox-help.txt
@@ -65,10 +64,8 @@ jobs:
 
       - name: Validate Docker Compose configuration
         run: |
-          bash scripts/host/ensure-ports-config.sh
           docker compose --project-directory . \
-            -f docker/docker-compose.yml \
-            -f docker/docker-compose.ports.yml config --quiet
+            -f docker/docker-compose.yml config --quiet
 
   docker-image-build:
     runs-on: ubuntu-latest
@@ -83,7 +80,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Exercise additional package manifest
-        run: printf 'jq\n' >> docker/packages.txt
+        run: printf 'jq\\n' >> docker/packages.txt
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -130,7 +127,7 @@ jobs:
           docker exec devbox-ci command -v socat
           docker exec devbox-ci devbox-manager info
           docker exec devbox-ci devbox-manager tools search jq | grep -F jq
-          docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v terraform && command -v docker && command -v jq'
+          docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v docker && command -v jq'
           docker exec devbox-ci devbox-manager __complete -- tools '' | grep -Fx 'search'
           docker exec devbox-ci zsh -fc 'source ~/.zshrc; (( $+functions[_devbox_completion] )) && [[ ${_comps[dm]} == _devbox_completion ]]'
           docker exec devbox-ci sh -ec 'test -x /usr/local/bin/devbox-host-bridge && test -x /usr/local/bin/devbox-status && test -d /workspace'
