@@ -181,6 +181,34 @@ def info() -> None:
         "[success]Available[/success]" if code_socket.exists() else "[warning]Not detected[/warning]",
     )
 
+    client = _docker_connection()
+    try:
+        container = get_devbox_container(client)
+        container.reload()
+    except NotFound as error:
+        render_panel(console, "DevBox status", "[error]DevBox container was not found.[/error]", border_style="error")
+        raise typer.Exit(code=1) from error
+
+    attrs = container.attrs
+    state = attrs.get("State", {})
+    networks = attrs.get("NetworkSettings", {}).get("Networks", {})
+    started = _format_started_at(state.get("StartedAt", ""))
+    container_status = container.status
+    state_label = (
+        f"[success]{container_status}[/success]"
+        if container_status == "running"
+        else f"[warning]{container_status}[/warning]"
+    )
+    status_table = Table(box=box.ROUNDED, show_header=False)
+    status_table.add_column("Property", style="info", no_wrap=True)
+    status_table.add_column("Value")
+    status_table.add_row("Container", container.name)
+    status_table.add_row("Status", state_label)
+    status_table.add_row("Image", attrs.get("Config", {}).get("Image", "unknown"))
+    status_table.add_row("Started", started)
+    status_table.add_row("Connected networks", str(len(networks)))
+    status_table.add_row("Workspace", str(WORKSPACE_PATH))
+
     render_panel(
         console,
         "DevBox info",
@@ -188,8 +216,10 @@ def info() -> None:
             summary,
             Text("HOST INTEGRATIONS", style="heading"),
             host_tools,
+            Text("CONTAINER STATUS", style="heading"),
+            status_table,
         ),
-        subtitle="Container environment and host integrations",
+        subtitle=f"Container {container_status}",
     )
 
 
@@ -253,56 +283,6 @@ def ports_remove(
         render_panel(console, "Port forward not found", f"[warning]No forward uses local port {local_port}.[/warning]")
         raise typer.Exit(code=1)
     render_panel(console, "Port forward removed", f"[success]localhost:{local_port} will no longer be forwarded.[/success]")
-
-
-@app.command()
-def status() -> None:
-    """Show the DevBox container status and runtime details."""
-    client = _docker_connection()
-
-    try:
-        container = get_devbox_container(client)
-        container.reload()
-    except NotFound as error:
-        render_panel(
-            console,
-            "DevBox status",
-            "[error]DevBox container was not found.[/error]",
-            border_style="error",
-        )
-        raise typer.Exit(code=1) from error
-
-    attrs = container.attrs
-    state = attrs.get("State", {})
-    networks = attrs.get("NetworkSettings", {}).get("Networks", {})
-    started = _format_started_at(state.get("StartedAt", ""))
-
-    table = Table(box=box.ROUNDED, show_header=False)
-    table.add_column("Property", style="info", no_wrap=True)
-    table.add_column("Value")
-
-    state_label = (
-        f"[success]{container.status}[/success]"
-        if container.status == "running"
-        else f"[warning]{container.status}[/warning]"
-    )
-    table.add_row("Container", container.name)
-    table.add_row("Status", state_label)
-    table.add_row("Image", attrs.get("Config", {}).get("Image", "unknown"))
-    table.add_row("Started", started)
-    table.add_row("Connected networks", str(len(networks)))
-    table.add_row("Workspace", str(WORKSPACE_PATH))
-
-    render_panel(
-        console,
-        "DevBox status",
-        table,
-        
-        subtitle=f"Container {container.status}",
-    )
-
-    if container.status != "running":
-        raise typer.Exit(code=1)
 
 
 @app.command()
