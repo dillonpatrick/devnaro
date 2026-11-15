@@ -56,7 +56,7 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
       bash ca-certificates curl git gnupg nano procps python3 python3-pip socat \
-      python3-venv passwd zsh zsh-autosuggestions zsh-syntax-highlighting; \
+      python3-venv passwd sudo zsh zsh-autosuggestions zsh-syntax-highlighting; \
     install -m 0755 -d /etc/apt/keyrings; \
     curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
     chmod a+r /etc/apt/keyrings/docker.asc; \
@@ -119,6 +119,9 @@ RUN set -eux; \
     USER_GROUP="$(getent group "$USER_GID" | cut -d: -f1)"; \
     useradd --uid "$USER_UID" --gid "$USER_GROUP" --create-home --home-dir "/home/$USERNAME" --shell /bin/zsh "$USERNAME"; \
     usermod -aG "$DOCKER_GROUP" "$USERNAME"; \
+    printf '%s ALL=(root) NOPASSWD: /usr/bin/apt, /usr/bin/apt-get, /usr/bin/dpkg\\n' "$USERNAME" > /etc/sudoers.d/devbox-package-management; \
+    chmod 0440 /etc/sudoers.d/devbox-package-management; \
+    visudo -cf /etc/sudoers.d/devbox-package-management; \
     mkdir -p "/home/$USERNAME"; \
     chown -R "$USER_UID":"$USER_GID" "/home/$USERNAME"
 
