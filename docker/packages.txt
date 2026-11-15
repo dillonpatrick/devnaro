@@ -1,3 +1,0 @@
-# Additional packages for the selected DevBox distribution installed in the DevBox image.
-# Keep one package name per line; blank lines and full-line comments are ignored.
-# Core DevBox dependencies remain declared in Dockerfile.
