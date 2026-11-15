@@ -50,6 +50,7 @@ jobs:
           bash -n scripts/host/install.sh
           bash -n scripts/host/uninstall.sh
           bash -n scripts/host/devbox
+          bash -n scripts/host/ci.sh
           bash -n scripts/host/compose.sh
           bash -n scripts/host/ui.sh
           bash -n scripts/host/start.sh
