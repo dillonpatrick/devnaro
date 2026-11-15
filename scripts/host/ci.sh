@@ -12,7 +12,7 @@ Usage:
   devbox ci                 Run all jobs in devbox-validation.yml
   devbox ci --list          List workflows and jobs
   devbox ci -j python-tests Run one job
-  devbox ci --dryrun        Show the execution plan without running jobs
+  devbox ci --dry-run        Show the execution plan without running jobs
   devbox ci --help          Show act options
 
 Additional arguments are passed directly to act.
@@ -51,7 +51,7 @@ install_act() {
             ;;
     esac
 
-    for dependency in curl tar sha256sum; do
+    for dependency in curl tar sha256sum install; do
         if ! command -v "$dependency" >/dev/null 2>&1; then
             printf 'Missing required command: %s\n' "$dependency" >&2
             exit 1
