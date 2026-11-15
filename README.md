@@ -25,7 +25,6 @@ Host
 |   +-- .devcontainer/
 |   +-- .github/
 |   +-- docker/
-|   |   +-- packages.txt (additional Debian packages)
 |   |   +-- Dockerfile
 |   |   +-- docker-compose.yml
 |   +-- network_manager/
@@ -152,35 +151,7 @@ Use `devbox clean` only when you intentionally want to remove DevBox's persisted
 
 ## Inside the container
 
-DevBox runs interactive sessions as an unprivileged user. The `sudo` command is not installed, and the default user cannot install Debian packages with `apt-get install`. This is intentional: development tools and system dependencies should be part of the reproducible DevBox image rather than installed manually into a running container.
-
-### Add system packages or development tools
-
-Additional Debian packages are declared in `docker/packages.txt`, one package name per line. DevBox mounts this file into the container so you can manage it through the `dm` CLI without leaving your shell. This is the user-customizable manifest for tools beyond DevBox's core runtime dependencies, which remain in `docker/Dockerfile`.
-
-Search the Debian APT package indexes to find a package name, then add it to the manifest:
-
-```bash
-dm tools search ripgrep
-dm tools add ripgrep
-dm tools list
-```
-
-To remove an additional package:
-
-```bash
-dm tools remove ripgrep
-```
-
-The add/remove commands update the host-backed `docker/packages.txt` file. They do not install or uninstall anything in the running container. After changing the manifest, DevBox displays a reminder to run this command in a **host terminal**:
-
-```bash
-devbox recreate
-```
-
-The recreate operation rebuilds the image and creates a new container, applying the complete manifest. The Docker build validates manifest entries and installs the listed packages from Debian APT repositories. Blank lines and full-line comments are ignored. Invalid entries fail the image build instead of being silently skipped. Because the manifest is part of the repository, the same additional packages are installed whenever the image is built on another machine.
-
-Do not install packages manually into a running container; declare them in this manifest so the environment remains reproducible. Keep core DevBox dependencies in the Dockerfile. For tools that are not available as Debian packages, add their installation steps to the Dockerfile as part of the image build.
+DevBox runs interactive sessions as an unprivileged user. To install Debian packages inside the container, use `sudo apt-get update` and `sudo apt-get install PACKAGE`. The DevBox user can run APT and dpkg with sudo without a password. These manual installations are not preserved when the container is recreated; add packages to the Dockerfile or the selected stack definition for reproducible images.
 
 After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 
@@ -225,7 +196,7 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 
 The project requires Python 3.12 or newer. The `devbox-manager` Python CLI is installed inside the container in an isolated virtual environment at `/opt/devbox-venv`. The `dm` shortcut invokes the same CLI.
 
-Available commands include `info` (stack, base image, installed tools, and host integrations), `tools search/add/remove/list`, status, health checks, network listing, and Network Manager status/logs. Package search and manifest management are available only inside the container. Search queries the official Debian Linux `main` and `community` repositories for the container's Debian release and CPU architecture. The add/remove commands update the host-backed manifest but do not modify the running image; run `devbox recreate` on the host to apply changes. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
+Available commands include `info` (container environment and host integrations), status, health checks, network listing, port forwarding, and Network Manager status/logs. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
 
 ## Local service port forwarding
 
@@ -312,5 +283,3 @@ Run the repository validation workflow on the host with `devbox ci`. The command
 
 The Python CLI source is in `src/devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`. Unit tests are in `tests/unit/`.
 
-
-The `dm info` installed-tools table shows each executable's resolved path instead of attempting to standardize version output across different tools. Additional executables are detected without running them, avoiding unintended side effects. Rows are sorted by source first, then tool name.
