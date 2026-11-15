@@ -29,7 +29,7 @@ type response struct {
 
 type bridge struct {
 	workspace      string
-	terminalScript string
+	containerName   string
 }
 
 func (b bridge) handle(conn net.Conn) {
@@ -52,12 +52,16 @@ func (b bridge) handle(conn net.Conn) {
 	_ = json.NewEncoder(conn).Encode(result)
 }
 
+func remoteFolderURI(containerName, folderPath string) string {
+	authority := hex.EncodeToString([]byte(containerName))
+	return fmt.Sprintf("vscode-remote://attached-container+%s%s", authority, folderPath)
+}
+
 func (b bridge) open(containerPath string) error {
 	cleanPath := filepath.Clean(containerPath)
 	if !filepath.IsAbs(cleanPath) || (cleanPath != "/workspace" && !strings.HasPrefix(cleanPath, "/workspace/")) {
 		return errors.New("Only paths inside /workspace can be opened.")
 	}
-
 	relative := strings.TrimPrefix(strings.TrimPrefix(cleanPath, "/workspace"), string(filepath.Separator))
 	target, err := filepath.EvalSymlinks(filepath.Join(b.workspace, relative))
 	if err != nil {
@@ -67,7 +71,6 @@ func (b bridge) open(containerPath string) error {
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return errors.New("The requested path resolves outside the workspace.")
 	}
-
 	info, err := os.Stat(target)
 	if err != nil {
 		return fmt.Errorf("Path does not exist: %s", containerPath)
@@ -81,12 +84,17 @@ func (b bridge) open(containerPath string) error {
 		return err
 	}
 	containerFolder := filepath.ToSlash(filepath.Join("/workspace", folderRel))
-
 	vscode, err := exec.LookPath("code")
 	if err != nil {
 		return errors.New("VS Code CLI 'code' was not found on the host PATH. Install VS Code and make its 'code' command available.")
 	}
-
+	extensions, err := exec.Command(vscode, "--list-extensions").Output()
+	if err != nil {
+		return fmt.Errorf("Unable to inspect VS Code extensions: %v", err)
+	}
+	if !strings.Contains(strings.ToLower(string(extensions)), "ms-vscode-remote.remote-containers") {
+		return errors.New("The VS Code 'Dev Containers' extension is required. Install ms-vscode-remote.remote-containers on the host and try again.")
+	}
 	cacheHome := os.Getenv("XDG_CACHE_HOME")
 	if cacheHome == "" {
 		home, err := os.UserHomeDir()
@@ -99,19 +107,18 @@ func (b bridge) open(containerPath string) error {
 	if err := os.MkdirAll(cacheRoot, 0700); err != nil {
 		return err
 	}
-	sum := sha256.Sum256([]byte(folder))
+	sum := sha256.Sum256([]byte(b.containerName + ":" + folder))
 	workspaceFile := filepath.Join(cacheRoot, hex.EncodeToString(sum[:])[:16]+".code-workspace")
 	config := map[string]any{
-		"folders": []map[string]string{{"path": folder}},
+		"folders": []map[string]string{{"uri": remoteFolderURI(b.containerName, containerFolder)}},
 		"settings": map[string]any{
-			"terminal.integrated.profiles.linux": map[string]any{
-				"DevBox": map[string]any{
-					"path": "/bin/bash",
-					"args": []string{b.terminalScript, containerFolder},
-					"icon": "terminal-linux",
-				},
+			"terminal.integrated.defaultProfile.linux": "zsh",
+			"python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+			"python.terminal.activateEnvironment": true,
+			"[python]": map[string]any{
+				"editor.defaultFormatter": "charliermarsh.ruff",
+				"editor.formatOnSave": true,
 			},
-			"terminal.integrated.defaultProfile.linux": "DevBox",
 		},
 	}
 	data, err := json.MarshalIndent(config, "", "  ")
@@ -121,7 +128,6 @@ func (b bridge) open(containerPath string) error {
 	if err := os.WriteFile(workspaceFile, append(data, '\n'), 0600); err != nil {
 		return err
 	}
-
 	cmd := exec.Command(vscode, "--reuse-window", workspaceFile)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = nil, nil, nil
 	if err := cmd.Start(); err != nil {
@@ -134,25 +140,16 @@ func (b bridge) open(containerPath string) error {
 func main() {
 	socketPath := flag.String("socket", "", "Unix socket path")
 	workspacePath := flag.String("workspace", "", "Host workspace path")
-	terminalScript := flag.String("terminal-script", "", "Host VS Code terminal launcher")
+	containerName := flag.String("container", "devbox", "Running Docker container name")
 	flag.Parse()
-	if *socketPath == "" || *workspacePath == "" || *terminalScript == "" {
-		fmt.Fprintln(os.Stderr, "socket, workspace, and terminal-script are required")
+	if *socketPath == "" || *workspacePath == "" || *containerName == "" {
+		fmt.Fprintln(os.Stderr, "socket, workspace, and container are required")
 		os.Exit(2)
 	}
 
 	workspace, err := filepath.EvalSymlinks(*workspacePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "resolve workspace: %v\n", err)
-		os.Exit(1)
-	}
-	terminal, err := filepath.Abs(*terminalScript)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "resolve terminal script: %v\n", err)
-		os.Exit(1)
-	}
-	if info, err := os.Stat(terminal); err != nil || !info.Mode().IsRegular() {
-		fmt.Fprintln(os.Stderr, "VS Code terminal launcher not found")
 		os.Exit(1)
 	}
 
@@ -181,7 +178,7 @@ func main() {
 		<-ctx.Done()
 		_ = listener.Close()
 	}()
-	server := bridge{workspace: workspace, terminalScript: terminal}
+	server := bridge{workspace: workspace, containerName: *containerName}
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
