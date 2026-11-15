@@ -153,6 +153,7 @@ RUN git init /home/${USERNAME}/.oh-my-zsh \
     && if [ -x /opt/uv-venv/bin/uv ]; then /opt/uv-venv/bin/uv --version; fi
 
 COPY network_manager/ /opt/network-manager/
+COPY src/devbox_manager/port_forwarding.py /opt/port-forwarding/manager.py
 COPY scripts/container/entrypoint.sh /usr/local/bin/devbox-entrypoint
 COPY scripts/container/code /usr/local/bin/code
 COPY --from=bridge-builder /devbox-host-bridge /usr/local/bin/devbox-host-bridge
