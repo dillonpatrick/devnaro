@@ -211,9 +211,9 @@ The `dm` command is a Zsh function available **inside the container only**. It i
 
 ### Open VS Code on the host
 
-The `code` command inside DevBox forwards the current directory to the VS Code CLI installed on the Linux host. It opens the project as a temporary VS Code workspace (stored under the host cache, not inside the project) and configures **DevBox** as that workspace's default integrated terminal profile. Open the terminal with <kbd>Ctrl</kbd> + <kbd>Backtick</kbd> or **Terminal → New Terminal**; it starts a Zsh session inside the running DevBox container at the matching `/workspace/...` directory. Additional terminals in that workspace use the same profile.
+The `code` command inside DevBox forwards the current directory to the VS Code CLI installed on the Linux host and opens it through the **Dev Containers: Attach to Running Container** remote connection. The editor, integrated terminals, Python interpreter, debugger, and remote-capable extensions then run against the DevBox container instead of the host filesystem.
 
-If DevBox is stopped, the terminal displays an instruction to run `devbox start` from a host terminal; it does not start or recreate the container automatically. The host must have Docker Compose access and the VS Code `code` command available.
+Install the **Dev Containers** extension (`ms-vscode-remote.remote-containers`) in host VS Code before using this command. DevBox checks for it and displays an actionable error if it is missing. The first connection installs the VS Code Server in the container; later connections reuse it.
 
 From any project directory, run:
 
@@ -224,27 +224,7 @@ code .
 
 The host-side bridge is compiled as a static Go binary during the DevBox image build, then extracted to the host runtime directory by `devbox start`; no host Python or Go installation is needed. The bridge is removed by `devbox clean`. The host must have the VS Code `code` command available on its `PATH`. The bridge only opens paths inside the configured workspace.
 
-| Command | Description |
-|---|---|
-| `dm info` | Show the DevBox stack, base image, installed tools, and host integrations |
-| `dm tools search QUERY` | Search official Debian Linux `main` and `community` package repositories |
-| `dm tools add PACKAGE` | Add an Debian package to `docker/packages.txt` |
-| `dm tools remove PACKAGE` | Remove an Debian package from `docker/packages.txt` |
-| `dm tools list` | List additional packages declared for the next image build |
-| `dm status` | Show DevBox container status |
-| `dm doctor` | Run environment health checks |
-| `dm networks` | List networks connected to DevBox |
-| `dm network-manager status` | Check Network Manager process |
-| `dm network-manager logs` | Show recent log lines |
-| `docker ps` | List running containers |
-| `docker compose up -d` | Start services in the current project directory |
-
-Run project-specific Docker Compose commands from that project's directory, for example:
-
-```bash
-cd /workspace/project-1
-docker compose up -d
-```
+The DevBox workspace opens with Zsh as its integrated terminal and uses the project's `.venv/bin/python` as the default Python interpreter when present. Install Python tooling extensions such as Python, Pylance, and Ruff in the **DevBox remote window** (the Extensions view distinguishes local and remote installations). Ruff is the configured Python formatter; this avoids requiring a separate Black Formatter process.
 
 ## Makefile tasks
 
