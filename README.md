@@ -267,6 +267,27 @@ The project requires Python 3.12 or newer. The `devbox-manager` Python CLI is in
 
 Available commands include `info` (stack, base image, installed tools, and host integrations), `tools search/add/remove/list`, status, health checks, network listing, and Network Manager status/logs. Package search and manifest management are available only inside the container. Search queries the official Debian Linux `main` and `community` repositories for the container's Debian release and CPU architecture. The add/remove commands update the host-backed manifest but do not modify the running image; run `devbox recreate` on the host to apply changes. Use `dm --help` or `devbox-manager --help` inside the container for the current command reference.
 
+## Local service port forwarding
+
+DevBox can expose a project service on its own loopback interface without changing the project's connection string. The Port Forwarding Manager reads persistent mappings from `~/.config/devbox/port-forwards.json` and starts a TCP listener bound only to `127.0.0.1` inside DevBox. It forwards traffic to the target service or container name on a Docker network connected to DevBox.
+
+Configure a mapping from inside the container:
+
+```bash
+dm ports add 5432 warranty-manager-db 5432
+dm ports list
+```
+
+The example makes PostgreSQL available to processes running inside DevBox at `localhost:5432`. Use the Compose service name (for example, `db`) or a container name as the target. The target must be reachable on a Docker network connected to DevBox.
+
+Remove a mapping with:
+
+```bash
+dm ports remove 5432
+```
+
+Local ports must be unique. The listener binds to DevBox loopback, not to the host or external network interfaces. The mapping survives container recreation because it is stored in the persistent DevBox home volume. The manager starts automatically with the container and retries a stopped forwarding process.
+
 ## Network Manager
 
 The Network Manager runs inside DevBox and reconciles Docker networks every 10 seconds by default.
