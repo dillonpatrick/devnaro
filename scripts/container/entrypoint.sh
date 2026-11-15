@@ -37,7 +37,9 @@ devbox_update_prompt() {
         [[ -n "$branch" ]] && branch="($branch)"
     fi
 
-    PROMPT="%F{green}╭─ [DEVBOX] %f%F{cyan}%~%f ${branch}%f"$'\n'"%F{green}╰─❯%f "
+    local venv_prefix=""
+    [[ -n "${VIRTUAL_ENV:-}" ]] && venv_prefix="(%F{yellow}${VIRTUAL_ENV:t}%f) "
+    PROMPT="%F{green}╭─ [DEVBOX] %f${venv_prefix}%F{cyan}%~%f ${branch}%f"$'\n'"%F{green}╰─❯%f "
 }
 precmd_functions+=(devbox_update_prompt)
 devbox_update_prompt
@@ -68,7 +70,9 @@ devbox_bash_prompt() {
         branch=$(command git symbolic-ref --quiet --short HEAD 2>/dev/null || command git rev-parse --short HEAD 2>/dev/null || true)
         [[ -n "$branch" ]] && branch=" ($branch)"
     fi
-    PS1="\\[\\e[32m\\]╭─ [DEVBOX] \\[\\e[36m\\]\\w\\[\\e[0m\\]\\[\\e[2m\\]${branch}\\[\\e[0m\\]\\n\\[\\e[32m\\]╰─❯\\[\\e[0m\\] "
+    local venv_prefix=""
+    [[ -n "${VIRTUAL_ENV:-}" ]] && venv_prefix="(${VIRTUAL_ENV##*/}) "
+    PS1="\\[\\e[32m\\]╭─ [DEVBOX] \\[\\e[33m\\]${venv_prefix}\\[\\e[36m\\]\\w\\[\\e[0m\\]\\[\\e[2m\\]${branch}\\[\\e[0m\\]\\n\\[\\e[32m\\]╰─❯\\[\\e[0m\\] "
 }
 PROMPT_COMMAND=devbox_bash_prompt
 # END DEVBOX BASH CONFIG
