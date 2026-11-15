@@ -55,7 +55,7 @@ RUN set -eux; \
     test "$ID" = debian; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      bash ca-certificates curl git gnupg nano procps python3 python3-pip \
+      bash ca-certificates curl git gnupg nano procps python3 python3-pip socat \
       python3-venv passwd zsh zsh-autosuggestions zsh-syntax-highlighting; \
     install -m 0755 -d /etc/apt/keyrings; \
     curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
