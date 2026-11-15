@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ACT_VERSION="0.2.89"
+ACT_VERSION="0.2.97"
 ACT_RELEASE="https://github.com/nektos/act/releases/download/v${ACT_VERSION}"
 
 usage() {
@@ -39,11 +39,11 @@ install_act() {
     case "$(uname -m)" in
         x86_64|amd64)
             architecture="x86_64"
-            checksum="0191d6f1f3b716b5c55820032605d05fc3c1cdbf581ebeff655019e5dd1524c0"
+            checksum="67b4976a56f33ea7870b798912e738ec44eef38e7578ae7b532f2def1c73a5ad"
             ;;
         aarch64|arm64)
             architecture="arm64"
-            checksum="daa8679ba9615a74d2d0cec321dc593f21948a2a11bb65862b063d8b930f4bcb"
+            checksum="44d48e3d4a6409053fdec6fc6518322467d79a2d5be8f72c021b0421e2ac113d"
             ;;
         *)
             printf 'Unsupported architecture for automatic act installation: %s\n' "$(uname -m)" >&2
