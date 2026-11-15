@@ -86,17 +86,18 @@ jobs:
           tags: devbox:ci
           build-args: |
             USERNAME=devuser
-            USER_UID=1000
-            USER_GID=1000
-            DOCKER_GID=966
             BASE_IMAGE=${{ matrix.base-image }}
             STACK_NAME=${{ matrix.stack-name }}
 
       - name: Start DevBox container
         run: |
           mkdir -p "$RUNNER_TEMP/devbox-workspace"
+          docker volume create devbox-home-ci
+          docker run --rm --volume devbox-home-ci:/home/devuser debian:trixie-slim \
+            sh -ec 'mkdir -p /home/devuser/.oh-my-zsh/custom && chown -R 1000:1000 /home/devuser/.oh-my-zsh && chmod -R 0775 /home/devuser/.oh-my-zsh'
           docker run --detach --name devbox-ci \
             --volume "$RUNNER_TEMP/devbox-workspace:/workspace" \
+            --volume devbox-home-ci:/home/devuser \
             devbox:ci
 
       - name: Run container smoke tests
@@ -118,6 +119,8 @@ jobs:
           docker exec devbox-ci apt-get update
           docker exec devbox-ci apt-get install -y --no-install-recommends jq
           docker exec devbox-ci jq --version
+          docker exec devbox-ci sh -ec 'test "$(stat -c %u /home/devuser/.oh-my-zsh)" = "0" && test "$(stat -c %u /home/devuser/.oh-my-zsh/custom)" = "0" && test -z "$(find /home/devuser/.oh-my-zsh -type d -perm /022 -print -quit)"'
+          docker exec devbox-ci zsh -lic '! compaudit | grep -q "Insecure completion-dependent directories"'
           docker exec devbox-ci devbox-manager --help
           docker exec devbox-ci devbox-manager ports --help
           docker exec devbox-ci test -f /opt/port-forwarding/manager.py
@@ -131,3 +134,7 @@ jobs:
       - name: Remove smoke-test container
         if: always()
         run: docker rm --force devbox-ci || true
+
+      - name: Remove smoke-test home volume
+        if: always()
+        run: docker volume rm devbox-home-ci || true
