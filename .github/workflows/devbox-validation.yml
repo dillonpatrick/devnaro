@@ -111,28 +111,51 @@ jobs:
             sleep 1
           done
 
+          echo "Smoke check: container is running"
           test "$(docker inspect --format '{{.State.Running}}' devbox-ci)" = "true"
+          echo "Smoke check: DevBox Manager version"
           docker exec devbox-ci devbox-manager --version
+          echo "Smoke check: container runs as root"
           test "$(docker exec devbox-ci id -u)" = "0"
+          echo "Smoke check: HOME ownership and write access"
           docker exec devbox-ci sh -ec 'test "$HOME" = "/home/devuser" && test -d "$HOME" && test -w "$HOME"'
+          echo "Smoke check: apt-get version"
           docker exec devbox-ci apt-get --version
+          echo "Smoke check: apt-get update"
           docker exec devbox-ci apt-get update
+          echo "Smoke check: install jq"
           docker exec devbox-ci apt-get install -y --no-install-recommends jq
+          echo "Smoke check: jq version"
           docker exec devbox-ci jq --version
+          echo "Smoke check: oh-my-zsh ownership and permissions"
           docker exec devbox-ci sh -ec 'test "$(stat -c %u /home/devuser/.oh-my-zsh)" = "0" && test "$(stat -c %u /home/devuser/.oh-my-zsh/custom)" = "0" && test -z "$(find /home/devuser/.oh-my-zsh -type d -perm /022 -print -quit)"'
+          echo "Smoke check: zsh compaudit"
           test -z "$(docker exec devbox-ci zsh -lic 'autoload -Uz compaudit; compaudit')"
+          echo "Smoke check: DevBox Manager help"
           docker exec devbox-ci devbox-manager --help
+          echo "Smoke check: ports help"
           docker exec devbox-ci devbox-manager ports --help
+          echo "Smoke check: port-forwarding manager file"
           docker exec devbox-ci test -f /opt/port-forwarding/manager.py
+          echo "Smoke check: socat availability"
           docker exec devbox-ci sh -lc 'command -v socat'
+          echo "Smoke check: DevBox Manager info"
           docker exec devbox-ci devbox-manager info
+          echo "Smoke check: base tools availability"
           docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v docker'
+          echo "Smoke check: zsh completion registration"
           docker exec devbox-ci zsh -fc 'source ~/.zshrc; (( $+functions[_devbox_completion] )) && [[ ${_comps[dm]} == _devbox_completion ]]'
+          echo "Smoke check: bash aliases and prompt"
           docker exec devbox-ci bash -ic 'type dm >/dev/null && [[ "$PS1" == *DEVBOX* ]] && command -v devbox-manager >/dev/null'
+          echo "Smoke check: create Python virtual environment"
           docker exec devbox-ci python3 -m venv /tmp/devbox-prompt-venv
+          echo "Smoke check: bash virtualenv prompt"
           docker exec devbox-ci bash -ic 'source /tmp/devbox-prompt-venv/bin/activate && devbox_bash_prompt && [[ "$PS1" == *"(devbox-prompt-venv)"* ]]'
+          echo "Smoke check: zsh virtualenv prompt"
           docker exec devbox-ci zsh -ic 'source /tmp/devbox-prompt-venv/bin/activate && devbox_update_prompt && [[ "$PROMPT" == *"(devbox-prompt-venv)"* ]]
+          echo "Smoke check: host bridge, status command, and workspace"
           docker exec devbox-ci sh -ec 'test -x /usr/local/bin/devbox-host-bridge && test -x /usr/local/bin/devbox-status && test -d /workspace'
+          echo "Smoke check: Python version"
           docker exec devbox-ci python3 -c 'import sys; assert sys.version_info >= (3, 12), sys.version'
 
       - name: Remove smoke-test container
