@@ -20,7 +20,6 @@ ARG STACK_NAME=default
 WORKDIR /resolver
 RUN mkdir -p /resolver/devbox_manager \
     && pip install --no-cache-dir "PyYAML==6.0.3"
-COPY src/devbox_manager/packages_manifest.py ./devbox_manager/packages_manifest.py
 COPY src/devbox_manager/stack_resolver.py ./devbox_manager/stack_resolver.py
 COPY stacks/ ./stacks/
 RUN mkdir -p /out \
@@ -40,13 +39,11 @@ ARG DEVBOX_BOOTSTRAP_UV_VERSION=0.13.7
 ARG OH_MY_ZSH_COMMIT=cca3bdfbef8c52ef8939ce7911ff68852b949daa
 ARG BASE_IMAGE
 
-RUN mkdir -p /opt/devbox-config \
-    && touch /opt/devbox-config/packages.txt /opt/devbox-config/package-warnings.txt
+RUN mkdir -p /opt/devbox-config
 
 COPY --from=stack-resolver /out/ /opt/devbox-config/stack/
 RUN test "$(cat /opt/devbox-config/stack/base-image)" = "$BASE_IMAGE" \
     || { echo "BASE_IMAGE does not match the selected stack definition." >&2; exit 1; }
-COPY docker/packages.txt /tmp/devbox-user-packages.txt
 
 # Install only runtime requirements for the DevBox Core.
 # Compiler toolchains and development headers are intentionally not part of the final image.
@@ -65,9 +62,9 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin
 
-# Install stack and user-managed packages from Debian repositories.
+# Install packages declared by the selected stack.
 RUN set -eu; \
-    cat /opt/devbox-config/stack/debian-packages.txt /tmp/devbox-user-packages.txt \
+    cat /opt/devbox-config/stack/debian-packages.txt \
       | awk '/^[[:space:]]*($|#)/ { next } NF != 1 || $1 !~ /^[A-Za-z0-9+_.-]+$/ { print "Invalid package entry at line " NR ": " $0 > "/dev/stderr"; exit 1 } { if (!seen[$1]++) print $1 }' \
       > /tmp/devbox-extra-packages; \
     if [ -s /tmp/devbox-extra-packages ]; then \
@@ -80,7 +77,6 @@ RUN set -eu; \
         else \
           warning="WARNING: Debian package '$package' was not found; skipping."; \
           printf '%s\n' "$warning" >&2; \
-          printf '%s\n' "$warning" >> /opt/devbox-config/package-warnings.txt; \
         fi; \
       done < /tmp/devbox-extra-packages; \
       if [ -s /tmp/devbox-install-packages ]; then \
@@ -88,7 +84,7 @@ RUN set -eu; \
       fi; \
       rm -f /tmp/devbox-install-packages; \
     fi; \
-    rm -f /tmp/devbox-user-packages.txt /tmp/devbox-extra-packages
+    rm -f /tmp/devbox-extra-packages
 
 
 # Keep the bootstrap uv/ private to DevBox; install the stack's uv separately.
