@@ -217,6 +217,7 @@ Run these tasks from the DevBox repository directory on the host. They are for d
 | `make build` | Build the DevBox image |
 | `make rebuild` | Rebuild the image without cache |
 | `make test` | Run Python unit tests (DevBox must be running) |
+| `devbox ci` | Run the GitHub Actions workflow locally using act |
 | `make config` | Validate Docker Compose configuration |
 | `make clean` | Remove DevBox containers, networks, volumes, and local images |
 
@@ -286,7 +287,6 @@ The following build arguments can be set in the local `.env` file to update pinn
 
 | Variable | Default | Description |
 |---|---|---|
-| `TERRAFORM_VERSION` | `1.17.1` | Terraform version installed in the image |
 | `UV_VERSION` | `0.13.7` | uv version installed in the image |
 | `OH_MY_ZSH_COMMIT` | `cca3bdfbef8c52ef8939ce7911ff68852b949daa` | Exact Oh My Zsh commit |
 
