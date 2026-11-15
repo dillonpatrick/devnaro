@@ -82,7 +82,10 @@ tools_app = typer.Typer(
 )
 app.add_typer(tools_app, name="tools")
 ports_app = typer.Typer(
-    help="Manage localhost TCP forwards to services in project Docker networks.",
+    help=(
+        "Manage localhost TCP forwards to services in project Docker networks.\n\n"
+        "Example: dm ports add 5432 warranty-manager-db 5432"
+    ),
     no_args_is_help=True,
 )
 app.add_typer(ports_app, name="ports")
@@ -514,7 +517,11 @@ def ports_add(
     target_host: str = typer.Argument(..., help="Docker service or container name."),
     target_port: int = typer.Argument(..., help="Port exposed by the target service."),
 ) -> None:
-    """Forward a DevBox localhost port to a project service."""
+    """Forward a DevBox localhost port to a project service.
+
+    Example:
+        dm ports add 5432 warranty-manager-db 5432
+    """
     try:
         add_forward(local_port, target_host, target_port)
     except (OSError, ValueError) as error:
