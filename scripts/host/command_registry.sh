@@ -5,7 +5,7 @@
 DEVBOX_HOST_ALIASES=(enter)
 
 DEVBOX_HOST_COMMANDS=(
-    start shell stop clean restart recreate recreate-all status info logs networks doctor config manager help
+    start shell stop clean restart recreate recreate-all status info logs networks doctor ci config manager help
 )
 
 declare -A DEVBOX_HOST_COMMAND_DESCRIPTIONS=(
