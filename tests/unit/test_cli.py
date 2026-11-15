@@ -236,7 +236,7 @@ def test_tools_search_reports_network_errors(monkeypatch):
         raise DebianPackageSearchError("repository unavailable")
 
     monkeypatch.setattr(cli, "search_debian_packages", fail_search)
-    result = runner.invoke(app, ["tools", "search", "terraform"])
+    result = runner.invoke(app, ["tools", "search", "jq"])
 
     assert result.exit_code == 1
     assert "repository unavailable" in result.stdout
