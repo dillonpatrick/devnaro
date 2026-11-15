@@ -22,8 +22,6 @@ services:
 
     cap_drop:
       - ALL
-    security_opt:
-      - no-new-privileges:true
     environment:
       TZ: ${TZ:-UTC}
     volumes:
