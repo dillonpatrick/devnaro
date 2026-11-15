@@ -157,7 +157,15 @@ jobs:
           echo "Smoke check: bash virtualenv prompt"
           docker exec devbox-ci bash -ic 'source /tmp/devbox-prompt-venv/bin/activate && devbox_bash_prompt && [[ "$PS1" == *"(devbox-prompt-venv)"* ]]'
           echo "Smoke check: zsh virtualenv prompt"
-          docker exec devbox-ci zsh -ic 'source /tmp/devbox-prompt-venv/bin/activate && devbox_update_prompt && [[ "$PROMPT" == *"(devbox-prompt-venv)"* ]]'
+          docker exec devbox-ci zsh -ic '
+            source /tmp/devbox-prompt-venv/bin/activate
+            print -r -- "VIRTUAL_ENV=$VIRTUAL_ENV"
+            print -r -- "PROMPT before update: $PROMPT"
+            whence -f devbox_update_prompt
+            devbox_update_prompt
+            print -r -- "PROMPT after update: $PROMPT"
+            [[ "$PROMPT" == *"(devbox-prompt-venv)"* ]]
+          '
           echo "Smoke check: host bridge, status command, and workspace"
           docker exec devbox-ci sh -ec 'test -x /usr/local/bin/devbox-host-bridge && test -x /usr/local/bin/devbox-status && test -d /workspace'
           echo "Smoke check: Python version"
