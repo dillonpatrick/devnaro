@@ -2,6 +2,7 @@
 set -euo pipefail
 
 DEVBOX_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+rm -f "$DEVBOX_DIR/docker/docker-compose.ports.yml"
 source "$DEVBOX_DIR/scripts/host/ui.sh"
 
 devbox_info "Cleaning DevBox resources..."
