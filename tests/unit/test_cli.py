@@ -9,7 +9,21 @@ runner = CliRunner()
 
 
 
-def test_info_shows_container_and_host_integrations():
+def test_info_shows_container_host_integrations_and_status(monkeypatch):
+    from types import SimpleNamespace
+    from devbox_manager import cli
+
+    container = SimpleNamespace(
+        name="devbox", status="running",
+        attrs={
+            "State": {"StartedAt": "2026-11-15T21:11:12.000000000Z"},
+            "NetworkSettings": {"Networks": {"bridge": {}, "project": {}}},
+            "Config": {"Image": "devbox:latest"},
+        },
+        reload=lambda: None,
+    )
+    monkeypatch.setattr(cli, "_docker_connection", lambda: object())
+    monkeypatch.setattr(cli, "get_devbox_container", lambda client: container)
     result = runner.invoke(app, ["info"])
     assert result.exit_code == 0
     assert "DevBox info" in result.stdout
@@ -19,6 +33,10 @@ def test_info_shows_container_and_host_integrations():
     assert "Workspace" in result.stdout
     assert "Docker Engine" in result.stdout
     assert "VS Code bridge" in result.stdout
+    assert "CONTAINER STATUS" in result.stdout
+    assert "devbox" in result.stdout
+    assert "running" in result.stdout
+    assert "Connected networks" in result.stdout
     assert "INSTALLED TOOLS" not in result.stdout
 
 
@@ -59,7 +77,7 @@ def test_welcome_separates_host_and_container_quick_commands(monkeypatch):
     assert "Host commands:" not in result.stdout
     assert "devbox info" not in result.stdout
     assert "dm info" in result.stdout
-    assert "dm status" in result.stdout
+    assert "dm status" not in result.stdout
     assert "dm doctor" in result.stdout
     assert "dm networks" in result.stdout
     assert "dm network-manager status" in result.stdout
@@ -75,6 +93,7 @@ def test_welcome_commands_come_from_registered_typer_tree():
     commands = dict(_registered_cli_commands())
 
     assert "dm info" in commands
+    assert "dm status" not in commands
     assert "dm network-manager status" in commands
     assert "dm network-manager logs" in commands
     assert all("__complete" not in usage for usage in commands)
