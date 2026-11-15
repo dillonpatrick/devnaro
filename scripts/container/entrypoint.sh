@@ -1,6 +1,14 @@
 #!/usr/bin/env sh
 set -eu
 
+# The persistent home volume may have been created by the previous non-root
+# image (UID/GID 1000). DevBox now runs as root, so repair Oh My Zsh's
+# completion directories before Zsh runs compaudit.
+if [ -d "${HOME}/.oh-my-zsh" ]; then
+    chown -R root:root "${HOME}/.oh-my-zsh"
+    chmod -R go-w "${HOME}/.oh-my-zsh"
+fi
+
 # Normalize DevBox-managed Zsh configuration in the persistent home volume.
 ZSHRC="${HOME}/.zshrc"
 
