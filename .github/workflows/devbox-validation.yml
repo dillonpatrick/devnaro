@@ -93,8 +93,8 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/devbox-workspace"
           docker volume create devbox-home-ci
-          docker run --rm --volume devbox-home-ci:/home/devuser debian:trixie-slim \
-            sh -ec 'mkdir -p /home/devuser/.oh-my-zsh/custom && chown -R 1000:1000 /home/devuser/.oh-my-zsh && chmod -R 0775 /home/devuser/.oh-my-zsh'
+          docker run --rm --volume devbox-home-ci:/mnt/home --entrypoint sh devbox:ci \
+            -ec 'cp -a /home/devuser/. /mnt/home/ && chown -R 0:0 /mnt/home && chmod -R u+rwX,go+rX /mnt/home'
           docker run --detach --name devbox-ci \
             --volume /var/run/docker.sock:/var/run/docker.sock \
             --volume "$RUNNER_TEMP/devbox-workspace:/workspace" \
