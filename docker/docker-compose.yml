@@ -22,6 +22,9 @@ services:
 
     cap_drop:
       - ALL
+    cap_add:
+      - SETGID
+      - SETUID
     environment:
       TZ: ${TZ:-UTC}
     volumes:
