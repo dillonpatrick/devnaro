@@ -53,6 +53,27 @@ export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
 EOF
 fi
 
+# Keep Bash terminals (including VS Code's default terminal) consistent with Zsh.
+BASHRC="${HOME}/.bashrc"
+touch "$BASHRC"
+sed -i '/^# BEGIN DEVBOX BASH CONFIG$/,/^# END DEVBOX BASH CONFIG$/d' "$BASHRC"
+cat >> "$BASHRC" <<'EOF'
+
+# BEGIN DEVBOX BASH CONFIG
+export PATH="${HOME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:${PATH}"
+dm() { devbox-manager "$@"; }
+devbox_bash_prompt() {
+    local branch=""
+    if command git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        branch=$(command git symbolic-ref --quiet --short HEAD 2>/dev/null || command git rev-parse --short HEAD 2>/dev/null || true)
+        [[ -n "$branch" ]] && branch=" ($branch)"
+    fi
+    PS1="\\[\\e[32m\\]╭─ [DEVBOX] \\[\\e[36m\\]\\w\\[\\e[0m\\]\\[\\e[2m\\]${branch}\\[\\e[0m\\]\\n\\[\\e[32m\\]╰─❯\\[\\e[0m\\] "
+}
+PROMPT_COMMAND=devbox_bash_prompt
+# END DEVBOX BASH CONFIG
+EOF
+
 # Make the mounted workspace easy to reach from the container home directory.
 if [ -d "/workspace" ] && [ ! -e "${HOME}/workspace" ] && [ ! -L "${HOME}/workspace" ]; then
     ln -s /workspace "${HOME}/workspace"
