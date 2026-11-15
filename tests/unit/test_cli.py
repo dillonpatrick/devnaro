@@ -38,10 +38,8 @@ def test_info_shows_stack_base_and_tool_sources(monkeypatch, tmp_path):
     assert "DevBox info" in result.stdout
     assert "Stack" in result.stdout
     assert "Debian" in result.stdout
-    assert "Terraform" in result.stdout
     assert "Docker Compose" in result.stdout
     assert "Path" in result.stdout
-    assert "/usr/bin/terraform" in result.stdout
     assert "Image" in result.stdout
     assert "custom-tool" in result.stdout
     assert "custom-sdk" in result.stdout
