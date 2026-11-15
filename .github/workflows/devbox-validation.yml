@@ -112,6 +112,7 @@ jobs:
 
           test "$(docker inspect --format '{{.State.Running}}' devbox-ci)" = "true"
           docker exec devbox-ci devbox-manager --version
+          test "$(docker exec devbox-ci sudo -n id -u)" = "0"
           docker exec devbox-ci sudo -n apt-get --version
           docker exec devbox-ci devbox-manager --help
           docker exec devbox-ci devbox-manager ports --help
