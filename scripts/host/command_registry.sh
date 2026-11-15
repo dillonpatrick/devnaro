@@ -21,6 +21,7 @@ declare -A DEVBOX_HOST_COMMAND_DESCRIPTIONS=(
     [logs]="Show container logs"
     [networks]="List networks connected to DevBox"
     [doctor]="Run health checks inside the container"
+    [ci]="Run GitHub Actions locally with act"
     [config]="Show or change machine-specific configuration"
     [manager]="Manage the Network Manager"
     [help]="Show this help message"
