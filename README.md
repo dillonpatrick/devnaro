@@ -14,7 +14,7 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 - Persistent home directory across normal container stops and restarts.
 - Separate stop and clean lifecycle operations.
 - Host CLI for lifecycle operations and container-side CLI for diagnostics.
-- Zsh, Oh My Zsh (pinned commit), Terraform 1.17.1, Docker CLI, Python 3.13 from Debian Trixie packages, uv 0.13.7, Typer, and Rich.
+- Zsh, Oh My Zsh (pinned commit), Docker CLI, Python 3.13 from Debian Trixie packages, uv 0.13.7, Typer, and Rich.
 
 ## Architecture
 
@@ -28,8 +28,6 @@ Host
 |   |   +-- packages.txt (additional Debian packages)
 |   |   +-- Dockerfile
 |   |   +-- docker-compose.yml
-|   |   +-- docker-compose.ports.example.yml
-|   |   +-- docker-compose.ports.yml (generated locally, ignored by Git)
 |   +-- network_manager/
 |   |   +-- manager.py
 |   +-- scripts/
@@ -56,31 +54,12 @@ Host
 
 The workspace is mounted in the container at `/workspace`. Project Compose files remain in their own directories and do not need to be changed by DevBox.
 
-### Development port forwarding
+### Host port publishing
 
-DevBox publishes common development ports from the container to the host, bound **only to `127.0.0.1`**. This lets the host browser open links printed by tools such as Uvicorn, Vite, and other local development servers without changing a project's Compose file.
+DevBox does not publish development ports from its own container to the host by default. This avoids reserving broad port ranges and prevents unnecessary host-side listeners.
 
-The default host/container ports are `3000–3010`, `4173`, `5000–5010`, `5173`, `8000–8010`, `8080–8090`, and `9000–9010`. The host and container use the same port number. For example, an API listening on container port `8000` is reachable on the host at `http://127.0.0.1:8000`.
+When a project needs to be reachable from the host browser, publish the required port in that project's own Docker Compose configuration, or use a project-specific forwarding solution. DevBox's `dm ports` feature serves a different purpose: it exposes a service from another Docker container on DevBox's own loopback interface so tools running inside DevBox can continue using `localhost`.
 
-Port publishing is kept separate from the main Compose definition. On first use, DevBox copies `docker/docker-compose.ports.example.yml` to the local, Git-ignored `docker/docker-compose.ports.yml`. Edit that local file to add, remove, or change published ports. The generated file is not overwritten on subsequent starts, so your choices survive updates to the DevBox repository.
-
-To disable host port publishing entirely, replace the local file contents with:
-
-```yaml
-services:
-  devbox:
-    ports: []
-```
-
-To publish only selected ports, keep only the desired entries under `services.devbox.ports`. Keep the host binding on `127.0.0.1` unless you intentionally want to expose a development service on another network interface. For example, an entry such as `127.0.0.1:9000:8000` maps host port `9000` to container port `8000`.
-
-Applications started directly inside DevBox must bind to `0.0.0.0`, not `127.0.0.1`, so Docker can forward traffic to them. For example:
-
-```bash
-uvicorn your_module:app --reload --host 0.0.0.0 --port 8000
-```
-
-The default host-side bindings are loopback-only and are not exposed to other machines on the network. If a published host port is already occupied, Docker may refuse to start DevBox; remove or change that entry in `docker/docker-compose.ports.yml`. After changing port mappings, run `devbox recreate` to apply them to the container.
 
 ## Requirements
 
@@ -292,7 +271,7 @@ View logs from the host with `devbox manager logs`, or from inside the container
 
 ## Configuration
 
-The startup script generates a local `.env` file and, on first use, a local `docker/docker-compose.ports.yml` file. Both are ignored by Git. The port override is copied from the tracked `docker/docker-compose.ports.example.yml` only when it does not already exist; editing the local file is the supported way to customize published ports.
+The startup script generates a local `.env` file, which is ignored by Git.
 
 | Variable | Description |
 |---|---|
