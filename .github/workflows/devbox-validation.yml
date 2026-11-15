@@ -120,7 +120,7 @@ jobs:
           docker exec devbox-ci apt-get install -y --no-install-recommends jq
           docker exec devbox-ci jq --version
           docker exec devbox-ci sh -ec 'test "$(stat -c %u /home/devuser/.oh-my-zsh)" = "0" && test "$(stat -c %u /home/devuser/.oh-my-zsh/custom)" = "0" && test -z "$(find /home/devuser/.oh-my-zsh -type d -perm /022 -print -quit)"'
-          docker exec devbox-ci zsh -lic '! compaudit | grep -q "Insecure completion-dependent directories"'
+          test -z "$(docker exec devbox-ci zsh -lic 'autoload -Uz compaudit; compaudit')"
           docker exec devbox-ci devbox-manager --help
           docker exec devbox-ci devbox-manager ports --help
           docker exec devbox-ci test -f /opt/port-forwarding/manager.py
