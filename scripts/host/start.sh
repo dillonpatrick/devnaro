@@ -133,7 +133,6 @@ section 1 "Environment configuration"
 
 
 cd "$SCRIPT_DIR"
-bash "$SCRIPT_DIR/scripts/host/ensure-ports-config.sh"
 compose() {
     bash "$SCRIPT_DIR/scripts/host/compose.sh" "$@"
 }
