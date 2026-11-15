@@ -304,6 +304,10 @@ The Network Manager also supports:
 
 The mounted Docker socket grants extensive control over the host Docker Engine. Treat DevBox as a privileged development environment and only run trusted project code.
 
+## Local GitHub Actions
+
+Run the repository validation workflow on the host with `devbox ci`. The command installs a pinned, checksum-verified `act` binary into `~/.local/bin` on first use, then runs the workflow against the host Docker Engine. Docker must be running. Use `devbox ci --list` to list jobs or `devbox ci -j python-tests` to run one job. The workflow runs in containers, so the first execution downloads the runner image. Local execution is a close approximation, not a guarantee of identical behavior to GitHub-hosted runners.
+
 ## Development
 
 The Python CLI source is in `src/devbox_manager/`. Dependencies and the console entry point are declared in `pyproject.toml`. Unit tests are in `tests/unit/`.
