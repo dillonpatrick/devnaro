@@ -111,43 +111,11 @@ func (b bridge) open(containerPath string) error {
 	if !strings.Contains(strings.ToLower(string(extensions)), "ms-vscode-remote.remote-containers") {
 		return errors.New("The VS Code 'Dev Containers' extension is required. Install ms-vscode-remote.remote-containers on the host and try again.")
 	}
-	cacheHome := os.Getenv("XDG_CACHE_HOME")
-	if cacheHome == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		cacheHome = filepath.Join(home, ".cache")
-	}
-	cacheRoot := filepath.Join(cacheHome, "devbox", "vscode-workspaces")
-	if err := os.MkdirAll(cacheRoot, 0700); err != nil {
-		return err
-	}
-	sum := sha256.Sum256([]byte(b.containerName + ":" + folder))
-	workspaceFile := filepath.Join(cacheRoot, hex.EncodeToString(sum[:])[:16]+".code-workspace")
-	config := map[string]any{
-		"folders": []map[string]string{{"uri": remoteFolderURI(containerID, containerFolder)}},
-		"settings": map[string]any{
-			"terminal.integrated.defaultProfile.linux": "zsh",
-			"python.defaultInterpreterPath": filepath.ToSlash(filepath.Join(containerFolder, ".venv", "bin", "python")),
-			"python.terminal.activateEnvironment": true,
-			"[python]": map[string]any{
-				"editor.defaultFormatter": "charliermarsh.ruff",
-				"editor.formatOnSave": true,
-			},
-		},
-	}
-	data, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(workspaceFile, append(data, '\n'), 0600); err != nil {
-		return err
-	}
-	cmd := exec.Command(vscode, "--reuse-window", workspaceFile)
+	remoteURI := remoteFolderURI(containerID, containerFolder)
+	cmd := exec.Command(vscode, "--new-window", "--folder-uri", remoteURI)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = nil, nil, nil
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("Unable to start VS Code: %v", err)
+		return fmt.Errorf("Unable to start VS Code remote session: %v", err)
 	}
 	_ = cmd.Process.Release()
 	return nil
