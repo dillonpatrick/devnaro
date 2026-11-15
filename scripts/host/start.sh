@@ -427,7 +427,7 @@ line
 printf '\n'
 printf '  %bWorkspace%b       %s\n' "${CYAN}" "${RESET}" "$WORKSPACE_PATH"
 printf '  %bContainer%b      %s\n' "${CYAN}" "${RESET}" "devbox"
-printf '  %bUser%b           %s\n' "${CYAN}" "${RESET}" "$USERNAME"
+printf '  %bUser%b           %s\n' "${CYAN}" "${RESET}" "root"
 printf '  %bNetwork Manager%b %s\n' "${CYAN}" "${RESET}" "Running"
 
 printf '\n'
