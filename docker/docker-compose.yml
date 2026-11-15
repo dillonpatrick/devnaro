@@ -20,14 +20,6 @@ services:
     command: sleep infinity
     restart: unless-stopped
 
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - DAC_OVERRIDE
-      - FOWNER
-      - SETGID
-      - SETUID
     environment:
       TZ: ${TZ:-UTC}
     volumes:
