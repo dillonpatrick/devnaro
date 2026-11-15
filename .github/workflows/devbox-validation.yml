@@ -4,14 +4,6 @@ on:
   push:
     branches:
       - main
-      - feat/python-cli-foundation
-      - feat/stop-clean-lifecycle
-      - feat/stack-definition-foundation
-      - feat/curated-development-stacks
-      - feat/local-port-forwarding
-  pull_request:
-    branches:
-      - main
 
 jobs:
   python-tests:
