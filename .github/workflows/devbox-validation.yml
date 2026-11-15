@@ -119,7 +119,7 @@ jobs:
           docker exec devbox-ci devbox-manager --help
           docker exec devbox-ci devbox-manager ports --help
           docker exec devbox-ci test -f /opt/port-forwarding/manager.py
-          docker exec devbox-ci command -v socat
+          docker exec devbox-ci sh -lc 'command -v socat'
           docker exec devbox-ci devbox-manager info
           docker exec devbox-ci devbox-manager tools search jq | grep -F jq
           docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v docker && command -v jq'
