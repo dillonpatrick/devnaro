@@ -113,6 +113,7 @@ jobs:
           test "$(docker inspect --format '{{.State.Running}}' devbox-ci)" = "true"
           docker exec devbox-ci devbox-manager --version
           test "$(docker exec devbox-ci id -u)" = "0"
+          docker exec devbox-ci sh -ec 'test "$HOME" = "/home/devuser" && test -d "$HOME" && test -w "$HOME"'
           docker exec devbox-ci apt-get --version
           docker exec devbox-ci apt-get update
           docker exec devbox-ci apt-get install -y --no-install-recommends jq
