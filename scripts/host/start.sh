@@ -291,7 +291,7 @@ if [[ ! -S "$CODE_SOCKET_PATH" ]] || [[ ! -f "$CODE_BRIDGE_PID" ]] || ! kill -0 
     nohup "$CODE_BRIDGE_BINARY" \
         --socket "$CODE_SOCKET_PATH" \
         --workspace "$WORKSPACE_PATH" \
-        --terminal-script "$SCRIPT_DIR/scripts/host/vscode-terminal.sh" \
+        --container "devbox" \
         >"$CODE_BRIDGE_LOG" 2>&1 &
     echo "$!" > "$CODE_BRIDGE_PID"
 
