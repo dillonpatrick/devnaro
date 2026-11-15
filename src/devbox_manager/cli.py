@@ -142,7 +142,6 @@ def _render_manifest_updated(action: str, package: str) -> None:
 def _is_image_provided_tool(package: str) -> bool:
     """Return whether a package is already provided by the base DevBox image."""
     image_managed_commands = {
-        "terraform": "terraform",
         "uv": "uv",
     }
     command = image_managed_commands.get(package)
@@ -442,7 +441,6 @@ def info() -> None:
     tools.add_column("Source", style="muted")
 
     known_tools = [
-        ("Terraform", "terraform"),
         ("Docker CLI", "docker"),
         ("Docker Compose", "docker"),
         ("Python", "python3"),
