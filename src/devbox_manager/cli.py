@@ -84,7 +84,7 @@ app.add_typer(tools_app, name="tools")
 ports_app = typer.Typer(
     help=(
         "Manage localhost TCP forwards to services in project Docker networks.\n\n"
-        "Example: dm ports add 5432 warranty-manager-db 5432"
+        "Example: dm ports add 8080 my-service 80"
     ),
     no_args_is_help=True,
 )
@@ -520,7 +520,7 @@ def ports_add(
     """Forward a DevBox localhost port to a project service.
 
     Example:
-        dm ports add 5432 warranty-manager-db 5432
+        dm ports add 8080 my-service 80
     """
     try:
         add_forward(local_port, target_host, target_port)
