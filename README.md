@@ -22,30 +22,6 @@ DevBox combines Docker Compose, host-side Bash commands, a Python CLI, and an au
 Host
 |
 +-- devbox/
-|   +-- .devcontainer/
-|   +-- .github/
-|   +-- docker/
-|   |   +-- Dockerfile
-|   |   +-- docker-compose.yml
-|   +-- network_manager/
-|   |   +-- manager.py
-|   +-- scripts/
-|   |   +-- host/
-|   |   |   +-- devbox
-|   |   |   +-- install.sh
-|   |   |   +-- start.sh
-|   |   |   +-- stop.sh
-|   |   |   +-- clean.sh
-|   |   +-- compose.sh (shared Docker Compose entry point)
-|   |   +-- ui.sh (shared lifecycle terminal helpers)
-|   |   +-- container/
-|   |       +-- entrypoint.sh
-|   +-- src/devbox_manager/
-|   +-- tests/unit/
-|   +-- Makefile
-|   +-- pyproject.toml
-|   +-- README.md
-|
 +-- workspace/
     +-- project-1/
     +-- project-2/
