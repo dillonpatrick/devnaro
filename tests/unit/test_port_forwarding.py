@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from devbox_manager import port_forwarding as forwarding
+from devnaro import port_forwarding as forwarding
 
 
 def test_add_and_load_forward(tmp_path):

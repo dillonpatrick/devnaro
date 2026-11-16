@@ -1,4 +1,4 @@
-# DevBox — Project Status and Roadmap
+# DevNaro — Project Status and Roadmap
 
 > Snapshot recorded on 2026-11-12.
 > PRs #21, #22 and Stack-aware image architecture have been merged into `main`.
@@ -7,18 +7,18 @@
 
 ## Current state
 
-DevBox currently has a single Debian-based development container with a host
-CLI, container CLI (`dm`), persistent home, mounted workspace, Docker
+DevNaro currently has a single Debian-based development container with a host
+CLI, container CLI (`dvn`), persistent home, mounted workspace, Docker
 integration, Network Manager and VS Code host bridge.
 
-The image build is stack-aware and uses Debian Slim for every build stage and runtime stack. The curated-stacks work is continuing to add tool installers and explicit stack selection before Multi-DevBox begins.
+The image build is stack-aware and uses Debian Slim for every build stage and runtime stack. The curated-stacks work is continuing to add tool installers and explicit stack selection before Multi-DevNaro begins.
 
 ## Implemented
 
-- Debian Trixie Slim image and Python 3.13 runtime for the DevBox CLI (the package supports Python 3.12+).
+- Debian Trixie Slim image and Python 3.13 runtime for the DevNaro CLI (the package supports Python 3.12+).
 - Non-root user, Zsh/Oh My Zsh, persistent home and mounted workspace.
 - Host CLI lifecycle: start, stop, restart, recreate, recreate-all and clean.
-- Container CLI (`dm`) built with Typer and Rich.
+- Container CLI (`dvn`) built with Typer and Rich.
 - Docker CLI/Compose integration and Network Manager.
 - VS Code host bridge and terminal integration.
 - Configurable port override file and shell completions.
@@ -27,7 +27,7 @@ The image build is stack-aware and uses Debian Slim for every build stage and ru
   duplicate-key rejection, strict validation and normalized build artifacts.
 - Stack-controlled Debian-only packages, base image selection, tool versions
   or release channels, and environment.
-- Separate DevBox bootstrap uv and stack-provided uv installations.
+- Separate DevNaro bootstrap uv and stack-provided uv installations.
 - Unit tests and CI validation for Python, repository checks and Docker build.
 
 ## Current limitations
@@ -91,13 +91,13 @@ Implementation sequence:
 3. Add supported installers and version resolvers for the curated toolsets.
 4. Add the four stack definitions and remove the implicit default selection.
 5. Update CLI/Compose startup to require an explicit stack selection.
-6. Update `dm info`, tests, CI and user documentation.
+6. Update `dvn info`, tests, CI and user documentation.
 
-## Phase 3 — Multi-DevBox architecture
+## Phase 3 — Multi-DevNaro architecture
 
 Status: deferred until curated stacks are implemented and validated.
 
-Goal: allow multiple named DevBox environments to coexist.
+Goal: allow multiple named DevNaro environments to coexist.
 
 Proposed work sequence:
 

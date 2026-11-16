@@ -1,5 +1,5 @@
 services:
-  devbox:
+  devnaro:
     build:
       context: .
       dockerfile: docker/Dockerfile
@@ -7,10 +7,10 @@ services:
         BASE_IMAGE: ${BASE_IMAGE:-debian:trixie-slim}
         STACK_NAME: ${STACK_NAME:-default}
         USERNAME: ${USERNAME:-devuser}
-        DEVBOX_BOOTSTRAP_UV_VERSION: ${DEVBOX_BOOTSTRAP_UV_VERSION:-0.13.7}
+        DEVNARO_BOOTSTRAP_UV_VERSION: ${DEVNARO_BOOTSTRAP_UV_VERSION:-0.13.7}
         OH_MY_ZSH_COMMIT: ${OH_MY_ZSH_COMMIT:-cca3bdfbef8c52ef8939ce7911ff68852b949daa}
-    container_name: devbox
-    hostname: devbox
+    container_name: devnaro
+    hostname: devnaro
     init: true
     stdin_open: true
     tty: true
@@ -22,13 +22,13 @@ services:
     volumes:
       - ${WORKSPACE_PATH:-../workspace}:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
-      - devbox_home:/home/${USERNAME:-devuser}
+      - devnaro_home:/home/${USERNAME:-devuser}
       - type: bind
-        source: ${CODE_SOCKET_PATH:-/tmp/devbox-code.sock}
-        target: /run/devbox-host/code.sock
+        source: ${CODE_SOCKET_PATH:-/tmp/devnaro-code.sock}
+        target: /run/devnaro-host/code.sock
         bind:
           create_host_path: false
     working_dir: /workspace
 
 volumes:
-  devbox_home:
+  devnaro_home:

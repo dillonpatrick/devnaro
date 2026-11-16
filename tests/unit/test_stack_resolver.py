@@ -1,10 +1,10 @@
-"""Tests for declarative DevBox stack definitions."""
+"""Tests for declarative DevNaro stack definitions."""
 
 import shlex
 
 import pytest
 
-from devbox_manager.stack_resolver import (
+from devnaro.stack_resolver import (
     StackDefinitionError,
     resolve_stack,
     validate_stack_definition,

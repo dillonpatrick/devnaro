@@ -213,7 +213,7 @@ func render(items []container) string {
 	if n, err := strconv.Atoi(os.Getenv("COLUMNS")); err == nil && n >= 60 && n <= 140 { width = n }
 	inner := width - 4
 	borderWidth := inner + 2
-	title := " DevBox status "
+	title := " DevNaro status "
 	side := (borderWidth - visibleLen(title)) / 2
 	top := paint("╭"+strings.Repeat("─", side), cyan, color) +
 		paint(title, bold+cyan, color) +
@@ -223,14 +223,14 @@ func render(items []container) string {
 
 	body := make([]string, 0)
 	if len(items) == 0 {
-		body = append(body, paint("No container found. Start it with: devbox start", yellow, color))
+		body = append(body, paint("No container found. Start it with: devnaro start", yellow, color))
 	}
 	for i, item := range items {
 		name := item.Name
 		if name == "" { name = item.Service }
-		if name == "" { name = "devbox" }
+		if name == "" { name = "devnaro" }
 		service := item.Service
-		if service == "" { service = "devbox" }
+		if service == "" { service = "devnaro" }
 		state := item.Status
 		if state == "" { state = item.State }
 		if state == "" { state = "Unknown" }

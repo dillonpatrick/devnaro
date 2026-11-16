@@ -2,20 +2,20 @@
 set -Eeuo pipefail
 
 # ==========================================
-# DevBox Host CLI
+# DevNaro Host CLI
 # ==========================================
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-DEVBOX_DIR="$(cd -- "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/devbox"
+DEVNARO_DIR="$(cd -- "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/devnaro"
 CONFIG_FILE="$CONFIG_DIR/config"
-source "$DEVBOX_DIR/scripts/host/command_registry.sh"
+source "$DEVNARO_DIR/scripts/host/command_registry.sh"
 
 command="${1:-shell}"
 
 if [[ "$command" == "__complete" ]]; then
     shift
-    devbox_host_completion "$@"
+    devnaro_host_completion "$@"
     exit 0
 fi
 
@@ -59,46 +59,46 @@ print_command() {
 
 usage() {
     printf "\n%b╭%s╮%b\n" "$CYAN" "$HELP_BORDER" "$RESET"
-    print_box_line "DevBox - Docker development environment" \
-        "${BOLD}${CYAN}DevBox${RESET} ${DIM}- Docker development environment${RESET}"
+    print_box_line "DevNaro - Docker development environment" \
+        "${BOLD}${CYAN}DevNaro${RESET} ${DIM}- Docker development environment${RESET}"
     printf "%b├%s┤%b\n" "$CYAN" "$HELP_BORDER" "$RESET"
     print_box_line "Usage:" "${BOLD}${CYAN}Usage:${RESET}"
-    print_box_line "  devbox [command]" "  ${GREEN}devbox${RESET} [command]"
-    print_box_line "  devbox config [show|get workspace|set workspace PATH]" \
-        "  ${GREEN}devbox${RESET} config [show|get workspace|set workspace PATH]"
-    print_box_line "  devbox manager [status|logs]" \
-        "  ${GREEN}devbox${RESET} manager [status|logs]"
+    print_box_line "  devnaro [command]" "  ${GREEN}devnaro${RESET} [command]"
+    print_box_line "  devnaro config [show|get workspace|set workspace PATH]" \
+        "  ${GREEN}devnaro${RESET} config [show|get workspace|set workspace PATH]"
+    print_box_line "  devnaro manager [status|logs]" \
+        "  ${GREEN}devnaro${RESET} manager [status|logs]"
     print_box_line "" ""
     print_box_line "Host commands:" "${BOLD}${CYAN}Host commands:${RESET}"
     local command_name
-    for command_name in "${DEVBOX_HOST_COMMANDS[@]}"; do
-        print_command "$command_name" "${DEVBOX_HOST_COMMAND_DESCRIPTIONS[$command_name]}"
+    for command_name in "${DEVNARO_HOST_COMMANDS[@]}"; do
+        print_command "$command_name" "${DEVNARO_HOST_COMMAND_DESCRIPTIONS[$command_name]}"
     done
     local subcommand_name subcommand_key
-    for subcommand_name in "${DEVBOX_HOST_SUBCOMMANDS_manager[@]}"; do
+    for subcommand_name in "${DEVNARO_HOST_SUBCOMMANDS_manager[@]}"; do
         subcommand_key="manager $subcommand_name"
-        print_command "$subcommand_key" "${DEVBOX_HOST_SUBCOMMAND_DESCRIPTIONS[$subcommand_key]}"
+        print_command "$subcommand_key" "${DEVNARO_HOST_SUBCOMMAND_DESCRIPTIONS[$subcommand_key]}"
     done
     print_box_line "" ""
     print_box_line "Examples:" "${BOLD}${CYAN}Examples:${RESET}"
-    print_box_line "  devbox start" "  ${GREEN}devbox start${RESET}"
-    print_box_line "  devbox shell" "  ${GREEN}devbox shell${RESET}"
-    print_box_line "  devbox recreate" "  ${GREEN}devbox recreate${RESET}"
-    print_box_line "  devbox status" "  ${GREEN}devbox status${RESET}"
-    print_box_line "  devbox config set workspace PATH" \
-        "  ${GREEN}devbox config set workspace PATH${RESET}"
-    print_box_line "  devbox manager logs" "  ${GREEN}devbox manager logs${RESET}"
-    print_box_line "  devbox ci" "  ${GREEN}devbox ci${RESET}"
+    print_box_line "  devnaro start" "  ${GREEN}devnaro start${RESET}"
+    print_box_line "  devnaro shell" "  ${GREEN}devnaro shell${RESET}"
+    print_box_line "  devnaro recreate" "  ${GREEN}devnaro recreate${RESET}"
+    print_box_line "  devnaro status" "  ${GREEN}devnaro status${RESET}"
+    print_box_line "  devnaro config set workspace PATH" \
+        "  ${GREEN}devnaro config set workspace PATH${RESET}"
+    print_box_line "  devnaro manager logs" "  ${GREEN}devnaro manager logs${RESET}"
+    print_box_line "  devnaro ci" "  ${GREEN}devnaro ci${RESET}"
     printf "%b╰%s╯%b\n\n" "$CYAN" "$HELP_BORDER" "$RESET"
 }
 
 compose() {
-    bash "$DEVBOX_DIR/scripts/host/compose.sh" "$@"
+    bash "$DEVNARO_DIR/scripts/host/compose.sh" "$@"
 }
 
 require_running() {
-    if ! compose ps --status running --services | grep -Fxq devbox; then
-        printf 'DevBox is not running. Start it with: devbox start\n' >&2
+    if ! compose ps --status running --services | grep -Fxq devnaro; then
+        printf 'DevNaro is not running. Start it with: devnaro start\n' >&2
         exit 1
     fi
 }
@@ -126,32 +126,32 @@ config_set() {
 }
 
 show_config() {
-    printf 'DevBox machine configuration\n'
+    printf 'DevNaro machine configuration\n'
     printf '  Config file: %s\n' "$CONFIG_FILE"
 
     local workspace_path
     workspace_path="$(config_get workspace_path)"
 
     if [[ -z "$workspace_path" ]]; then
-        workspace_path="$DEVBOX_DIR/../workspace (default)"
+        workspace_path="$DEVNARO_DIR/../workspace (default)"
     fi
 
     printf '  Workspace:   %s\n' "$workspace_path"
-    printf '  Repository:  %s\n' "$DEVBOX_DIR"
+    printf '  Repository:  %s\n' "$DEVNARO_DIR"
 }
 
 case "$command" in
     start)
-        exec "$DEVBOX_DIR/scripts/host/start.sh"
+        exec "$DEVNARO_DIR/scripts/host/start.sh"
         ;;
     stop)
-        exec "$DEVBOX_DIR/scripts/host/stop.sh"
+        exec "$DEVNARO_DIR/scripts/host/stop.sh"
         ;;
     clean)
-        exec bash "$DEVBOX_DIR/scripts/host/clean.sh"
+        exec bash "$DEVNARO_DIR/scripts/host/clean.sh"
         ;;
     recreate-all)
-        printf 'WARNING: This will remove all DevBox-managed resources, including the devbox_home volume.\n'
+        printf 'WARNING: This will remove all DevNaro-managed resources, including the devnaro_home volume.\n'
         printf 'Your workspace files will be preserved, but files and settings stored in the container home will be lost.\n'
         read -r -p 'Continue? [y/N] ' confirmation
 
@@ -164,21 +164,21 @@ case "$command" in
                 ;;
         esac
 
-        bash "$DEVBOX_DIR/scripts/host/clean.sh"
-        exec "$DEVBOX_DIR/scripts/host/start.sh"
+        bash "$DEVNARO_DIR/scripts/host/clean.sh"
+        exec "$DEVNARO_DIR/scripts/host/start.sh"
         ;;
     restart)
-        if ! compose ps --all --services | grep -Fxq devbox; then
-            printf 'DevBox container does not exist. Use: devbox start\n' >&2
+        if ! compose ps --all --services | grep -Fxq devnaro; then
+            printf 'DevNaro container does not exist. Use: devnaro start\n' >&2
             exit 1
         fi
-        compose restart devbox
+        compose restart devnaro
         ;;
     recreate)
         USER_UID="$(id -u)"
         RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-        CODE_BRIDGE_PID="$RUNTIME_DIR/devbox-code-$USER_UID.pid"
-        CODE_SOCKET_PATH="$RUNTIME_DIR/devbox-code-$USER_UID.sock"
+        CODE_BRIDGE_PID="$RUNTIME_DIR/devnaro-code-$USER_UID.pid"
+        CODE_SOCKET_PATH="$RUNTIME_DIR/devnaro-code-$USER_UID.sock"
 
         if [[ -f "$CODE_BRIDGE_PID" ]]; then
             kill "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null || true
@@ -186,31 +186,31 @@ case "$command" in
 
         rm -f "$CODE_BRIDGE_PID" "$CODE_SOCKET_PATH"
         compose down --remove-orphans
-        exec "$DEVBOX_DIR/scripts/host/start.sh"
+        exec "$DEVNARO_DIR/scripts/host/start.sh"
         ;;
     shell|enter)
         require_running
-        exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox zsh
+        exec bash "$DEVNARO_DIR/scripts/host/compose.sh" exec devnaro zsh
         ;;
     status)
         RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-        STATUS_BINARY="$RUNTIME_DIR/devbox-status-$(id -u)"
+        STATUS_BINARY="$RUNTIME_DIR/devnaro-status-$(id -u)"
         if [[ -x "$STATUS_BINARY" ]]; then
             compose ps --all --format json | "$STATUS_BINARY"
         else
-            compose ps --all --format table devbox
+            compose ps --all --format table devnaro
         fi
         ;;
     info)
         require_running
-        exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager info
+        exec bash "$DEVNARO_DIR/scripts/host/compose.sh" exec devnaro devnaro info
         ;;
     logs)
-        compose logs devbox
+        compose logs devnaro
         ;;
     networks)
         require_running
-        exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager networks
+        exec bash "$DEVNARO_DIR/scripts/host/compose.sh" exec devnaro devnaro networks
         ;;
     config)
         case "${2:-show}" in
@@ -230,7 +230,7 @@ case "$command" in
                 case "${3:-}" in
                     workspace)
                         if [[ -z "${4:-}" ]]; then
-                            printf 'Usage: devbox config set workspace PATH\n' >&2
+                            printf 'Usage: devnaro config set workspace PATH\n' >&2
                             exit 2
                         fi
 
@@ -247,18 +247,18 @@ case "$command" in
                 esac
                 ;;
             *)
-                printf 'Usage: devbox config [show|get workspace|set workspace PATH]\n' >&2
+                printf 'Usage: devnaro config [show|get workspace|set workspace PATH]\n' >&2
                 exit 2
                 ;;
         esac
         ;;
     ci)
         shift
-        exec bash "$DEVBOX_DIR/scripts/host/ci.sh" "$@"
+        exec bash "$DEVNARO_DIR/scripts/host/ci.sh" "$@"
         ;;
     doctor)
         require_running
-        exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager doctor
+        exec bash "$DEVNARO_DIR/scripts/host/compose.sh" exec devnaro devnaro doctor
         ;;
     manager)
         subcommand="${2:-status}"
@@ -266,10 +266,10 @@ case "$command" in
 
         case "$subcommand" in
             status)
-                exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager network-manager status
+                exec bash "$DEVNARO_DIR/scripts/host/compose.sh" exec devnaro devnaro network-manager status
                 ;;
             logs)
-                exec bash "$DEVBOX_DIR/scripts/host/compose.sh" exec devbox devbox-manager network-manager logs
+                exec bash "$DEVNARO_DIR/scripts/host/compose.sh" exec devnaro devnaro network-manager logs
                 ;;
             *)
                 printf 'Unknown manager command: %s\n' "$subcommand" >&2

@@ -6,18 +6,18 @@ set -Eeuo pipefail
 CONTAINER_WORKDIR="${1:-/workspace}"
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-DEVBOX_DIR="$(cd -- "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
-COMPOSE_FILE="$DEVBOX_DIR/docker/docker-compose.yml"
-PORTS_FILE="$DEVBOX_DIR/docker/docker-compose.ports.yml"
+DEVNARO_DIR="$(cd -- "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
+COMPOSE_FILE="$DEVNARO_DIR/docker/docker-compose.yml"
+PORTS_FILE="$DEVNARO_DIR/docker/docker-compose.ports.yml"
 
 if [[ ! "$CONTAINER_WORKDIR" =~ ^/workspace(/.*)?$ ]]; then
-    printf 'DevBox terminal refused an invalid working directory: %s\n' "$CONTAINER_WORKDIR" >&2
+    printf 'DevNaro terminal refused an invalid working directory: %s\n' "$CONTAINER_WORKDIR" >&2
     exit 2
 fi
 
-if ! docker compose --project-directory "$DEVBOX_DIR" -f "$COMPOSE_FILE" -f "$PORTS_FILE" ps --status running --services | grep -Fxq devbox; then
-    printf 'DevBox is not running. Start it from a host terminal with: devbox start\n' >&2
+if ! docker compose --project-directory "$DEVNARO_DIR" -f "$COMPOSE_FILE" -f "$PORTS_FILE" ps --status running --services | grep -Fxq devnaro; then
+    printf 'DevNaro is not running. Start it from a host terminal with: devnaro start\n' >&2
     exit 1
 fi
 
-exec docker compose --project-directory "$DEVBOX_DIR" -f "$COMPOSE_FILE" -f "$PORTS_FILE" exec --workdir "$CONTAINER_WORKDIR" devbox zsh -l
+exec docker compose --project-directory "$DEVNARO_DIR" -f "$COMPOSE_FILE" -f "$PORTS_FILE" exec --workdir "$CONTAINER_WORKDIR" devnaro zsh -l

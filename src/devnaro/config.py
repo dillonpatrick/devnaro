@@ -1,9 +1,9 @@
-"""Central configuration for the DevBox CLI."""
+"""Central configuration for the DevNaro CLI."""
 
 import os
 from pathlib import Path
 
-DEVBOX_CONTAINER = os.getenv("DEVBOX_CONTAINER", "devbox")
+DEVNARO_CONTAINER = os.getenv("DEVNARO_CONTAINER", "devnaro")
 WORKSPACE_PATH = Path(os.getenv("WORKSPACE_PATH", "/workspace"))
 NETWORK_MANAGER_LOG = Path(
     os.getenv("NETWORK_MANAGER_LOG", "/tmp/network-manager.log")

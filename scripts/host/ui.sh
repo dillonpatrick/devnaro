@@ -2,17 +2,17 @@
 # Shared terminal presentation helpers for short host lifecycle commands.
 
 if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
-    DEVBOX_UI_RESET='\033[0m'
-    DEVBOX_UI_CYAN='\033[0;96m'
-    DEVBOX_UI_GREEN='\033[0;32m'
-    DEVBOX_UI_BOLD='\033[1m'
+    DEVNARO_UI_RESET='\033[0m'
+    DEVNARO_UI_CYAN='\033[0;96m'
+    DEVNARO_UI_GREEN='\033[0;32m'
+    DEVNARO_UI_BOLD='\033[1m'
 else
-    DEVBOX_UI_RESET=''
-    DEVBOX_UI_CYAN=''
-    DEVBOX_UI_GREEN=''
-    DEVBOX_UI_BOLD=''
+    DEVNARO_UI_RESET=''
+    DEVNARO_UI_CYAN=''
+    DEVNARO_UI_GREEN=''
+    DEVNARO_UI_BOLD=''
 fi
 
-devbox_info() { printf '%b➜%b %s\n' "$DEVBOX_UI_CYAN" "$DEVBOX_UI_RESET" "$1"; }
-devbox_success() { printf '%b✔%b %s\n' "$DEVBOX_UI_GREEN" "$DEVBOX_UI_RESET" "$1"; }
-devbox_heading() { printf '\n%b%s%b\n' "${DEVBOX_UI_CYAN}${DEVBOX_UI_BOLD}" "$1" "$DEVBOX_UI_RESET"; }
+devnaro_info() { printf '%b➜%b %s\n' "$DEVNARO_UI_CYAN" "$DEVNARO_UI_RESET" "$1"; }
+devnaro_success() { printf '%b✔%b %s\n' "$DEVNARO_UI_GREEN" "$DEVNARO_UI_RESET" "$1"; }
+devnaro_heading() { printf '\n%b%s%b\n' "${DEVNARO_UI_CYAN}${DEVNARO_UI_BOLD}" "$1" "$DEVNARO_UI_RESET"; }

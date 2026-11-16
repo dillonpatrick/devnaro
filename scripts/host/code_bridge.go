@@ -59,7 +59,7 @@ func remoteFolderURI(containerID, folderPath string) string {
 func resolveContainerID(containerName string) (string, error) {
 	output, err := exec.Command("docker", "inspect", "--format", "{{.Id}}", containerName).Output()
 	if err != nil {
-		return "", fmt.Errorf("Unable to inspect DevBox container %q: %w", containerName, err)
+		return "", fmt.Errorf("Unable to inspect DevNaro container %q: %w", containerName, err)
 	}
 	containerID := strings.TrimSpace(string(output))
 	if len(containerID) != 64 {
@@ -123,7 +123,7 @@ func (b bridge) open(containerPath string) error {
 func main() {
 	socketPath := flag.String("socket", "", "Unix socket path")
 	workspacePath := flag.String("workspace", "", "Host workspace path")
-	containerName := flag.String("container", "devbox", "Running Docker container name")
+	containerName := flag.String("container", "devnaro", "Running Docker container name")
 	flag.Parse()
 	if *socketPath == "" || *workspacePath == "" || *containerName == "" {
 		fmt.Fprintln(os.Stderr, "socket, workspace, and container are required")

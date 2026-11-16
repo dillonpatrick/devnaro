@@ -6,14 +6,14 @@ ACT_RELEASE="https://github.com/nektos/act/releases/download/v${ACT_VERSION}"
 
 usage() {
     cat <<'EOF'
-Run the DevBox GitHub Actions workflow locally.
+Run the DevNaro GitHub Actions workflow locally.
 
 Usage:
-  devbox ci                 Run all jobs in devbox-validation.yml
-  devbox ci --list          List workflows and jobs
-  devbox ci -j python-tests Run one job
-  devbox ci --dry-run        Show the execution plan without running jobs
-  devbox ci --help          Show act options
+  devnaro ci                 Run all jobs in devnaro-validation.yml
+  devnaro ci --list          List workflows and jobs
+  devnaro ci -j python-tests Run one job
+  devnaro ci --dry-run        Show the execution plan without running jobs
+  devnaro ci --help          Show act options
 
 Additional arguments are passed directly to act.
 EOF
@@ -79,7 +79,7 @@ if ! command -v act >/dev/null 2>&1; then
 fi
 
 REPOSITORY_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-WORKFLOW="$REPOSITORY_DIR/.github/workflows/devbox-validation.yml"
+WORKFLOW="$REPOSITORY_DIR/.github/workflows/devnaro-validation.yml"
 
 if [[ ! -f "$WORKFLOW" ]]; then
     printf 'Workflow not found: %s\n' "$WORKFLOW" >&2

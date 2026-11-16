@@ -5,7 +5,7 @@ from subprocess import CompletedProcess
 
 import pytest
 
-from devbox_manager import network_manager
+from devnaro import network_manager
 
 
 def completed(args, returncode=0, stdout="", stderr=""):

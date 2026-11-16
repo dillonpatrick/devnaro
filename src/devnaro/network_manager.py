@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import subprocess
 from pathlib import Path
 
-from devbox_manager.config import NETWORK_MANAGER_LOG, NETWORK_MANAGER_PROCESS
+from devnaro.config import NETWORK_MANAGER_LOG, NETWORK_MANAGER_PROCESS
 
 
 @dataclass(frozen=True)

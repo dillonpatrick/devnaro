@@ -1,4 +1,4 @@
-name: DevBox validation
+name: DevNaro validation
 
 on:
   push:
@@ -41,18 +41,18 @@ jobs:
         run: |
           bash -n scripts/host/install.sh
           bash -n scripts/host/uninstall.sh
-          bash -n scripts/host/devbox
+          bash -n scripts/host/devnaro
           bash -n scripts/host/ci.sh
           bash -n scripts/host/compose.sh
           bash -n scripts/host/ui.sh
           bash -n scripts/host/start.sh
           bash -n scripts/host/stop.sh
           bash -n scripts/host/clean.sh
-          LC_ALL=C bash scripts/host/devbox help > /tmp/devbox-help.txt
-          grep -Fq '╭' /tmp/devbox-help.txt
-          grep -Fq '╰' /tmp/devbox-help.txt
-          grep -Fq 'devbox ci' /tmp/devbox-help.txt
-          ! grep -Fq '�' /tmp/devbox-help.txt
+          LC_ALL=C bash scripts/host/devnaro help > /tmp/devnaro-help.txt
+          grep -Fq '╭' /tmp/devnaro-help.txt
+          grep -Fq '╰' /tmp/devnaro-help.txt
+          grep -Fq 'devnaro ci' /tmp/devnaro-help.txt
+          ! grep -Fq '�' /tmp/devnaro-help.txt
           sh -n scripts/container/entrypoint.sh
           python3 -m py_compile scripts/container/code
 
@@ -76,97 +76,97 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Build DevBox image
+      - name: Build DevNaro image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: docker/Dockerfile
           push: false
           load: true
-          tags: devbox:ci
+          tags: devnaro:ci
           build-args: |
             USERNAME=devuser
             BASE_IMAGE=${{ matrix.base-image }}
             STACK_NAME=${{ matrix.stack-name }}
 
-      - name: Start DevBox container
+      - name: Start DevNaro container
         run: |
-          mkdir -p "$RUNNER_TEMP/devbox-workspace"
-          docker volume create devbox-home-ci
-          docker run --rm --volume devbox-home-ci:/mnt/home --entrypoint sh devbox:ci \
+          mkdir -p "$RUNNER_TEMP/devnaro-workspace"
+          docker volume create devnaro-home-ci
+          docker run --rm --volume devnaro-home-ci:/mnt/home --entrypoint sh devnaro:ci \
             -ec 'cp -a /home/devuser/. /mnt/home/ && chown -R 0:0 /mnt/home && chmod -R u+rwX,go+rX /mnt/home'
-          docker run --detach --name devbox-ci \
+          docker run --detach --name devnaro-ci \
             --volume /var/run/docker.sock:/var/run/docker.sock \
-            --volume "$RUNNER_TEMP/devbox-workspace:/workspace" \
-            --volume devbox-home-ci:/home/devuser \
-            devbox:ci
+            --volume "$RUNNER_TEMP/devnaro-workspace:/workspace" \
+            --volume devnaro-home-ci:/home/devuser \
+            devnaro:ci
 
       - name: Run container smoke tests
         run: |
           set -euo pipefail
 
           for attempt in {1..10}; do
-            if [[ "$(docker inspect --format '{{.State.Running}}' devbox-ci)" == "true" ]]; then
+            if [[ "$(docker inspect --format '{{.State.Running}}' devnaro-ci)" == "true" ]]; then
               break
             fi
             sleep 1
           done
 
           echo "Smoke check: container is running"
-          test "$(docker inspect --format '{{.State.Running}}' devbox-ci)" = "true"
-          echo "Smoke check: DevBox Manager version"
-          docker exec devbox-ci devbox-manager --version
+          test "$(docker inspect --format '{{.State.Running}}' devnaro-ci)" = "true"
+          echo "Smoke check: DevNaro Manager version"
+          docker exec devnaro-ci devnaro --version
           echo "Smoke check: container runs as root"
-          test "$(docker exec devbox-ci id -u)" = "0"
+          test "$(docker exec devnaro-ci id -u)" = "0"
           echo "Smoke check: HOME ownership and write access"
-          docker exec devbox-ci sh -ec 'test "$HOME" = "/home/devuser" && test -d "$HOME" && test -w "$HOME"'
+          docker exec devnaro-ci sh -ec 'test "$HOME" = "/home/devuser" && test -d "$HOME" && test -w "$HOME"'
           echo "Smoke check: apt-get version"
-          docker exec devbox-ci apt-get --version
+          docker exec devnaro-ci apt-get --version
           echo "Smoke check: apt-get update"
-          docker exec devbox-ci apt-get update
+          docker exec devnaro-ci apt-get update
           echo "Smoke check: install jq"
-          docker exec devbox-ci apt-get install -y --no-install-recommends jq
+          docker exec devnaro-ci apt-get install -y --no-install-recommends jq
           echo "Smoke check: jq version"
-          docker exec devbox-ci jq --version
+          docker exec devnaro-ci jq --version
           echo "Smoke check: oh-my-zsh ownership and permissions"
-          docker exec devbox-ci sh -ec 'test "$(stat -c %u /home/devuser/.oh-my-zsh)" = "0" && test "$(stat -c %u /home/devuser/.oh-my-zsh/custom)" = "0" && test -z "$(find /home/devuser/.oh-my-zsh -type d -perm /022 -print -quit)"'
+          docker exec devnaro-ci sh -ec 'test "$(stat -c %u /home/devuser/.oh-my-zsh)" = "0" && test "$(stat -c %u /home/devuser/.oh-my-zsh/custom)" = "0" && test -z "$(find /home/devuser/.oh-my-zsh -type d -perm /022 -print -quit)"'
           echo "Smoke check: zsh compaudit"
-          compaudit_output="$(docker exec devbox-ci zsh -c 'source ~/.zshrc >/dev/null 2>&1; autoload -Uz compaudit; compaudit')"
+          compaudit_output="$(docker exec devnaro-ci zsh -c 'source ~/.zshrc >/dev/null 2>&1; autoload -Uz compaudit; compaudit')"
           if [[ -n "$compaudit_output" ]]; then
             printf 'compaudit found insecure completion paths:\n%s\n' "$compaudit_output" >&2
             exit 1
           fi
-          echo "Smoke check: DevBox Manager help"
-          docker exec devbox-ci devbox-manager --help
+          echo "Smoke check: DevNaro Manager help"
+          docker exec devnaro-ci devnaro --help
           echo "Smoke check: ports help"
-          docker exec devbox-ci devbox-manager ports --help
+          docker exec devnaro-ci devnaro ports --help
           echo "Smoke check: port-forwarding manager file"
-          docker exec devbox-ci test -f /opt/port-forwarding/manager.py
+          docker exec devnaro-ci test -f /opt/port-forwarding/manager.py
           echo "Smoke check: socat availability"
-          docker exec devbox-ci sh -lc 'command -v socat'
-          echo "Smoke check: DevBox Manager info"
-          docker exec devbox-ci devbox-manager info
+          docker exec devnaro-ci sh -lc 'command -v socat'
+          echo "Smoke check: DevNaro Manager info"
+          docker exec devnaro-ci devnaro info
           echo "Smoke check: base tools availability"
-          docker exec devbox-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v docker'
+          docker exec devnaro-ci zsh -lic 'command -v zsh && command -v git && command -v python3 && command -v uv && command -v docker'
           echo "Smoke check: zsh completion registration"
-          docker exec devbox-ci zsh -fc 'source ~/.zshrc; (( $+functions[_devbox_completion] )) && [[ ${_comps[dm]} == _devbox_completion ]]'
+          docker exec devnaro-ci zsh -fc 'source ~/.zshrc; (( $+functions[_devnaro_completion] )) && [[ ${_comps[dvn]} == _devnaro_completion ]]'
           echo "Smoke check: bash aliases and prompt"
-          docker exec devbox-ci bash -ic 'type dm >/dev/null && devbox_bash_prompt && [[ "$PS1" == *DEVBOX* ]] && command -v devbox-manager >/dev/null'
+          docker exec devnaro-ci bash -ic 'type dvn >/dev/null && devnaro_bash_prompt && [[ "$PS1" == *DEVNARO* ]] && command -v devnaro >/dev/null'
           echo "Smoke check: create Python virtual environment"
-          docker exec devbox-ci python3 -m venv /tmp/devbox-prompt-venv
+          docker exec devnaro-ci python3 -m venv /tmp/devnaro-prompt-venv
           echo "Smoke check: bash virtualenv prompt"
-          docker exec devbox-ci bash -ic 'source /tmp/devbox-prompt-venv/bin/activate && devbox_bash_prompt && [[ "$PS1" == *"(devbox-prompt-venv)"* ]]'
+          docker exec devnaro-ci bash -ic 'source /tmp/devnaro-prompt-venv/bin/activate && devnaro_bash_prompt && [[ "$PS1" == *"(devnaro-prompt-venv)"* ]]'
           echo "Smoke check: zsh virtualenv prompt"
-          docker exec devbox-ci zsh -ic 'source /tmp/devbox-prompt-venv/bin/activate && devbox_update_prompt && [[ "$PROMPT" == *"devbox-prompt-venv"* ]]'
+          docker exec devnaro-ci zsh -ic 'source /tmp/devnaro-prompt-venv/bin/activate && devnaro_update_prompt && [[ "$PROMPT" == *"devnaro-prompt-venv"* ]]'
           echo "Smoke check: host bridge, status command, and workspace"
-          docker exec devbox-ci sh -ec 'test -x /usr/local/bin/devbox-host-bridge && test -x /usr/local/bin/devbox-status && test -d /workspace'
+          docker exec devnaro-ci sh -ec 'test -x /usr/local/bin/devnaro-host-bridge && test -x /usr/local/bin/devnaro-status && test -d /workspace'
           echo "Smoke check: Python version"
-          docker exec devbox-ci python3 -c 'import sys; assert sys.version_info >= (3, 12), sys.version'
+          docker exec devnaro-ci python3 -c 'import sys; assert sys.version_info >= (3, 12), sys.version'
 
       - name: Remove smoke-test container
         if: always()
-        run: docker rm --force devbox-ci || true
+        run: docker rm --force devnaro-ci || true
 
       - name: Remove smoke-test home volume
         if: always()
-        run: docker volume rm devbox-home-ci || true
+        run: docker volume rm devnaro-home-ci || true

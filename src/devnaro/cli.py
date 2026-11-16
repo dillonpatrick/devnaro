@@ -1,4 +1,4 @@
-"""Rich-powered command line interface for DevBox."""
+"""Rich-powered command line interface for DevNaro."""
 
 from datetime import datetime
 import getpass
@@ -14,25 +14,25 @@ from rich.console import Console, Group
 from rich.table import Table
 from rich.text import Text
 
-from devbox_manager import __version__
-from devbox_manager.config import WORKSPACE_PATH
-from devbox_manager.docker_client import get_client, get_devbox_container
-from devbox_manager.network_manager import process_status, read_logs
-from devbox_manager.port_forwarding import (
+from devnaro import __version__
+from devnaro.config import WORKSPACE_PATH
+from devnaro.docker_client import get_client, get_devnaro_container
+from devnaro.network_manager import process_status, read_logs
+from devnaro.port_forwarding import (
     CONFIG_FILE as PORT_FORWARD_CONFIG,
     add_forward,
     load_forwards,
     remove_forward,
 )
-from devbox_manager.presentation import DEVBOX_THEME, configure_typer_help, render_panel
+from devnaro.presentation import DEVNARO_THEME, configure_typer_help, render_panel
 from typer.main import get_command
 
 configure_typer_help()
 
-console = Console(theme=DEVBOX_THEME, highlight=False)
+console = Console(theme=DEVNARO_THEME, highlight=False)
 
 
-class DevBoxTyperGroup(typer.core.TyperGroup):
+class DevNaroTyperGroup(typer.core.TyperGroup):
     """Keep built-in shell completion active without exposing setup flags in help."""
 
     def get_params(self, ctx):
@@ -44,10 +44,10 @@ class DevBoxTyperGroup(typer.core.TyperGroup):
 
 
 app = typer.Typer(
-    name="devbox-manager",
-    help="Inspect and troubleshoot your DevBox environment.",
+    name="devnaro",
+    help="Inspect and troubleshoot your DevNaro environment.",
     no_args_is_help=True,
-    cls=DevBoxTyperGroup,
+    cls=DevNaroTyperGroup,
     invoke_without_command=True,
     rich_markup_mode="rich",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -56,14 +56,14 @@ network_app = typer.Typer(
     name="network-manager",
     help="Inspect the automatic Docker network manager.",
     no_args_is_help=True,
-    cls=DevBoxTyperGroup,
+    cls=DevNaroTyperGroup,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 app.add_typer(network_app, name="network-manager")
 ports_app = typer.Typer(
     help=(
         "Manage localhost TCP forwards to services in project Docker networks.\n\n"
-        "Example: dm ports add 8080 my-service 80"
+        "Example: dvn ports add 8080 my-service 80"
     ),
     no_args_is_help=True,
 )
@@ -109,11 +109,11 @@ def main(
         False, "--version", "-v", is_eager=True, help="Show the CLI version and exit."
     ),
 ) -> None:
-    """DevBox command line tools."""
+    """DevNaro command line tools."""
     if version:
         render_panel(
             console,
-            "DevBox Manager",
+            "DevNaro Manager",
             f"[accent]v{__version__}[/accent]",
         )
         raise typer.Exit()
@@ -158,7 +158,7 @@ def info() -> None:
     summary = Table.grid(padding=(0, 2))
     summary.add_column(style="muted", no_wrap=True)
     summary.add_column()
-    summary.add_row("Stack", f"[value]DevBox[/value] v{__version__}")
+    summary.add_row("Stack", f"[value]DevNaro[/value] v{__version__}")
     summary.add_row("Base", base_image)
     summary.add_row("User", getpass.getuser())
     summary.add_row("Hostname", os.uname().nodename)
@@ -175,7 +175,7 @@ def info() -> None:
         docker_engine = "Not available"
     host_tools.add_row("Docker Engine", docker_engine,)
 
-    code_socket = Path("/run/devbox-host/code.sock")
+    code_socket = Path("/run/devnaro-host/code.sock")
     host_tools.add_row(
         "VS Code bridge",
         "[success]Available[/success]" if code_socket.exists() else "[warning]Not detected[/warning]",
@@ -183,10 +183,10 @@ def info() -> None:
 
     client = _docker_connection()
     try:
-        container = get_devbox_container(client)
+        container = get_devnaro_container(client)
         container.reload()
     except NotFound as error:
-        render_panel(console, "DevBox status", "[error]DevBox container was not found.[/error]", border_style="error")
+        render_panel(console, "DevNaro status", "[error]DevNaro container was not found.[/error]", border_style="error")
         raise typer.Exit(code=1) from error
 
     attrs = container.attrs
@@ -211,7 +211,7 @@ def info() -> None:
 
     render_panel(
         console,
-        "DevBox info",
+        "DevNaro info",
         Group(
             summary,
             Text("HOST INTEGRATIONS", style="heading"),
@@ -226,14 +226,14 @@ def info() -> None:
 
 @ports_app.command("add")
 def ports_add(
-    local_port: int = typer.Argument(..., help="Port to listen on inside DevBox localhost."),
+    local_port: int = typer.Argument(..., help="Port to listen on inside DevNaro localhost."),
     target_host: str = typer.Argument(..., help="Docker service or container name."),
     target_port: int = typer.Argument(..., help="Port exposed by the target service."),
 ) -> None:
-    """Forward a DevBox localhost port to a project service.
+    """Forward a DevNaro localhost port to a project service.
 
     Example:
-        dm ports add 8080 my-service 80
+        dvn ports add 8080 my-service 80
     """
     try:
         add_forward(local_port, target_host, target_port)
@@ -287,17 +287,17 @@ def ports_remove(
 
 @app.command()
 def networks() -> None:
-    """List Docker networks currently connected to DevBox."""
+    """List Docker networks currently connected to DevNaro."""
     client = _docker_connection()
 
     try:
-        container = get_devbox_container(client)
+        container = get_devnaro_container(client)
         container.reload()
     except NotFound as error:
         render_panel(
             console,
-            "DevBox networks",
-            "[error]DevBox container was not found.[/error]",
+            "DevNaro networks",
+            "[error]DevNaro container was not found.[/error]",
             border_style="error",
         )
         raise typer.Exit(code=1) from error
@@ -329,14 +329,14 @@ def networks() -> None:
     if not attached:
         render_panel(
             console,
-            "DevBox networks",
-            "[warning]DevBox is not connected to any networks.[/warning]",
+            "DevNaro networks",
+            "[warning]DevNaro is not connected to any networks.[/warning]",
             subtitle="0 networks connected",
         )
     else:
         render_panel(
             console,
-            "DevBox networks",
+            "DevNaro networks",
             table,
             subtitle=f"{len(attached)} network(s) connected",
         )
@@ -344,7 +344,7 @@ def networks() -> None:
 
 @app.command()
 def doctor() -> None:
-    """Run basic health checks for the DevBox environment."""
+    """Run basic health checks for the DevNaro environment."""
     checks: list[tuple[str, bool, str]] = []
 
     socket_path = Path("/var/run/docker.sock")
@@ -366,14 +366,14 @@ def doctor() -> None:
 
     if client is not None:
         try:
-            container = get_devbox_container(client)
+            container = get_devnaro_container(client)
             container.reload()
             running = container.status == "running"
             checks.append(
-                ("DevBox container", running, container.status)
+                ("DevNaro container", running, container.status)
             )
         except NotFound:
-            checks.append(("DevBox container", False, "Container not found"))
+            checks.append(("DevNaro container", False, "Container not found"))
 
     workspace_ok = WORKSPACE_PATH.is_dir()
     checks.append(
@@ -410,7 +410,7 @@ def doctor() -> None:
     )
     render_panel(
         console,
-        "DevBox health check",
+        "DevNaro health check",
         content,
         subtitle=f"{passed_count} passed · {failed_count} failed",
     )
@@ -510,7 +510,7 @@ def _registered_cli_commands(command=None, prefix: tuple[str, ...] = ()):
             for parameter in child.params
             if parameter.__class__.__name__.endswith("Argument")
         ]
-        usage = " ".join(("dm", *path, *arguments))
+        usage = " ".join(("dvn", *path, *arguments))
         description = child.help or child.short_help or ""
         yield usage, description
 
@@ -567,7 +567,7 @@ def _complete(ctx: typer.Context) -> None:
 
 @app.command()
 def welcome() -> None:
-    """Display the DevBox welcome screen."""
+    """Display the DevNaro welcome screen."""
     manager_running, _ = process_status()
     try:
         os_release = {}
@@ -582,7 +582,7 @@ def welcome() -> None:
     details = Table.grid(padding=(0, 2))
     details.add_column(style="muted", width=18, no_wrap=True)
     details.add_column()
-    details.add_row("DevBox version", f"[value]{__version__}[/value]")
+    details.add_row("DevNaro version", f"[value]{__version__}[/value]")
     details.add_row("Base image", base_release)
     details.add_row("User", getpass.getuser())
     details.add_row("Workspace", str(Path.cwd()))
@@ -606,7 +606,7 @@ def welcome() -> None:
     )
     render_panel(
         console,
-        "DevBox Development Environment",
+        "DevNaro Development Environment",
         content,
         border_style="info",
         padding=(1, 2),
