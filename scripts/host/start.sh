@@ -51,16 +51,11 @@ line() {
 banner() {
     printf '\n'
     printf '%b\n' "${CYAN}${BOLD}"
-    printf '  ____             ____             
-'
-    printf ' |  _ \  _____   _| __ )  _____  __
-'
-    printf ' | | | |/ _ \ \ / /  _ \ / _ \ \/ /
-'
-    printf ' | |_| |  __/\ V /| |_) | (_) >  <
-'
-    printf ' |____/ \___| \_/ |____/ \___/_/\_\
-'
+    printf '  ____                 _   _             \n'
+    printf ' |  _ \\  _____   _| \\ | | __ _ _ __ ___  \n'
+    printf ' | | | |/ _ \\ \\ / / | \\| |/ _` | '__/ _ \\ \n'
+    printf ' | |_| |  __/\\ V /| | | | (_| | | |  __/ \n'
+    printf ' |____/ \\___| \\_/ |_| |_|\\__,_|_|  \\___| \n'
     printf '%b\n' "${RESET}"
     printf '%b\n' "${DIM}  Docker Development Environment${RESET}"
     printf '%b\n\n' "${DIM}  Version ${APP_VERSION}${RESET}"
