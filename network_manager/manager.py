@@ -12,7 +12,7 @@ from docker.errors import APIError, NotFound
 
 client = docker.from_env()
 
-DEVBOX_CONTAINER = os.getenv("HOSTNAME", "")
+DEVNARO_CONTAINER = os.getenv("HOSTNAME", "")
 
 SYNC_INTERVAL = int(os.getenv("NETWORK_SYNC_INTERVAL", "10"))
 
@@ -33,7 +33,7 @@ EXCLUDE_INTERNAL = os.getenv("NETWORK_EXCLUDE_INTERNAL", "true").lower() == "tru
 
 STATE_DIR = Path(
     os.getenv(
-        "NETWORK_MANAGER_STATE_DIR", str(Path.home() / ".local/state/devbox-network-manager")
+        "NETWORK_MANAGER_STATE_DIR", str(Path.home() / ".local/state/devnaro-network-manager")
     )
 )
 
@@ -113,7 +113,7 @@ def eligible(network):
 
 def synchronize():
     try:
-        container = client.containers.get(DEVBOX_CONTAINER)
+        container = client.containers.get(DEVNARO_CONTAINER)
         container.reload()
 
         current = container.attrs.get("NetworkSettings", {}).get("Networks", {})
@@ -189,7 +189,7 @@ def synchronize():
         save_state(state)
 
     except NotFound:
-        print("[!] DevBox container not found", flush=True)
+        print("[!] DevNaro container not found", flush=True)
 
     except APIError as error:
         print(f"[!] Docker API error: {error}", flush=True)

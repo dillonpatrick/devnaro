@@ -1,4 +1,4 @@
-"""Shared Rich presentation helpers for a consistent DevBox CLI."""
+"""Shared Rich presentation helpers for a consistent DevNaro CLI."""
 
 from typing import Any
 
@@ -8,7 +8,7 @@ from rich.panel import Panel
 from rich.theme import Theme
 
 
-DEVBOX_STYLE_STRINGS = {
+DEVNARO_STYLE_STRINGS = {
     "info": "bright_cyan",
     "success": "bold green",
     "warning": "bold yellow",
@@ -18,11 +18,11 @@ DEVBOX_STYLE_STRINGS = {
     "accent": "bold green",
     "value": "white",
 }
-DEVBOX_THEME = Theme(DEVBOX_STYLE_STRINGS)
+DEVNARO_THEME = Theme(DEVNARO_STYLE_STRINGS)
 
 
 def configure_typer_help() -> None:
-    """Align Typer's built-in help renderer with the DevBox color palette."""
+    """Align Typer's built-in help renderer with the DevNaro color palette."""
     from typer import rich_utils
 
     # Typer renders help panels with an expanding table. Cap its Rich console width
@@ -31,18 +31,18 @@ def configure_typer_help() -> None:
         rich_utils.MAX_WIDTH = min(rich_utils.MAX_WIDTH or 88, 88)
 
     styles = {
-        "STYLE_USAGE": DEVBOX_STYLE_STRINGS["heading"],
+        "STYLE_USAGE": DEVNARO_STYLE_STRINGS["heading"],
         "STYLE_USAGE_COMMAND": "bold",
-        "STYLE_OPTION": DEVBOX_STYLE_STRINGS["heading"],
-        "STYLE_SWITCH": DEVBOX_STYLE_STRINGS["heading"],
-        "STYLE_NEGATIVE_OPTION": DEVBOX_STYLE_STRINGS["heading"],
-        "STYLE_NEGATIVE_SWITCH": DEVBOX_STYLE_STRINGS["heading"],
-        "STYLE_OPTIONS_PANEL_BORDER": DEVBOX_STYLE_STRINGS["info"],
-        "STYLE_COMMANDS_PANEL_BORDER": DEVBOX_STYLE_STRINGS["info"],
-        "STYLE_ERRORS_PANEL_BORDER": DEVBOX_STYLE_STRINGS["error"],
-        "STYLE_COMMANDS_TABLE_FIRST_COLUMN": DEVBOX_STYLE_STRINGS["heading"],
-        "STYLE_HELPTEXT": DEVBOX_STYLE_STRINGS["value"],
-        "STYLE_OPTION_HELP": DEVBOX_STYLE_STRINGS["value"],
+        "STYLE_OPTION": DEVNARO_STYLE_STRINGS["heading"],
+        "STYLE_SWITCH": DEVNARO_STYLE_STRINGS["heading"],
+        "STYLE_NEGATIVE_OPTION": DEVNARO_STYLE_STRINGS["heading"],
+        "STYLE_NEGATIVE_SWITCH": DEVNARO_STYLE_STRINGS["heading"],
+        "STYLE_OPTIONS_PANEL_BORDER": DEVNARO_STYLE_STRINGS["info"],
+        "STYLE_COMMANDS_PANEL_BORDER": DEVNARO_STYLE_STRINGS["info"],
+        "STYLE_ERRORS_PANEL_BORDER": DEVNARO_STYLE_STRINGS["error"],
+        "STYLE_COMMANDS_TABLE_FIRST_COLUMN": DEVNARO_STYLE_STRINGS["heading"],
+        "STYLE_HELPTEXT": DEVNARO_STYLE_STRINGS["value"],
+        "STYLE_OPTION_HELP": DEVNARO_STYLE_STRINGS["value"],
     }
 
     for name, style in styles.items():
@@ -59,8 +59,8 @@ def render_panel(
     subtitle: str | None = None,
     padding: tuple[int, int] = (1, 1),
 ) -> None:
-    """Render command output inside the standard DevBox panel."""
-    with console.use_theme(DEVBOX_THEME):
+    """Render command output inside the standard DevNaro panel."""
+    with console.use_theme(DEVNARO_THEME):
         console.print(
             Panel(
                 content,

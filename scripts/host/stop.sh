@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEVBOX_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-source "$DEVBOX_DIR/scripts/host/ui.sh"
+DEVNARO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$DEVNARO_DIR/scripts/host/ui.sh"
 
-devbox_info "Stopping DevBox container..."
+devnaro_info "Stopping DevNaro container..."
 
 
-bash "$DEVBOX_DIR/scripts/host/compose.sh" stop devbox
+bash "$DEVNARO_DIR/scripts/host/compose.sh" stop devnaro
 
 echo
-devbox_success "DevBox container stopped."
+devnaro_success "DevNaro container stopped."
 echo
-devbox_heading "Preserved:"
-echo "  - DevBox container (stopped)"
-echo "  - DevBox image and Compose network"
-echo "  - devbox_home volume"
+devnaro_heading "Preserved:"
+echo "  - DevNaro container (stopped)"
+echo "  - DevNaro image and Compose network"
+echo "  - devnaro_home volume"
 echo "  - Workspace files"
 echo "  - Other Docker resources"
 echo
-echo "Start it again with: devbox start"
+echo "Start it again with: devnaro start"

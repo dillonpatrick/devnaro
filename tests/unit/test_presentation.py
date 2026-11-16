@@ -4,7 +4,7 @@ from io import StringIO
 
 from rich.console import Console
 
-from devbox_manager.presentation import render_panel
+from devnaro.presentation import render_panel
 
 
 def test_render_panel_uses_consistent_framed_layout():
@@ -26,10 +26,10 @@ def test_render_panel_uses_consistent_framed_layout():
     assert "╰" in rendered
 
 
-def test_typer_help_uses_devbox_theme():
+def test_typer_help_uses_devnaro_theme():
     from typer import rich_utils
 
-    from devbox_manager.presentation import configure_typer_help
+    from devnaro.presentation import configure_typer_help
 
     configure_typer_help()
 
@@ -41,15 +41,15 @@ def test_typer_help_uses_devbox_theme():
 
 
 
-def test_devbox_theme_uses_named_semantic_palette():
-    from devbox_manager.presentation import DEVBOX_THEME
+def test_devnaro_theme_uses_named_semantic_palette():
+    from devnaro.presentation import DEVNARO_THEME
 
-    assert DEVBOX_THEME.styles["info"].color.name == "bright_cyan"
-    assert DEVBOX_THEME.styles["heading"].color.name == "bright_cyan"
-    assert DEVBOX_THEME.styles["success"].color.name == "green"
-    assert DEVBOX_THEME.styles["warning"].color.name == "yellow"
-    assert DEVBOX_THEME.styles["error"].color.name == "red"
-    assert DEVBOX_THEME.styles["value"].color.name == "white"
+    assert DEVNARO_THEME.styles["info"].color.name == "bright_cyan"
+    assert DEVNARO_THEME.styles["heading"].color.name == "bright_cyan"
+    assert DEVNARO_THEME.styles["success"].color.name == "green"
+    assert DEVNARO_THEME.styles["warning"].color.name == "yellow"
+    assert DEVNARO_THEME.styles["error"].color.name == "red"
+    assert DEVNARO_THEME.styles["value"].color.name == "white"
 
 
 

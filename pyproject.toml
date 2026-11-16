@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "devbox-manager"
+name = "devnaro"
 version = "0.1.0"
-description = "CLI utilities for the DevBox development environment"
+description = "CLI utilities for the DevNaro development environment"
 requires-python = ">=3.12"
 dependencies = [
     "docker>=7.1,<8",
@@ -21,7 +21,7 @@ dev = [
 ]
 
 [project.scripts]
-devbox-manager = "devbox_manager.cli:app"
+devnaro = "devnaro.cli:app"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
@@ -32,4 +32,4 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["devbox_manager*"]
+include = ["devnaro*"]

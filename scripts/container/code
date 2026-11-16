@@ -7,7 +7,7 @@ import socket
 import sys
 from pathlib import Path
 
-SOCKET_PATH = "/run/devbox-host/code.sock"
+SOCKET_PATH = "/run/devnaro-host/code.sock"
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
     if not paths:
         paths = ["."]
     if len(paths) != 1:
-        print("DevBox code bridge currently accepts one path at a time.", file=sys.stderr)
+        print("DevNaro code bridge currently accepts one path at a time.", file=sys.stderr)
         return 2
 
     target = Path(paths[0])
@@ -33,7 +33,7 @@ def main():
             response = json.loads(stream.readline())
     except FileNotFoundError:
         print(
-            "Cannot reach the host VS Code bridge. Run 'devbox start' again.",
+            "Cannot reach the host VS Code bridge. Run 'devnaro start' again.",
             file=sys.stderr,
         )
         return 1

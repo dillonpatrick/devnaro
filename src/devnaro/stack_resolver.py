@@ -1,4 +1,4 @@
-"""Load, validate and normalize declarative DevBox stack definitions."""
+"""Load, validate and normalize declarative DevNaro stack definitions."""
 
 import argparse
 from dataclasses import dataclass
@@ -328,7 +328,7 @@ def write_build_inputs(stack: StackDefinition, output_dir: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Resolve a DevBox stack for image building.")
+    parser = argparse.ArgumentParser(description="Resolve a DevNaro stack for image building.")
     parser.add_argument("--stack-file", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()

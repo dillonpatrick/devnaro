@@ -6,9 +6,9 @@ import (
 )
 
 func TestLoadContainersJSONArray(t *testing.T) {
-    got, err := loadContainers(strings.NewReader(`[ {"Name":"devbox","Service":"devbox","State":"running"} ]`))
+    got, err := loadContainers(strings.NewReader(`[ {"Name":"devnaro","Service":"devnaro","State":"running"} ]`))
     if err != nil { t.Fatal(err) }
-    if len(got) != 1 || got[0].Name != "devbox" { t.Fatalf("unexpected containers: %#v", got) }
+    if len(got) != 1 || got[0].Name != "devnaro" { t.Fatalf("unexpected containers: %#v", got) }
 }
 
 func TestLoadContainersNewlineDelimited(t *testing.T) {
@@ -64,7 +64,7 @@ func TestWrapPortLineStaysWithinPanelWidth(t *testing.T) {
 
 func TestRenderEmptyState(t *testing.T) {
     got := render(nil)
-    for _, expected := range []string{"DevBox status", "No container found", "devbox start"} {
+    for _, expected := range []string{"DevNaro status", "No container found", "devnaro start"} {
         if !strings.Contains(got, expected) { t.Errorf("rendered output missing %q", expected) }
     }
 }

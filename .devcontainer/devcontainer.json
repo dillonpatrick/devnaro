@@ -1,8 +1,8 @@
 
 {
-  "name": "DevBox Debian Trixie Slim",
+  "name": "DevNaro Debian Trixie Slim",
   "dockerComposeFile": "../docker/docker-compose.yml",
-  "service": "devbox",
+  "service": "devnaro",
   "workspaceFolder": "/workspace",
 
   "shutdownAction": "none",

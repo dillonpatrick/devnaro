@@ -9,7 +9,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-CONFIG_FILE = Path.home() / ".config/devbox/port-forwards.json"
+CONFIG_FILE = Path.home() / ".config/devnaro/port-forwards.json"
 LOG_FILE = Path("/tmp/port-forward-manager.log")
 SYNC_INTERVAL = 3
 _HOST_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
