@@ -96,6 +96,7 @@ jobs:
           docker run --rm --volume devnaro-home-ci:/mnt/home --entrypoint sh devnaro:ci \
             -ec 'cp -a /home/devuser/. /mnt/home/ && chown -R 0:0 /mnt/home && chmod -R u+rwX,go+rX /mnt/home'
           docker run --detach --name devnaro-ci \
+            --env DEVNARO_CONTAINER=devnaro-ci \
             --volume /var/run/docker.sock:/var/run/docker.sock \
             --volume "$RUNNER_TEMP/devnaro-workspace:/workspace" \
             --volume devnaro-home-ci:/home/devuser \
