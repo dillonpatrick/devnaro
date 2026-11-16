@@ -49,18 +49,18 @@ line() {
 }
 
 banner() {
-    printf '\\n'
-    printf '%b\\n' "${CYAN}${BOLD}"
+    printf '\n'
+    printf '%b\n' "${CYAN}${BOLD}"
     cat <<'DEVNARO_LOGO'
-  ____                 _   _                 
- |  _ \\  _____   _| \\ | | __ _ _ __ ___  
- | | | |/ _ \\ \\ / / | \\| |/ _` | '__/ _ \\ 
- | |_| |  __/\\ V /| | | | (_| | | |  __/   
- |____/ \\___| \\_/ |_| |_|\\__,_|_|  \\___|  
+  DDDDD  EEEEE  V   V  N   N  AAAAA  RRRR   OOOOO
+  D    D E      V   V  NN  N  A   A  R   R  O   O
+  D    D EEEE    V V   N N N  AAAAA  RRRR   O   O
+  D    D E        V    N  NN  A   A  R R    O   O
+  DDDDD  EEEEE    V    N   N  A   A  R  RR  OOOOO
 DEVNARO_LOGO
-    printf '%b\\n' "${RESET}"
-    printf '%b\\n' "${DIM}  Docker Development Environment${RESET}"
-    printf '%b\\n\\n' "${DIM}  Version ${APP_VERSION}${RESET}"
+    printf '%b\n' "${RESET}"
+    printf '%b\n' "${DIM}  Docker Development Environment${RESET}"
+    printf '%b\n\n' "${DIM}  Version ${APP_VERSION}${RESET}"
 }
 
 section() {
