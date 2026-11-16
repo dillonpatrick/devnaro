@@ -68,6 +68,25 @@ func resolveContainerID(containerName string) (string, error) {
 	return containerID, nil
 }
 
+func syncLocalExtensions(vscode, remoteAuthority string) error {
+	output, err := exec.Command(vscode, "--list-extensions").Output()
+	if err != nil {
+		return fmt.Errorf("Unable to list locally installed VS Code extensions: %w", err)
+	}
+
+	for _, line := range strings.Split(string(output), "\n") {
+		extension := strings.TrimSpace(line)
+		if extension == "" {
+			continue
+		}
+		cmd := exec.Command(vscode, "--remote", remoteAuthority, "--install-extension", extension)
+		if result, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("Unable to install local extension %q in DevNaro: %w: %s", extension, err, strings.TrimSpace(string(result)))
+		}
+	}
+	return nil
+}
+
 func (b bridge) open(containerPath string) error {
 	cleanPath := filepath.Clean(containerPath)
 	if !filepath.IsAbs(cleanPath) || (cleanPath != "/workspace" && !strings.HasPrefix(cleanPath, "/workspace/")) {
@@ -109,6 +128,10 @@ func (b bridge) open(containerPath string) error {
 	}
 	if !strings.Contains(strings.ToLower(string(extensions)), "ms-vscode-remote.remote-containers") {
 		return errors.New("The VS Code 'Dev Containers' extension is required. Install ms-vscode-remote.remote-containers on the host and try again.")
+	}
+	remoteAuthority := "attached-container+" + hex.EncodeToString([]byte(containerID))
+	if err := syncLocalExtensions(vscode, remoteAuthority); err != nil {
+		return err
 	}
 	remoteURI := remoteFolderURI(containerID, containerFolder)
 	cmd := exec.Command(vscode, "--new-window", "--folder-uri", remoteURI)
