@@ -151,7 +151,7 @@ Use `devbox clean` only when you intentionally want to remove DevBox's persisted
 
 ## Inside the container
 
-DevBox runs interactive sessions as an unprivileged user. To install Debian packages inside the container, use `sudo apt-get update` and `sudo apt-get install PACKAGE`. The DevBox user can run APT and dpkg with sudo without a password. These manual installations are not preserved when the container is recreated; add packages to the Dockerfile or the selected stack definition for reproducible images.
+DevBox runs as root inside its isolated container. Install Debian packages directly with `apt-get update` and `apt-get install PACKAGE`; no sudo is needed. This does not make the process root on the host, but files created in the bind-mounted `/workspace` can be owned by root on the host. If that becomes inconvenient, adjust their ownership on the host. Manual package installations are not preserved when the container is recreated; add packages to the Dockerfile or selected stack definition for reproducible images. The container has access to the host Docker socket, so treat it as a trusted development environment.
 
 After entering DevBox, the first interactive Zsh session after each container start/restart displays a welcome panel. The panel includes the current workspace, Network Manager status, and useful commands.
 

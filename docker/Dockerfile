@@ -32,9 +32,6 @@ RUN mkdir -p /out \
 FROM ${BASE_IMAGE} AS runtime
 
 ARG USERNAME=devuser
-ARG USER_UID=1000
-ARG USER_GID=1000
-ARG DOCKER_GID=966
 ARG DEVBOX_BOOTSTRAP_UV_VERSION=0.13.7
 ARG OH_MY_ZSH_COMMIT=cca3bdfbef8c52ef8939ce7911ff68852b949daa
 ARG BASE_IMAGE
@@ -53,7 +50,7 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
       bash ca-certificates curl git gnupg nano procps python3 python3-pip socat \
-      python3-venv passwd sudo zsh zsh-autosuggestions zsh-syntax-highlighting; \
+      python3-venv zsh zsh-autosuggestions zsh-syntax-highlighting; \
     install -m 0755 -d /etc/apt/keyrings; \
     curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
     chmod a+r /etc/apt/keyrings/docker.asc; \
@@ -107,22 +104,14 @@ RUN python3 -m venv /opt/devbox-venv \
 
 ENV PATH="/opt/devbox-venv/bin:/opt/uv-venv/bin:$PATH"
 
-# Configure the non-root developer account and Docker socket group.
-RUN set -eux; \
-    if ! getent group "$DOCKER_GID" >/dev/null; then groupadd --gid "$DOCKER_GID" docker_host; fi; \
-    DOCKER_GROUP="$(getent group "$DOCKER_GID" | cut -d: -f1)"; \
-    if ! getent group "$USER_GID" >/dev/null; then groupadd --gid "$USER_GID" "$USERNAME"; fi; \
-    USER_GROUP="$(getent group "$USER_GID" | cut -d: -f1)"; \
-    useradd --uid "$USER_UID" --gid "$USER_GROUP" --create-home --home-dir "/home/$USERNAME" --shell /bin/zsh "$USERNAME"; \
-    usermod -aG "$DOCKER_GROUP" "$USERNAME"; \
-    printf '%s ALL=(root) NOPASSWD: /usr/bin/apt, /usr/bin/apt-get, /usr/bin/dpkg\n' "$USERNAME" > /etc/sudoers.d/devbox-package-management; \
-    chmod 0440 /etc/sudoers.d/devbox-package-management; \
-    visudo -cf /etc/sudoers.d/devbox-package-management; \
-    mkdir -p "/home/$USERNAME"; \
-    chown -R "$USER_UID":"$USER_GID" "/home/$USERNAME"
+# DevBox is a trusted personal development container and runs as root.
+# Keep its persistent home isolated from the root home on the host.
+RUN mkdir -p "/home/$USERNAME" \
+    && chmod 0755 "/home/$USERNAME"
 
-USER $USERNAME
-WORKDIR /home/$USERNAME
+USER root
+ENV HOME="/home/${USERNAME}"
+WORKDIR /home/${USERNAME}
 ENV PATH="/home/${USERNAME}/.local/bin:/opt/devbox-venv/bin:/opt/uv-venv/bin:$PATH"
 
 RUN git init /home/${USERNAME}/.oh-my-zsh \
@@ -167,6 +156,6 @@ if [[ -f /tmp/devbox-welcome-pending ]]; then
 fi
 EOF
 
-USER $USERNAME
+USER root
 ENTRYPOINT ["/usr/local/bin/devbox-entrypoint"]
 CMD ["sleep", "infinity"]
