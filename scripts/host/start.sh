@@ -275,29 +275,47 @@ if ! extract_host_binaries "$IMAGE_ID"; then
     fi
 fi
 
-if [[ ! -S "$CODE_SOCKET_PATH" ]] || [[ ! -f "$CODE_BRIDGE_PID" ]] || ! kill -0 "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null; then
-    rm -f "$CODE_SOCKET_PATH" "$CODE_BRIDGE_PID"
-    info "Starting host VS Code bridge..."
-    nohup "$CODE_BRIDGE_BINARY" \
-        --socket "$CODE_SOCKET_PATH" \
-        --workspace "$WORKSPACE_PATH" \
-        --container "devnaro" \
-        >"$CODE_BRIDGE_LOG" 2>&1 &
-    echo "$!" > "$CODE_BRIDGE_PID"
-
-    BRIDGE_READY=false
-    for attempt in {1..5}; do
-        if [[ -S "$CODE_SOCKET_PATH" ]]; then
-            BRIDGE_READY=true
-            break
+# The bridge binary is extracted from the selected image above. Always restart
+# the host process so it cannot keep executing an older in-memory binary after
+# DevNaro has been updated or recreated.
+if [[ -f "$CODE_BRIDGE_PID" ]]; then
+    OLD_BRIDGE_PID="$(cat "$CODE_BRIDGE_PID")"
+    if [[ "$OLD_BRIDGE_PID" =~ ^[0-9]+$ ]] && kill -0 "$OLD_BRIDGE_PID" 2>/dev/null; then
+        info "Stopping previous host VS Code bridge..."
+        kill "$OLD_BRIDGE_PID" 2>/dev/null || true
+        for attempt in {1..5}; do
+            if ! kill -0 "$OLD_BRIDGE_PID" 2>/dev/null; then
+                break
+            fi
+            sleep 1
+        done
+        if kill -0 "$OLD_BRIDGE_PID" 2>/dev/null; then
+            kill -9 "$OLD_BRIDGE_PID" 2>/dev/null || true
         fi
-        sleep 1
-    done
-
-    if [[ "$BRIDGE_READY" != true ]]; then
-        error "Host VS Code bridge failed to start. Check: $CODE_BRIDGE_LOG"
-        exit 1
     fi
+fi
+
+rm -f "$CODE_SOCKET_PATH" "$CODE_BRIDGE_PID"
+info "Starting host VS Code bridge..."
+nohup "$CODE_BRIDGE_BINARY" \
+    --socket "$CODE_SOCKET_PATH" \
+    --workspace "$WORKSPACE_PATH" \
+    --container "devnaro" \
+    >"$CODE_BRIDGE_LOG" 2>&1 &
+echo "$!" > "$CODE_BRIDGE_PID"
+
+BRIDGE_READY=false
+for attempt in {1..5}; do
+    if [[ -S "$CODE_SOCKET_PATH" ]]; then
+        BRIDGE_READY=true
+        break
+    fi
+    sleep 1
+done
+
+if [[ "$BRIDGE_READY" != true ]]; then
+    error "Host VS Code bridge failed to start. Check: $CODE_BRIDGE_LOG"
+    exit 1
 fi
 success "Host VS Code bridge is ready."
 
