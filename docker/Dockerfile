@@ -111,6 +111,7 @@ RUN mkdir -p "/home/$USERNAME" \
 
 USER root
 ENV HOME="/home/${USERNAME}"
+ENV SHELL="/usr/bin/zsh"
 WORKDIR /home/${USERNAME}
 ENV PATH="/home/${USERNAME}/.local/bin:/opt/devnaro-venv/bin:/opt/uv-venv/bin:$PATH"
 
@@ -136,7 +137,8 @@ COPY --from=bridge-builder /devnaro-host-bridge /usr/local/bin/devnaro-host-brid
 COPY --from=bridge-builder /devnaro-status /usr/local/bin/devnaro-status
 
 USER root
-RUN mkdir -p /run/devnaro-host \
+RUN chsh -s /usr/bin/zsh root \
+    && mkdir -p /run/devnaro-host \
     && cp /opt/devnaro-config/stack/environment.sh /etc/profile.d/devnaro-stack.sh \
     && chmod 644 /etc/profile.d/devnaro-stack.sh \
     && grep -m1 '^version = ' /opt/devnaro-cli/pyproject.toml | cut -d '"' -f2 > /etc/devnaro-version \
