@@ -51,7 +51,7 @@ All DevNaro build stages and runtime environments use Debian-based images. The h
 Clone the repository and install the host command:
 
 ```bash
-git clone git@github.com:dillonpatrick/devnaro.git
+git clone git@github.com:dillonpatrick/devbox.git
 cd devnaro
 make install
 ```
