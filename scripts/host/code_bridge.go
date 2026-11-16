@@ -148,11 +148,11 @@ func (b bridge) open(containerPath string) error {
 	if err != nil {
 		return errors.New("VS Code CLI 'code' was not found on the host PATH. Install VS Code and make its 'code' command available.")
 	}
-	extensions, err := exec.Command(vscode, "--list-extensions").Output()
+	localExtensionOutput, err := exec.Command(vscode, "--list-extensions").Output()
 	if err != nil {
 		return fmt.Errorf("Unable to inspect VS Code extensions: %v", err)
 	}
-	if !strings.Contains(strings.ToLower(string(extensions)), "ms-vscode-remote.remote-containers") {
+	if !strings.Contains(strings.ToLower(string(localExtensionOutput)), "ms-vscode-remote.remote-containers") {
 		return errors.New("The VS Code 'Dev Containers' extension is required. Install ms-vscode-remote.remote-containers on the host and try again.")
 	}
 	extensions, err := syncLocalExtensions(vscode, b.containerName)
