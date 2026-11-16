@@ -27,8 +27,8 @@ type response struct {
 }
 
 type bridge struct {
-	workspace    string
-	containerName string
+	workspace      string
+	containerName   string
 }
 
 func (b bridge) handle(conn net.Conn) {
@@ -68,61 +68,6 @@ func resolveContainerID(containerName string) (string, error) {
 	return containerID, nil
 }
 
-func listLocalExtensions(vscode string) ([]string, error) {
-	output, err := exec.Command(vscode, "--list-extensions").Output()
-	if err != nil {
-		return nil, fmt.Errorf("Unable to list locally installed VS Code extensions: %w", err)
-	}
-	extensions := make([]string, 0)
-	for _, line := range strings.Split(string(output), "\n") {
-		if extension := strings.TrimSpace(line); extension != "" {
-			extensions = append(extensions, extension)
-		}
-	}
-	return extensions, nil
-}
-
-func syncLocalExtensions(vscode, containerName string) ([]string, error) {
-	extensions, err := listLocalExtensions(vscode)
-	if err != nil {
-		return nil, err
-	}
-	configHome := os.Getenv("XDG_CONFIG_HOME")
-	if configHome == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil, err
-		}
-		configHome = filepath.Join(home, ".config")
-	}
-	configDir := filepath.Join(configHome, "Code", "User", "globalStorage", "ms-vscode-remote.remote-containers", "nameConfigs")
-	if err := os.MkdirAll(configDir, 0700); err != nil {
-		return nil, fmt.Errorf("Unable to create VS Code container config directory: %w", err)
-	}
-	configPath := filepath.Join(configDir, strings.TrimPrefix(containerName, "/")+".json")
-	config := map[string]json.RawMessage{}
-	if existing, err := os.ReadFile(configPath); err == nil {
-		if err := json.Unmarshal(existing, &config); err != nil {
-			return nil, fmt.Errorf("Unable to read VS Code container config: %w", err)
-		}
-	} else if !os.IsNotExist(err) {
-		return nil, err
-	}
-	extensionJSON, err := json.Marshal(extensions)
-	if err != nil {
-		return nil, err
-	}
-	config["extensions"] = extensionJSON
-	encoded, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	if err := os.WriteFile(configPath, append(encoded, '\n'), 0600); err != nil {
-		return nil, fmt.Errorf("Unable to write VS Code container config: %w", err)
-	}
-	return extensions, nil
-}
-
 func (b bridge) open(containerPath string) error {
 	cleanPath := filepath.Clean(containerPath)
 	if !filepath.IsAbs(cleanPath) || (cleanPath != "/workspace" && !strings.HasPrefix(cleanPath, "/workspace/")) {
@@ -158,15 +103,12 @@ func (b bridge) open(containerPath string) error {
 	if err != nil {
 		return errors.New("VS Code CLI 'code' was not found on the host PATH. Install VS Code and make its 'code' command available.")
 	}
-	localExtensionOutput, err := exec.Command(vscode, "--list-extensions").Output()
+	extensions, err := exec.Command(vscode, "--list-extensions").Output()
 	if err != nil {
 		return fmt.Errorf("Unable to inspect VS Code extensions: %v", err)
 	}
-	if !strings.Contains(strings.ToLower(string(localExtensionOutput)), "ms-vscode-remote.remote-containers") {
+	if !strings.Contains(strings.ToLower(string(extensions)), "ms-vscode-remote.remote-containers") {
 		return errors.New("The VS Code 'Dev Containers' extension is required. Install ms-vscode-remote.remote-containers on the host and try again.")
-	}
-	if _, err := syncLocalExtensions(vscode, b.containerName); err != nil {
-		return err
 	}
 	remoteURI := remoteFolderURI(containerID, containerFolder)
 	cmd := exec.Command(vscode, "--new-window", "--folder-uri", remoteURI)
