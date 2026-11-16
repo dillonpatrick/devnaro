@@ -1,5 +1,6 @@
 services:
   devnaro:
+    image: devnaro:latest
     build:
       context: .
       dockerfile: docker/Dockerfile
