@@ -82,6 +82,17 @@ func syncLocalExtensions(vscode, containerName string) error {
 	configPath := filepath.Join(configDir, strings.TrimPrefix(containerName, "/")+".json")
 	config := map[string]json.RawMessage{}
 	if existing, err := os.ReadFile(configPath); err == nil { if err := json.Unmarshal(existing, &config); err != nil { return fmt.Errorf("Unable to read VS Code container config: %w", err) } } else if !os.IsNotExist(err) { return err }
+	// Force Dev Containers to reapply the attached-container configuration
+	// on the next connection, including its extension list.
+	reset := exec.Command("docker", "exec", containerName, "sh", "-lc",
+		"for home in /root /home/devuser; do "+
+		"rm -f \"$home/.vscode-server/data/Machine/.writeMachineSettingsMarker\" "+
+		"\"$home/.vscode-server-insiders/data/Machine/.writeMachineSettingsMarker\"; "+
+		"done")
+	if output, err := reset.CombinedOutput(); err != nil {
+		return fmt.Errorf("Unable to refresh VS Code container settings: %w: %s", err, strings.TrimSpace(string(output)))
+	}
+
 	extensionJSON, err := json.Marshal(extensions); if err != nil { return err }; config["extensions"] = extensionJSON
 	encoded, err := json.MarshalIndent(config, "", "  "); if err != nil { return err }
 	if err := os.WriteFile(configPath, append(encoded, '\n'), 0600); err != nil { return fmt.Errorf("Unable to write VS Code container config: %w", err) }
