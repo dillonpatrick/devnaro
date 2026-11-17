@@ -255,6 +255,24 @@ The mounted Docker socket grants extensive control over the host Docker Engine. 
 
 Run the repository validation workflow on the host with `devnaro ci`. The command installs a pinned, checksum-verified `act` binary into `~/.local/bin` on first use, then runs the workflow against the host Docker Engine. Docker must be running. Use `devnaro ci --list` to list jobs or `devnaro ci -j python-tests` to run one job. The workflow runs in containers, so the first execution downloads the runner image. Local execution is a close approximation, not a guarantee of identical behavior to GitHub-hosted runners.
 
+## GitHub Check reporting for local CI
+
+When a GitHub App installation token with `Checks: write` permission is available, `devnaro ci` publishes a Check Run named **DevNaro Local CI (act)** on the current commit. The Check is created as in progress and updated with the overall success or failure and execution duration when `act` finishes.
+
+Set the token only for the command:
+
+```bash
+DEVNARO_GITHUB_TOKEN="<github-app-installation-token>" devnaro ci
+```
+
+The token must belong to a GitHub App installed on the target repository and have the **Checks: write** repository permission. A token is not required to run local CI; without one, `devnaro ci` behaves as before and reports results only in the terminal.
+
+The repository is detected from the `origin` Git remote. If that remote is not the target repository, set `DEVNARO_GITHUB_REPOSITORY=OWNER/REPOSITORY`.
+
+This integration publishes one aggregate Check Run on the commit. It does **not** create an Actions workflow run in the GitHub Actions tab, reproduce individual jobs as separate Checks, or upload the full `act` logs. Full logs remain in the local terminal.
+
+See [Local CI reporting](docs/local-ci-reporting.md) for details and permissions.
+
 ## Development
 
 The Python CLI source is in `src/devnaro/`. Dependencies and the console entry point are declared in `pyproject.toml`. Unit tests are in `tests/unit/`.
