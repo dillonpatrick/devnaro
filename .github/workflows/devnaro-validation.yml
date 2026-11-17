@@ -7,7 +7,7 @@ on:
 
 jobs:
   python-tests:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -32,7 +32,7 @@ jobs:
         run: uv run --locked pytest
 
   repository-validation:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -62,7 +62,7 @@ jobs:
             -f docker/docker-compose.yml config --quiet
 
   docker-image-build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
