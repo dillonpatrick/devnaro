@@ -51,7 +51,7 @@ All DevNaro build stages and runtime environments use Debian-based images. The h
 Clone the repository and install the host command:
 
 ```bash
-git clone git@github.com:dillonpatrick/devbox.git
+git clone git@github.com:dillonpatrick/devnaro.git
 cd devnaro
 make install
 ```
@@ -118,10 +118,10 @@ Machine-specific settings are stored outside the repository in `~/.config/devnar
 - **Start:** leaves an already-running container untouched; starts an existing stopped container without rebuilding; builds the image and creates a container only when no container exists. It does not apply Dockerfile or Compose changes to an existing container. Use `devnaro recreate` to recreate the container and network and apply those changes while preserving `devnaro_home`.
 - **Restart:** runs `docker compose restart devnaro`. It only restarts the existing container; it does not recreate the container or network, rebuild the image, or change volumes.
 - **Recreate:** removes and recreates the container and Compose network while preserving `devnaro_home`; the host VS Code bridge is restarted.
-- **Recreate all:** asks for confirmation, then removes the DevNaro container, Compose network, `devnaro_home` volume, local image, and host VS Code bridge before running the full startup flow. Workspace files and resources from other Compose projects are preserved. Files and settings stored in `devnaro_home` are permanently lost.
-- **Clean:** runs Compose cleanup for the DevNaro project, removes its Compose-managed volumes and locally built images, and stops/removes the host VS Code bridge. It does not delete the workspace or resources belonging to other Compose projects.
+- **Recreate all (`devnaro recreate-all`):** asks for confirmation, then removes the DevNaro container, Compose network, `devnaro_home` volume, local image, and host VS Code bridge before running the full startup flow. Workspace files and resources from other Compose projects are preserved. Files and settings stored in `devnaro_home` are permanently lost.
+- **Clean (`devnaro clean`):** runs Compose cleanup for the current DevNaro project, removing its containers, network, Compose-managed volumes, and locally built images, then stops/removes the host VS Code bridge and its temporary files. It does not delete the workspace or resources belonging to other Compose projects. Volumes created under the previous Compose project name (`devbox`) are legacy resources and are not removed by the current cleanup script; remove them separately only after confirming they belong to the old DevNaro environment.
 
-Use `devnaro clean` only when you intentionally want to remove DevNaro's persisted home configuration and local image. A subsequent `devnaro start` rebuilds what is needed.
+Use `devnaro clean` only when you intentionally want to remove the current DevNaro project's persisted home configuration and local image. A subsequent `devnaro start` rebuilds what is needed.
 
 - **Uninstall:** run `make uninstall` from the DevNaro repository. It requests sudo authentication, then asks for confirmation before completely removing DevNaro from the host. The script runs as your regular user to preserve file ownership. It removes the DevNaro container, Compose network, `devnaro_home` volume, locally built image, host VS Code bridge, command symlink, installer-managed PATH entries, machine-specific configuration, and generated local files. The DevNaro repository and configured workspace are both preserved. If DevNaro was installed to a custom directory with `DEVNARO_BIN_DIR`, pass the same variable to `make uninstall`.
 
@@ -163,7 +163,7 @@ Run these tasks from the DevNaro repository directory on the host. They are for 
 | `make uninstall` | Authenticate with sudo and completely remove DevNaro while preserving the repository and workspace |
 | `make build` | Build the DevNaro image |
 | `make rebuild` | Rebuild the image without cache |
-| `make test` | Run Python unit tests (DevNaro must be running) |
+| `make test` | Run `pytest` against `/opt/devnaro-cli/tests/unit` inside the running DevNaro container |
 | `devnaro ci` | Run the GitHub Actions workflow locally using act |
 | `make config` | Validate Docker Compose configuration |
 | `make clean` | Remove DevNaro containers, networks, volumes, and local images |
