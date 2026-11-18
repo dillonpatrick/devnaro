@@ -84,6 +84,8 @@ jobs:
           push: false
           load: true
           tags: devnaro:ci
+          cache-from: type=gha,scope=devnaro-validation-${{ matrix.base-image }}-${{ matrix.stack-name }}
+          cache-to: type=gha,mode=max,scope=devnaro-validation-${{ matrix.base-image }}-${{ matrix.stack-name }}
           build-args: |
             USERNAME=devuser
             BASE_IMAGE=${{ matrix.base-image }}
