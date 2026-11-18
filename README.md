@@ -181,7 +181,7 @@ DevNaro can expose a project service on its own loopback interface without chang
 Configure a mapping from inside the container:
 
 ```bash
-dvn ports add 5432 warranty-manager-db 5432
+dvn ports add 5432 container-db 5432
 dvn ports list
 ```
 
