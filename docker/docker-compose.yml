@@ -25,8 +25,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - devnaro_home:/home/${USERNAME:-devuser}
       - type: bind
-        source: ${CODE_SOCKET_PATH:-/tmp/devnaro-code.sock}
-        target: /run/devnaro-host/code.sock
+        source: ${CODE_SOCKET_DIR:-/tmp/devnaro-host}
+        target: /run/devnaro-host
         bind:
           create_host_path: false
     working_dir: /workspace
