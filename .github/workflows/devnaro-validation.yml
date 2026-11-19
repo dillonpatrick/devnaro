@@ -100,9 +100,9 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/devnaro-workspace"
           docker volume create devnaro-home-ci
-          docker run --rm --volume devnaro-home-ci:/mnt/home --entrypoint sh devnaro:ci \
+          docker run --rm --network host --volume devnaro-home-ci:/mnt/home --entrypoint sh devnaro:ci \
             -ec 'cp -a /home/devuser/. /mnt/home/ && chown -R 0:0 /mnt/home && chmod -R u+rwX,go+rX /mnt/home'
-          docker run --detach --name devnaro-ci \
+          docker run --detach --network host --name devnaro-ci \
             --env DEVNARO_CONTAINER=devnaro-ci \
             --volume /var/run/docker.sock:/var/run/docker.sock \
             --volume "$RUNNER_TEMP/devnaro-workspace:/workspace" \
