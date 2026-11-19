@@ -9,7 +9,8 @@ devnaro_info "Cleaning DevNaro resources..."
 
 USER_UID="$(id -u)"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-CODE_SOCKET_PATH="$RUNTIME_DIR/devnaro-code-$USER_UID.sock"
+CODE_SOCKET_DIR="$RUNTIME_DIR/devnaro-host-$USER_UID"
+CODE_SOCKET_PATH="$CODE_SOCKET_DIR/code.sock"
 CODE_BRIDGE_PID="$RUNTIME_DIR/devnaro-code-$USER_UID.pid"
 CODE_BRIDGE_LOG="$RUNTIME_DIR/devnaro-code-$USER_UID.log"
 CODE_BRIDGE_BINARY="$RUNTIME_DIR/devnaro-host-bridge-$USER_UID"
@@ -23,6 +24,7 @@ if [[ -f "$CODE_BRIDGE_PID" ]]; then
     kill "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null || true
 fi
 rm -f "$CODE_BRIDGE_PID" "$CODE_SOCKET_PATH" "$CODE_BRIDGE_LOG" "$CODE_BRIDGE_BINARY" "$STATUS_BINARY"
+rmdir "$CODE_SOCKET_DIR" 2>/dev/null || true
 rm -rf "$CODE_BRIDGE_CACHE_DIR"
 
 echo
