@@ -178,7 +178,8 @@ case "$command" in
         USER_UID="$(id -u)"
         RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
         CODE_BRIDGE_PID="$RUNTIME_DIR/devnaro-code-$USER_UID.pid"
-        CODE_SOCKET_PATH="$RUNTIME_DIR/devnaro-code-$USER_UID.sock"
+        CODE_SOCKET_DIR="$RUNTIME_DIR/devnaro-host-$USER_UID"
+        CODE_SOCKET_PATH="$CODE_SOCKET_DIR/code.sock"
 
         if [[ -f "$CODE_BRIDGE_PID" ]]; then
             kill "$(cat "$CODE_BRIDGE_PID")" 2>/dev/null || true
